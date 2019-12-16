@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang=en>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <link rel="icon" href="favicon.ico">
+  <title>Boggle</title>
+  <style>
+    /* Mobile - Small */
+    body {
+      font-family: "Roboto", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+      margin: 0px;
+      touch-action: none;
+      user-select: none;
+    }
+    ::-webkit-scrollbar {
+      width: 0px;  /* Remove scrollbar space */
+      background: transparent;
+    }
+    #display {
+      /* 393x714 */
+      width: 393px;
+      height: 714px;
+
+      margin: 0px auto;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+    #loader, #content {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #loader {
+      height: 60%;
+    }
+    #topbar {
+      height: 70px;
+      line-height: 70px;
+      vertical-align: middle;
+      font-size: 20px;
+      display: flex;
+      flex-direction: row;
+      text-align: center;
+      font-weight: bold;
+    }
+    #refresh, #score { width: 20%; }
+    #timer {
+      width: 60%;
+      font-size: 40px;
+    }
+    #timer.expired { color: red; }
+    #board {
+      font-size: 70px;
+      font-weight: bold;
+      touch-action: auto;
+      margin: 40px 0;
+    }
+    #word {
+      width: 100%;
+      height: 70px;
+      line-height: 70px;
+      vertical-align: middle;
+      text-align: center;
+      font-size: 40px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+    .easy {
+      color: green; /* TODO */
+    }
+    .group {
+      font-style: italic; /* TODO */
+    }
+    #word:focus {
+      outline: none;
+    }
+    #defn {
+      text-align: center;
+    }
+    #board td { 
+      text-align: center;
+      border: 3px solid black;
+      height: 80px;
+      width: 80px;
+      border-radius: 8px;
+    }
+    .target {
+      height: 70px;
+      width: 70px;
+      position: absolute;
+      margin: -75px 5px;
+      z-index: 100;
+    }
+    .hidden {
+      display: none !important;
+    }
+    #board td.selected {
+      background: lightblue;
+    }
+    #wrapper {
+      height: 100%;
+      overflow: scroll;
+    }
+    #results {
+      width: 90%;
+      z-index: -1;
+    }
+    @keyframes fade {
+      100% { opacity: 0 };
+    }
+    .errorFade {
+      color: red;
+      animation-name: fade;
+      animation-duration: 0.5s;
+    }
+    @keyframes spinner {
+      to { transform: rotate(360deg); }
+    }
+    #spinner {
+      display: inline-block;
+      width: 2rem;
+      height: 2rem;
+      vertical-align: text-bottom;
+      border: .25em solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      -webkit-animation: spinner .75s linear infinite;
+      animation: spinner .75s linear infinite;
+    }
+    .rotate90 { transform: rotate(90deg); }
+    .rotate180 { transform: rotate(180deg); }
+    .rotate270 { transform: rotate(270deg); }
+    /* Mobile - Medium */
+    @media(min-width: 375px) { }
+    /* Mobile - Large */
+    @media(min-width: 425px) { }
+    /* Tablet */
+    @media(min-width: 768px) {
+      body {
+        margin-top: 20px;
+      }
+    }
+    /* Laptop */
+    @media(min-width: 1024px) {
+    }
+  </style>
+</head>
+<body>
+  <div id="display">
+    <div id="loader">
+      <div id="spinner"></div>
+    </div>
+    <div id="game" class="hidden">
+      <header id="topbar">
+        <div id="refresh"><img height="20" src="img/refresh.svg" /></div>
+        <div id="timer">3:00</div>
+        <div id="score">0</div>
+      </header>
+      <div id="content">
+      </div>
+      <div id="word"></div>
+      <div id="defn"></div>
+    </div>
+  </div>
+  <script type="application/javascript" src="boggle.js"></script>
+  <script>
+    var STATE = null;
+
+    class Timer {
+      constructor(duration) {
+        this.elapsed = 0;
+        this.duration = duration;
+        this.display = document.getElementById('timer');
+        this.display.classList.remove('expired');
+        this.interval = null;
+        this.paused = null;
+      }
+
+      start() {
+        if (!this.elapsed) {
+          this.begin = new Date().getTime();
+          this.last = this.begin;
+          this.interval = setInterval(() => this.update(), 100);
+        }
+      }
+
+      stop() {
+        if (this.interval) {
+          this.interval = clearInterval(this.interval);
+          this.inteval = null;
+        }
+      }
+
+      pause() {
+        if (this.interval) {
+          this.interval = clearInterval(this.interval);
+          this.interval = null;
+          this.begin = new Date().getTime();
+          this.elapsed += this.begin - this.last;
+          this.last = this.begin;
+        } else {
+          this.begin = new Date().getTime();
+          this.last = this.begin;
+          this.interval = setInterval(() => this.update(), 100);
+        }
+      }
+
+      expired() {
+        return this.elapsed >= this.duration;
+      }
+
+      update() {
+        const now = new Date().getTime();
+        this.elapsed += now - this.last;
+        this.last = now;
+
+        let distance;
+        if (this.expired()) {
+          this.display.classList.add('expired');
+          distance = this.elapsed - this.duration;
+          if (!STATE.game.expired) STATE.game.expired = +new Date();
+        } else {
+          distance = this.duration - this.elapsed;
+        }
+
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = `${Math.floor((distance % (1000 * 60)) / 1000)}`.padStart(2, '0');
+
+        this.display.textContent = `${minutes}:${seconds}`;
+      }
+    }
+
+    (async () => {
+      setTimeout(() => window.scrollTo(0, 1), 0);
+
+      const response = await fetch('data/dict.json', {mode: 'no-cors'});
+      const DICT = await response.json();
+
+      document.getElementById('display').removeChild(document.getElementById('loader'));
+      document.getElementById('game').classList.remove('hidden');
+
+      const TRIE = new Trie(DICT);
+      const RANDOM = new Random(Math.random() * 124861247); // TODO
+
+      STATE = refresh();
+
+      const TOUCH = ('ontouchstart' in window) ||
+        (navigator.maxTouchPoints > 0) || 
+        (navigator.msMaxTouchPoints > 0);
+
+      const word = document.getElementById('word');
+      const defn = document.getElementById('defn');
+      if (!TOUCH) {
+        word.contentEditable = true;
+        word.focus();
+      }
+
+      let kept = false;
+      const clearWord = w => {
+        if (w && w !== word.textContent) return;
+        word.textContent = '';
+        word.classList.remove('errorFade');
+        defn.textContent = '';
+        kept = false;
+      }
+
+      function adjacent(a, b) {
+        return Math.abs(b.dataset.x - a.dataset.x) <= 1 && Math.abs(b.dataset.y - a.dataset.y) <= 1;
+      }
+
+      function refresh(state) {
+        if (state) {
+          state.timer.stop();
+        }
+        const timer = new Timer(180 * 1000);
+
+        const game = new Game(DICE, TRIE, DICT, RANDOM);
+        const content = document.getElementById('content');
+        if (content.firstChild) content.removeChild(content.firstChild);
+        const table = document.createElement('table');
+        table.setAttribute('id', 'board');
+        const size = game.big ? 5 : 4;
+        for (let row = 0; row < size; row++) {
+          const tr = document.createElement('tr');
+          for (let col = 0; col < size; col++) {
+            const td = document.createElement('td');
+            td.textContent = game.board[row*size + col];
+            td.classList.add(`rotate${90*RANDOM.next(0, 4)}`);
+            const div = document.createElement('div');
+            div.classList.add('target');
+            div.setAttribute('data-x', row);
+            div.setAttribute('data-y', col);
+            td.appendChild(div);
+            tr.appendChild(td);
+          }
+          table.appendChild(tr);
+        }
+        
+        let touched;
+        let lastTouched = null;
+        const deselect = () => {
+          if (!touched) return;
+          for (const td of touched) {
+            td.classList.remove('selected');
+          }
+        };
+        table.addEventListener('touchstart', () => {
+          clearWord();
+          deselect();
+          touched = new Set();
+          lastTouched = null;
+        });
+        table.addEventListener('touchend', () => {
+          deselect();
+          play(STATE, word);
+        });
+        table.addEventListener('touchmove', e => {
+          const touch = e.touches[0];
+          const cell = document.elementFromPoint(touch.clientX, touch.clientY);
+          if (cell && cell.matches('.target')) {
+            // TODO: make sure is adjacent to last td!
+            /* if (lastTouched && !adjacent(cell, lastTouched)) {
+              deselect();
+              play(STATE, word);
+            } */
+            const td = cell.parentNode;
+            td.classList.add('selected');
+            if (!touched.has(td)) {
+              touched.add(td);
+              lastTouched = cell;
+              word.textContent += td.textContent;
+            }
+          }
+        });
+
+        content.appendChild(table);
+
+        document.getElementById('score').textContent = 0;
+
+        // Cleanup
+        const wrapper = document.getElementById('wrapper');
+        if (wrapper) document.getElementById('display').removeChild(wrapper);
+        const word = document.getElementById('word');
+        word.textContent = '';
+        word.classList.remove('hidden');
+        word.classList.remove('errorFade');
+        const defn = document.getElementById('defn');
+        defn.textContent = '';
+
+        timer.start();
+        return {timer, game};
+      }
+
+      function formatScore(score) {
+        return score.overtime ? `${score.regular} / ${score.overtime}` : `${score.regular}`;
+      }
+
+      function play(state, word) {
+        const w = word.textContent;
+        const score = state.game.play(w.toUpperCase());
+        document.getElementById('score').textContent = formatScore(state.game.score);
+        kept = true;
+        if (score) {
+          // TODO only do red if not-a-word, not dupe?
+          document.getElementById('defn').textContent = DICT[w.toUpperCase()].defn;
+        } else {
+          word.classList.add('errorFade');
+          const animationend = () => {
+            clearWord(w);
+            word.removeEventListener(animationend);
+          }
+          word.addEventListener('animationend', animationend);
+        }
+      }
+
+      document.getElementById('refresh').addEventListener('click', () => {
+        STATE = refresh(STATE);
+      });
+
+      document.getElementById('timer').addEventListener('click', () => {
+        STATE.timer.pause();
+      });
+
+      document.getElementById('score').addEventListener('click', () => {
+        const display = document.getElementById('display');
+        const board = document.getElementById('board');
+        const wrapper = document.getElementById('wrapper');
+        if (!wrapper) {
+          board.classList.add('hidden');
+          word.classList.add('hidden');
+          defn.classList.add('hidden');
+
+          const state = STATE.game.state();
+          const wrapper = document.createElement('div');
+          wrapper.setAttribute('id', 'wrapper');
+          const table = document.createElement('table');
+          table.setAttribute('id', 'results');
+          for (const {word, score, easy, group, defn} of state.possible) {
+            const tr = document.createElement('tr');
+            if (easy) tr.classList.add('easy');
+            if (group) tr.classList.add('group');
+            let td = document.createElement('td');
+            const b = document.createElement('b');
+            b.textContent = word;
+            td.appendChild(b);
+            tr.appendChild(td);
+            td = document.createElement('td');
+            td.textContent = defn;
+            tr.appendChild(td);
+            table.appendChild(tr);
+          }
+          wrapper.appendChild(table);
+          display.appendChild(wrapper);
+        } else {
+          display.removeChild(wrapper);
+          board.classList.remove('hidden');
+          word.classList.remove('hidden');
+          defn.classList.remove('hidden');
+        }
+      });
+
+      // TODO shouldnt work when in score mode!
+      document.addEventListener('keydown', e => {
+        if (kept) clearWord();
+        word.focus(); // TODO fix cursor locaton
+        const key = e.keyCode;
+        if (key === 13 || key === 32) {
+          play(STATE, word);
+          e.preventDefault(); 
+          word.focus();
+        } else if ((key < 65 || key > 90) && key !== 8) {
+          e.preventDefault();
+        }
+      });
+
+    })();
+  </script>
+</body>
+</html>
