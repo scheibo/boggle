@@ -1,14 +1,8 @@
 'use strict';
 
 class Random {
-  constructor(n = 4 /* https://xkcd.com/221/ */) {
-    // Hash: https://burtleburtle.net/bob/hash/integer.html
-    n = n ^ 61 ^ (n >>> 16);
-    n = n + (n << 3);
-    n = n ^ (n >>> 4);
-    n = Math.imul(n, 0x27d4eb2d);
-    n = n ^ (n >>> 15);
-    this.seed = n >>> 0;
+  constructor(seed = 4 /* https://xkcd.com/221/ */) {
+    this.seed = seed;
   }
 
   // Mulberry32: https://gist.github.com/tommyettinger/46a874533244883189143505d203312c
@@ -163,8 +157,7 @@ class Game {
 
   static fromJSON(json, trie, dict) {
     const type = seed[0];
-    const random = new Random();
-    random.seed = Number(seed.slice(1));
+    const random = new Random(Number(seed.slice(1)));
     const reconstitute = d => {
       const g = new Game(d, trie, dict, random);
       g.start = start;
@@ -332,7 +325,7 @@ class Game {
           }
           if (node2 !== undefined) {
             const s2 = s + c;
-            if (node2.isWord) words.add(s2);
+            if (node2.isWord && s2.length >= this.size - 1) words.add(s2);
             queue.push([x2, y2, s2, node2, hist]);
           }
         }

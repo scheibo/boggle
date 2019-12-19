@@ -14,14 +14,12 @@
       user-select: none;
     }
     ::-webkit-scrollbar {
-      width: 0px;  /* Remove scrollbar space */
+      width: 0px;
       background: transparent;
     }
     #display {
-      /* 393x714 */
       width: 393px;
       height: 714px;
-
       margin: 0px auto;
       display: flex;
       flex-direction: column;
@@ -46,17 +44,15 @@
       text-align: center;
       font-weight: bold;
     }
-    #refresh, #score { width: 20%; }
+    #refresh, #score {
+      width: 20%;
+    }
     #timer {
       width: 60%;
       font-size: 40px;
     }
-    #timer.expired { color: red; }
-    #board {
-      font-size: 70px;
-      font-weight: bold;
-      touch-action: auto;
-      margin: 40px 0;
+    #timer.expired {
+      color: red;
     }
     #word {
       width: 100%;
@@ -68,19 +64,21 @@
       font-weight: bold;
       text-transform: uppercase;
     }
-    .easy {
-      color: green; /* TODO */
-    }
-    .group {
-      font-style: italic; /* TODO */
-    }
     #word:focus {
       outline: none;
     }
     #defn {
       text-align: center;
+      margin: 0px auto;
+      width: 90%;
     }
-    #board td { 
+    #board {
+      font-size: 70px;
+      font-weight: bold;
+      touch-action: auto;
+      margin: 40px 0;
+    }
+    #board td {
       text-align: center;
       border: 3px solid black;
       height: 80px;
@@ -93,6 +91,21 @@
       position: absolute;
       margin: -75px 5px;
       z-index: 100;
+    }
+    #board.big {
+      font-size: 56px;
+    }
+    #board.big td { 
+      height: 64px;
+      width: 64px;
+    }
+    #board.big .target {
+      height: 56px;
+      width: 56px;
+      margin: -60px 5px;
+    }
+    .qu {
+      font-size: 90%;
     }
     .hidden {
       display: none !important;
@@ -124,13 +137,11 @@
       font-family: "Roboto", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
       font-weight: bold;
     }
-
     .collapsible-content {
       padding: 0 18px;
       display: none;
       overflow: hidden;
     }
-
     .collapsible:after {
       content: '\02795';
       color: transparent;
@@ -138,16 +149,16 @@
       float: right;
       margin-left: 5px;
     }
-
     .active:after {
       content: '\02796';
     }
-
     @keyframes fade {
       100% { opacity: 0 };
     }
-    .errorFade {
+    .error {
       color: red;
+    }
+    .fade {
       animation-name: fade;
       animation-duration: 0.5s;
     }
@@ -297,32 +308,32 @@
       const clearWord = w => {
         if (w && w !== word.textContent) return;
         word.textContent = '';
-        word.classList.remove('errorFade');
+        word.classList.remove('error');
+        word.classList.remove('fade');
         defn.textContent = '';
         kept = false;
-      }
+      };
 
-      function adjacent(a, b) {
-        return Math.abs(b.dataset.x - a.dataset.x) <= 1 && Math.abs(b.dataset.y - a.dataset.y) <= 1;
-      }
+      const adjacent = (a, b) =>
+        Math.abs(b.dataset.x - a.dataset.x) <= 1 && Math.abs(b.dataset.y - a.dataset.y) <= 1;
 
       function refresh(state) {
-        if (state) {
-          state.timer.stop();
-        }
+        if (state) state.timer.stop();
         const timer = new Timer(180 * 1000);
 
-        const game = new Game(DICE, TRIE, DICT, RANDOM);
+        const game = new Game(DICE, TRIE, DICT, RANDOM); // TODO BIG_DICE / OLD_DICE
         const content = document.getElementById('content');
         if (content.firstChild) content.removeChild(content.firstChild);
+
         const table = document.createElement('table');
         table.setAttribute('id', 'board');
-        const size = game.big ? 5 : 4;
-        for (let row = 0; row < size; row++) {
+        if (game.size > 4) table.classList.add('big');
+        for (let row = 0; row < game.size; row++) {
           const tr = document.createElement('tr');
-          for (let col = 0; col < size; col++) {
+          for (let col = 0; col < game.size; col++) {
             const td = document.createElement('td');
-            td.textContent = game.board[row*size + col];
+            td.textContent = game.board[row*game.size + col];
+            if (td.textContent === 'Qu') td.classList.add('qu');
             td.classList.add(`rotate${90*RANDOM.next(0, 4)}`);
             const div = document.createElement('div');
             div.classList.add('target');
@@ -372,7 +383,6 @@
         });
 
         content.appendChild(table);
-
         document.getElementById('score').textContent = 0;
 
         // Cleanup
@@ -381,7 +391,8 @@
         const word = document.getElementById('word');
         word.textContent = '';
         word.classList.remove('hidden');
-        word.classList.remove('errorFade');
+        word.classList.remove('error');
+        word.classList.remove('fade');
         const defn = document.getElementById('defn');
         defn.textContent = '';
 
@@ -389,23 +400,22 @@
         return {timer, game};
       }
 
-      function formatScore(score) {
-        return score.overtime ? `${score.regular} / ${score.overtime}` : `${score.regular}`;
-      }
+      const formatScore = score => score.overtime ? `${score.regular} / ${score.overtime}` : `${score.regular}`;
 
       function play(state, word) {
-        const w = word.textContent;
-        const score = state.game.play(w.toUpperCase());
+        const w = word.textContent.toUpperCase();
+        const score = state.game.play(w);
         document.getElementById('score').textContent = formatScore(state.game.score);
         kept = true;
         if (score) {
-          // TODO only do red if not-a-word, not dupe?
-          document.getElementById('defn').textContent = DICT[w.toUpperCase()].defn;
+          document.getElementById('defn').textContent = DICT[w].defn;
         } else {
-          word.classList.add('errorFade');
+          const o = word.textContent;
+          if (!state.game.played[w]) word.classList.add('error');
+          word.classList.add('fade');
           const animationend = () => {
-            clearWord(w);
-            word.removeEventListener(animationend);
+            clearWord(o);
+            word.removeEventListener('animationend', animationend);
           }
           word.addEventListener('animationend', animationend);
         }
@@ -500,7 +510,6 @@
           e.preventDefault();
         }
       });
-
     })();
   </script>
 </body>
