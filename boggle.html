@@ -106,8 +106,43 @@
     }
     #results {
       width: 90%;
+      margin: 0px auto;
+      padding: 5px;
       z-index: -1;
     }
+    .collapsible {
+      background-color: #fff;
+      cursor: pointer;
+      padding: 18px;
+      width: 95%;
+      display: block;
+      margin: 0px auto;
+      border: 3px solid black;
+      border-radius: 8px;
+      text-align: left;
+      outline: none;
+      font-family: "Roboto", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+      font-weight: bold;
+    }
+
+    .collapsible-content {
+      padding: 0 18px;
+      display: none;
+      overflow: hidden;
+    }
+
+    .collapsible:after {
+      content: '\02795';
+      color: transparent;
+      text-shadow: 0 0 0 black;
+      float: right;
+      margin-left: 5px;
+    }
+
+    .active:after {
+      content: '\02796';
+    }
+
     @keyframes fade {
       100% { opacity: 0 };
     }
@@ -384,6 +419,23 @@
         STATE.timer.pause();
       });
 
+      function makeCollapsible(seed, active) {
+        const button = document.createElement('button');
+        button.setAttribute('type', 'button');
+        button.classList.add('collapsible');
+        button.textContent = seed;
+        button.addEventListener('click', function() {
+          this.classList.toggle('active');
+          const content = this.nextElementSibling;
+          if (content.style.display === 'table') {
+            content.style.display = 'none';
+          } else {
+            content.style.display = 'table';
+          }
+        });
+        return button;
+      }
+
       document.getElementById('score').addEventListener('click', () => {
         const display = document.getElementById('display');
         const board = document.getElementById('board');
@@ -393,26 +445,39 @@
           word.classList.add('hidden');
           defn.classList.add('hidden');
 
-          const state = STATE.game.state();
           const wrapper = document.createElement('div');
           wrapper.setAttribute('id', 'wrapper');
+
+          // TODO iterate through ALL states...
+
+          const state = STATE.game.state();
           const table = document.createElement('table');
+          table.classList.add('collapsible-content');
           table.setAttribute('id', 'results');
           for (const {word, score, easy, group, defn} of state.possible) {
             const tr = document.createElement('tr');
-            if (easy) tr.classList.add('easy');
-            if (group) tr.classList.add('group');
+
             let td = document.createElement('td');
             const b = document.createElement('b');
             b.textContent = word;
             td.appendChild(b);
             tr.appendChild(td);
+
             td = document.createElement('td');
             td.textContent = defn;
             tr.appendChild(td);
+
             table.appendChild(tr);
           }
+
+
+          // TODO remember collapsible state..., also stop recalculating solutions of old games (on demand, then cache)
+          const current = makeCollapsible(STATE.game.toJSON().seed);
+          current.classList.add('active');
+          wrapper.appendChild(current);
+          table.style.display = 'table';
           wrapper.appendChild(table);
+
           display.appendChild(wrapper);
         } else {
           display.removeChild(wrapper);
