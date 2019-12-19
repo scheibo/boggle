@@ -117,11 +117,19 @@
       height: 100%;
       overflow: scroll;
     }
-    #results {
-      width: 90%;
-      margin: 0px auto;
+    .results {
+      width: 100%;
       padding: 5px;
       z-index: -1;
+    }
+    .hard {
+      color: #aaa;
+    }
+    .group {
+      font-style: italic;
+    }
+    .suffix {
+      text-decoration: underline;
     }
     .collapsible {
       background-color: #fff;
@@ -136,11 +144,27 @@
       outline: none;
       font-family: "Roboto", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
       font-weight: bold;
+      background-color: #fafafa;
     }
     .collapsible-content {
-      padding: 0 18px;
+      padding: 5px 18px;
       display: none;
       overflow: hidden;
+    }
+    .collapsible-content .collapsible-content {
+      border: 3px solid black;
+      border-top: none;
+      border-radius: 0px 0px 8px 8px;
+      margin-bottom: 5px;
+      min-height: 3em;
+    }
+    .collapsible-content .collapsible {
+      width: 100%;
+      margin-bottom: 5px;
+    }
+    .collapsible-content .collapsible.active {
+      margin-bottom: 0px;
+      border-radius: 8px 8px 0px 0px;
     }
     .collapsible:after {
       content: '\02795';
@@ -289,7 +313,7 @@
       document.getElementById('game').classList.remove('hidden');
 
       const TRIE = new Trie(DICT);
-      const RANDOM = new Random(Math.random() * 124861247); // TODO
+      const RANDOM = new Random(Math.floor(Math.random() * 124861247)); // TODO
 
       STATE = refresh();
 
@@ -429,7 +453,7 @@
         STATE.timer.pause();
       });
 
-      function makeCollapsible(seed, active) {
+      function makeCollapsible(seed, display = 'block') {
         const button = document.createElement('button');
         button.setAttribute('type', 'button');
         button.classList.add('collapsible');
@@ -437,13 +461,81 @@
         button.addEventListener('click', function() {
           this.classList.toggle('active');
           const content = this.nextElementSibling;
-          if (content.style.display === 'table') {
+          if (content.style.display === display) {
             content.style.display = 'none';
           } else {
-            content.style.display = 'table';
+            content.style.display = display;
           }
         });
         return button;
+      }
+
+      function displayPlayed(state, div, expanded) {
+        const button = makeCollapsible('PLAYED: 0/0/0/0', 'table');
+        const table = document.createElement('table');
+        table.classList.add('collapsible-content');
+        table.classList.add('results');
+        table.classList.add('played');
+        for (const {word, easy, group, defn} of state.played) {
+          const tr = document.createElement('tr');
+          if (group) {
+            tr.classList.add('group');
+          } else if (!easy) {
+            tr.classList.add('hard');
+          }
+
+          let td = document.createElement('td');
+          const b = document.createElement('b');
+          b.textContent = word;
+          td.appendChild(b);
+          tr.appendChild(td);
+
+          td = document.createElement('td');
+          td.textContent = defn;
+          tr.appendChild(td);
+
+          table.appendChild(tr);
+        }
+        if (expanded) {
+          button.classList.add('active');
+          table.style.display = 'table';
+        }
+        div.appendChild(button);
+        div.appendChild(table);
+      }
+
+      function displayPossible(state, div, expanded) {
+        const button = makeCollapsible('POSSIBLE: 10/10/10/10', 'table');
+        const table = document.createElement('table');
+        table.classList.add('collapsible-content');
+        table.classList.add('results');
+        table.classList.add('possible');
+        for (const {word, easy, group, defn} of state.possible) {
+          const tr = document.createElement('tr');
+          if (group) {
+            tr.classList.add('group');
+          } else if (!easy) {
+            tr.classList.add('hard');
+          }
+
+          let td = document.createElement('td');
+          const b = document.createElement('b');
+          b.textContent = word;
+          td.appendChild(b);
+          tr.appendChild(td);
+
+          td = document.createElement('td');
+          td.textContent = defn;
+          tr.appendChild(td);
+
+          table.appendChild(tr);
+        }
+        if (expanded) {
+          button.classList.add('active');
+          table.style.display = 'table';
+        }
+        div.appendChild(button);
+        div.appendChild(table);
       }
 
       document.getElementById('score').addEventListener('click', () => {
@@ -459,34 +551,20 @@
           wrapper.setAttribute('id', 'wrapper');
 
           // TODO iterate through ALL states...
-
           const state = STATE.game.state();
-          const table = document.createElement('table');
-          table.classList.add('collapsible-content');
-          table.setAttribute('id', 'results');
-          for (const {word, score, easy, group, defn} of state.possible) {
-            const tr = document.createElement('tr');
-
-            let td = document.createElement('td');
-            const b = document.createElement('b');
-            b.textContent = word;
-            td.appendChild(b);
-            tr.appendChild(td);
-
-            td = document.createElement('td');
-            td.textContent = defn;
-            tr.appendChild(td);
-
-            table.appendChild(tr);
-          }
-
-
           // TODO remember collapsible state..., also stop recalculating solutions of old games (on demand, then cache)
-          const current = makeCollapsible(STATE.game.toJSON().seed);
-          current.classList.add('active');
+          const current = makeCollapsible(STATE.game.toJSON().seed); // FIXME INCLUDE PERCENT
+          const div = document.createElement('div');
+          div.classList.add('collapsible-content');
+          displayPlayed(state, div, true); // TODO only current played...
+          displayPossible(state, div);
           wrapper.appendChild(current);
-          table.style.display = 'table';
-          wrapper.appendChild(table);
+          wrapper.appendChild(div);
+          
+          // Start off with played expanded
+          current.classList.add('active');
+          div.style.display = 'block';
+
 
           display.appendChild(wrapper);
         } else {

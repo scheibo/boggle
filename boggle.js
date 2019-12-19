@@ -156,15 +156,15 @@ class Game {
   }
 
   static fromJSON(json, trie, dict) {
-    const type = seed[0];
-    const random = new Random(Number(seed.slice(1)));
+    const type = json.seed[0];
+    const random = new Random(Number(json.seed.slice(1)));
     const reconstitute = d => {
       const g = new Game(d, trie, dict, random);
-      g.start = start;
-      g.expired = expired;
-      g.played = words;
+      g.start = json.start;
+      g.expired = json.expired;
+      g.played = json.words;
       return g;
-    }
+    };
     if (type === 'N') return reconstitute(NEW_DICE);
     if (type === 'O') return reconstitute(OLD_DICE);
     if (type === 'B') return reconstitute(BIG_DICE);
@@ -172,7 +172,7 @@ class Game {
   }
 
   compute() {
-    const suffixes = new Set();
+    const suffixes = {};
     const anagrams = {};
     const groups = new Set();
     const easy = new Set();
@@ -183,7 +183,7 @@ class Game {
         if (word.endsWith(suffix)) {
           const root = word.slice(0, word.length - suffix.lengh);
           if (this.possible.has(root)) {
-            suffixes.add(word);
+            suffixes[word] = root;
           }
         }
       }
@@ -209,7 +209,6 @@ class Game {
   }
 
   progress() {
-    const suffixes = new Set();
     const anagrams = {};
     const groups = new Set();
     const easy = new Set();
@@ -219,10 +218,10 @@ class Game {
     for (const word in this.played) {
       // Suffixes
       for (const suffix of SUFFIXES) {
-        if (this.stats.suffixes.has(word + suffix)) {
+        if (this.stats.suffixess[word + suffix]) {
           expected++;
         }
-        if (word.endsWith(suffix) && this.stats.suffixes.has(word)) {
+        if (word.endsWith(suffix) && this.stats.suffixes[word]) {
           actual++;
         }
       }
@@ -271,7 +270,6 @@ class Game {
       const data = self.dict[w];
       return {
         word: w, 
-        score: Game.score(w),
         easy: self.stats.easy.has(w),
         group: self.stats.groups.has(w),
         defn: data.defn,
@@ -279,7 +277,7 @@ class Game {
     };
 
     return {
-      regular: Array.from(Object.entries(this.played)).sort((a, b) => a[1] - b[1]).map(e => {
+      played: Array.from(Object.entries(this.played)).sort((a, b) => a[1] - b[1]).map(e => {
         const w = e[0];
         const v = augment(w);
         if (this.overtime.has(w)) v.overtime = true;
