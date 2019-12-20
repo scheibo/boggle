@@ -218,7 +218,7 @@ class Game {
     for (const word in this.played) {
       // Suffixes
       for (const suffix of SUFFIXES) {
-        if (this.stats.suffixess[word + suffix]) {
+        if (this.stats.suffixes[word + suffix]) {
           expected++;
         }
         if (word.endsWith(suffix) && this.stats.suffixes[word]) {
