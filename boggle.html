@@ -6,7 +6,7 @@
   <link rel="icon" href="favicon.ico">
   <title>Boggle</title>
   <style>
-    /* Mobile - Small */
+    /* LG-H873 = 360 x 588  */
     body {
       font-family: "Roboto", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
       margin: 0px;
@@ -18,8 +18,8 @@
       background: transparent;
     }
     #display {
-      width: 393px;
-      height: 714px;
+      width: 360px;
+      height: 588px;
       margin: 0px auto;
       display: flex;
       flex-direction: column;
@@ -35,8 +35,8 @@
       height: 60%;
     }
     #topbar {
-      height: 70px;
-      line-height: 70px;
+      height: 68px;
+      line-height: 68px;
       vertical-align: middle;
       font-size: 20px;
       display: flex;
@@ -56,8 +56,8 @@
     }
     #word {
       width: 100%;
-      height: 70px;
-      line-height: 70px;
+      height: 68px;
+      line-height: 68px;
       vertical-align: middle;
       text-align: center;
       font-size: 40px;
@@ -73,10 +73,10 @@
       width: 90%;
     }
     #board {
-      font-size: 70px;
+      font-size: 68px;
       font-weight: bold;
       touch-action: auto;
-      margin: 40px 0;
+      margin: 5px 0;
     }
     #board td {
       text-align: center;
@@ -93,15 +93,15 @@
       z-index: 100;
     }
     #board.big {
-      font-size: 56px;
+      font-size: 54px;
     }
     #board.big td { 
       height: 64px;
       width: 64px;
     }
     #board.big .target {
-      height: 56px;
-      width: 56px;
+      height: 54px;
+      width: 54px;
       margin: -60px 5px;
     }
     .qu {
@@ -203,6 +203,21 @@
     .rotate90 { transform: rotate(90deg); }
     .rotate180 { transform: rotate(180deg); }
     .rotate270 { transform: rotate(270deg); }
+    .underline { text-decoration: underline; }
+
+    /* Pixel = 393 x 714 */
+    @media(min-width: 393px) {
+      #display {
+        width: 393px;
+        height: 714px;
+      }
+      #board {
+        margin: 40px 0;
+      }
+    }
+
+    /* iPhone 6S Plus = 414 x 736 */
+
     /* Mobile - Medium */
     @media(min-width: 375px) { }
     /* Mobile - Large */
@@ -309,6 +324,11 @@
       const response = await fetch('data/dict.json', {mode: 'no-cors'});
       const DICT = await response.json();
 
+      const TYPE =
+        document.location.hash.includes('big') ? 'b' : document.location.href.includes('dad') ? 'd' :
+        document.location.href.includes('old') ? 'o' :
+        'n';
+
       document.getElementById('display').removeChild(document.getElementById('loader'));
       document.getElementById('game').classList.remove('hidden');
 
@@ -345,7 +365,7 @@
         if (state) state.timer.stop();
         const timer = new Timer(180 * 1000);
 
-        const game = new Game(DICE, TRIE, DICT, RANDOM); // TODO BIG_DICE / OLD_DICE
+        const game = new Game(TRIE, DICT, RANDOM, TYPE);
         const content = document.getElementById('content');
         if (content.firstChild) content.removeChild(content.firstChild);
 
@@ -358,6 +378,7 @@
             const td = document.createElement('td');
             td.textContent = game.board[row*game.size + col];
             if (td.textContent === 'Qu') td.classList.add('qu');
+            if (['N', 'Z', 'M'].includes(td.textContent)) td.classList.add('underline');
             td.classList.add(`rotate${90*RANDOM.next(0, 4)}`);
             const div = document.createElement('div');
             div.classList.add('target');
@@ -419,6 +440,7 @@
         word.classList.remove('fade');
         const defn = document.getElementById('defn');
         defn.textContent = '';
+        defn.classList.remove('hidden');
 
         timer.start();
         return {timer, game};

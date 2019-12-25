@@ -95,25 +95,21 @@ const BIG_DICE = [
 
 const SUFFIXES = ['S', 'ER', 'ED', 'ING'];
 
-const DICE = NEW_DICE;
-
 const FREQUENCY = 10000;
 
 class Game {
-  constructor(dice, trie, dict, random) {
-    this.dice = dice;
-    this.size = Math.sqrt(this.dice.length);
-    this.type =
-      dice === NEW_DICE ? 'n' :
-      dice === OLD_DICE ? 'o' :
-      dice === BIG_DICE ? 'b' :
-      ' ';
-
+  constructor(trie, dict, random, type = 'n') {
     this.trie = trie;
     this.dict = dict;
-    
+
     this.random = random;
     this.seed = this.random.seed;
+    
+    this.type = type;
+    this.dice =
+      this.type === 'd' || this.type ===  'b' ? BIG_DICE :
+      this.type === 'o' ? OLD_DICE : NEW_DICE;
+    this.size = Math.sqrt(this.dice.length);
 
     this.board = [];
     for (const die of this.dice) {
@@ -158,17 +154,11 @@ class Game {
   static fromJSON(json, trie, dict) {
     const type = json.seed[0];
     const random = new Random(Number(json.seed.slice(1)));
-    const reconstitute = d => {
-      const g = new Game(d, trie, dict, random);
-      g.start = json.start;
-      g.expired = json.expired;
-      g.played = json.words;
-      return g;
-    };
-    if (type === 'N') return reconstitute(NEW_DICE);
-    if (type === 'O') return reconstitute(OLD_DICE);
-    if (type === 'B') return reconstitute(BIG_DICE);
-    throw new TypeError(`Unknown game type ${type} from ${seed}`);
+    const game = new Game(trie, dict, random, type.toLowerCase());
+    game.start = json.start;
+    game.expired = json.expired;
+    game.played = json.words;
+    return game;
   }
 
   compute() {
@@ -323,7 +313,7 @@ class Game {
           }
           if (node2 !== undefined) {
             const s2 = s + c;
-            if (node2.isWord && s2.length >= this.size - 1) words.add(s2);
+            if (node2.isWord && s2.length >= this.size - (this.type !== 'd')) words.add(s2);
             queue.push([x2, y2, s2, node2, hist]);
           }
         }
