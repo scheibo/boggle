@@ -102,27 +102,28 @@ class Game {
     this.trie = trie;
     this.dict = dict;
 
-    this.random = random;
-    this.seed = this.random.seed;
-    
     this.type = type;
     this.dice =
       this.type === 'd' || this.type ===  'b' ? BIG_DICE :
       this.type === 'o' ? OLD_DICE : NEW_DICE;
-      this.id = `${this.type.toUpperCase()}${this.seed}`;
     this.size = Math.sqrt(this.dice.length);
 
-    this.board = [];
-    for (const die of this.dice) {
-      const c = this.random.sample(die.split(''));
-      this.board.push(c === 'Q' ? 'Qu' : c);
-    }
-    this.random.shuffle(this.board);
+    this.random = random;
+    do {
+      this.seed = this.random.seed;
+      this.board = [];
+      for (const die of this.dice) {
+        const c = this.random.sample(die.split(''));
+        this.board.push(c === 'Q' ? 'Qu' : c);
+      }
+      this.random.shuffle(this.board);
+      this.possible = this.solve();
+    } while (this.possible.size === 0);
+
+    this.id = `${this.type.toUpperCase()}${this.seed}`;
 
     this.played = {};
     this.overtime = new Set();
-    this.possible = this.solve(); // TODO reroll if no words!
-
     this.score = {regular: 0, overtime: 0};
 
     this.start = +new Date();

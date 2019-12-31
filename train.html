@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang=en>
+<head>
+  <title>Boggle</title>
+  <style>
+    /* LG-H873 = 360 x 588  */
+    body {
+      font-family: "Roboto", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+      margin: 0px;
+      touch-action: none;
+      user-select: none;
+    }
+    ::-webkit-scrollbar {
+      width: 0px;
+      background: transparent;
+    }
+    #display {
+      width: 360px;
+      height: 588px;
+      margin: 0px auto;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+    #loader {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #loader {
+      height: 60%;
+    }
+    .hidden {
+      display: none !important;
+    }
+    #wrapper {
+      height: 100%;
+      overflow: scroll;
+    }
+    .results {
+      width: 100%;
+      padding: 5px;
+      z-index: -1;
+    }
+    .collapsible {
+      background-color: #fff;
+      cursor: pointer;
+      padding: 18px;
+      width: 95%;
+      display: block;
+      margin: 3px auto;
+      border: 3px solid black;
+      border-radius: 8px;
+      text-align: left;
+      outline: none;
+      font-family: "Roboto", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+      background-color: #fafafa;
+    }
+    .title {
+      font-weight: bold;
+    }
+    .collapsible-content {
+      padding: 5px 18px;
+      display: none;
+      overflow: hidden;
+    }
+    .collapsible-content .collapsible-content {
+      border: 3px solid black;
+      border-top: none;
+      border-radius: 0px 0px 8px 8px;
+      margin-bottom: 5px;
+      min-height: 3em;
+    }
+    .collapsible-content .collapsible {
+      width: 100%;
+      margin-bottom: 5px;
+    }
+    .collapsible-content .collapsible.active {
+      margin-bottom: 0px;
+      border-radius: 8px 8px 0px 0px;
+    }
+    .collapsible:after {
+      content: '\02795';
+      color: transparent;
+      text-shadow: 0 0 0 black;
+      float: right;
+      margin-left: 5px;
+    }
+    .active:after {
+      content: '\02796';
+    }
+    .collapsible div {
+      width: 90%;
+      display: inline-block;
+    }
+    .details {
+      float: right;
+    }
+    @keyframes spinner {
+      to { transform: rotate(360deg); }
+    }
+    #spinner {
+      display: inline-block;
+      width: 2rem;
+      height: 2rem;
+      vertical-align: text-bottom;
+      border: .25em solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      -webkit-animation: spinner .75s linear infinite;
+      animation: spinner .75s linear infinite;
+    }
+
+    /* Pixel = 393 x 714 */
+    @media(min-width: 393px) {
+      #display {
+        width: 393px;
+        height: 714px;
+      }
+      #board {
+        margin: 40px 0;
+      }
+    }
+
+    /* iPhone 6S Plus = 414 x 736 */
+
+    /* Mobile - Medium */
+    @media(min-width: 375px) { }
+    /* Mobile - Large */
+    @media(min-width: 425px) { }
+    /* Tablet */
+    @media(min-width: 768px) {
+      body {
+        margin-top: 20px;
+      }
+    }
+    /* Laptop */
+    @media(min-width: 1024px) {
+    }
+  </style>
+</head>
+<body>
+  <div id="display">
+    <div id="loader">
+      <div id="spinner"></div>
+    </div>
+    <div id="wrapper"></div>
+  </div>
+  <script>
+    class Random {
+      constructor(seed = 4 /* https://xkcd.com/221/ */) {
+        this.seed = seed;
+      }
+
+      // Mulberry32: https://gist.github.com/tommyettinger/46a874533244883189143505d203312c
+      next(min, max) {
+        if (min) min = Math.floor(min);
+        if (max) max = Math.floor(max);
+
+        let z = (this.seed += 0x6d2b79f5 | 0);
+        z = Math.imul(z ^ (z >>> 15), z | 1);
+        z = z ^ (z + Math.imul(z ^ (z >>> 7), z | 61));
+        z = (z ^ (z >>> 14)) >>> 0;
+        const n = z / 2 ** 32;
+
+        if (min === undefined) return n;
+        if (!max) return Math.floor(n * min);
+        return Math.floor(n * (max - min)) + min;
+      }
+
+      shuffle(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(this.next() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+      }
+    }
+
+    (async () => {
+      setTimeout(() => window.scrollTo(0, 1), 0);
+
+      const TYPE = 'n'; // TODO
+      const response = await fetch('data/dict.json', {mode: 'no-cors'});
+      const DICT = await response.json();
+
+      const GROUPS = {}
+      for (const word in DICT) {
+        const val = DICT[word];
+        if (!val.type || !val.type.includes(TYPE)) continue;
+        const anagram = word.split('').sort().join('');
+        GROUPS[anagram] = (GROUPS[anagram] || []);
+        GROUPS[anagram].push(word);
+      }
+
+      document.getElementById('display').removeChild(document.getElementById('loader'));
+
+      var RANDOM = new Random(Math.round(Math.random() * 131423558));
+      refresh();
+
+      function refresh(state) {
+        const wrapper = document.getElementById('wrapper');
+  
+        const ordered = RANDOM.shuffle(Object.keys(GROUPS));
+        for (const g of ordered) {
+          const group = GROUPS[g];
+          const button = makeCollapsible(g, 'table');
+          const table = document.createElement('table');
+          table.classList.add('collapsible-content');
+          table.classList.add('results');
+          for (const word of group) {
+            const tr = document.createElement('tr');
+
+            let td = document.createElement('td');
+            const b = document.createElement('b');
+            b.textContent = word;
+            td.appendChild(b);
+            tr.appendChild(td);
+
+            td = document.createElement('td');
+            td.textContent = DICT[word].defn;
+            tr.appendChild(td);
+
+            table.appendChild(tr);
+          }
+          wrapper.appendChild(button);
+          wrapper.appendChild(table);
+        }
+      }
+
+      function makeCollapsible(title, display = 'block') {
+        const button = document.createElement('button');
+        button.setAttribute('type', 'button');
+        button.classList.add('collapsible');
+
+        const div = document.createElement('div');
+        const titleSpan = document.createElement('span');
+        titleSpan.classList.add('title');
+        titleSpan.textContent = title;
+        div.appendChild(titleSpan);
+        button.appendChild(div);
+
+        button.addEventListener('click', function() {
+          this.classList.toggle('active');
+          const content = this.nextElementSibling;
+          if (content.style.display === display) {
+            content.style.display = 'none';
+          } else {
+            content.style.display = display;
+          }
+        });
+        return button;
+      }
+    })();
+  </script>
+</body>
+</html>
