@@ -109,6 +109,7 @@ class Game {
     this.dice =
       this.type === 'd' || this.type ===  'b' ? BIG_DICE :
       this.type === 'o' ? OLD_DICE : NEW_DICE;
+      this.id = `${this.type.toUpperCase()}${this.seed}`;
     this.size = Math.sqrt(this.dice.length);
 
     this.board = [];
@@ -120,9 +121,7 @@ class Game {
 
     this.played = {};
     this.overtime = new Set();
-    this.possible = this.solve();
-    this.stats = this.compute();
-    console.log(this.stats); // TODO
+    this.possible = this.solve(); // TODO reroll if no words!
 
     this.score = {regular: 0, overtime: 0};
 
@@ -131,20 +130,26 @@ class Game {
   }
 
   play(word) {
-    if (!this.played[word] && this.possible.has(word)) {
-      this.played[word] = +new Date();
-      const score = Game.score(word);
-      if (this.expired) this.overtime.add(word);
-      const bucket = this.expired ? 'overtime' : 'regular';
-      this.score[bucket] += score;
-      return score;
+    if (!this.played[word]) {
+      if (this.possible.has(word)) {
+        this.played[word] = +new Date();
+        const score = Game.score(word);
+        if (this.expired) this.overtime.add(word);
+
+        const bucket = this.expired ? 'overtime' : 'regular';
+        this.score[bucket] += score;
+        return score;
+      } else {
+        this.played[word] = -new Date();
+        if (this.expired) this.overtime.add(word);
+      }
     }
     return 0;
   }
 
   toJSON() {
     return {
-      seed: `${this.type.toUpperCase()}${this.seed}`,
+      seed: this.id,
       start: this.start,
       expired: this.expired,
       words: this.played,
@@ -161,19 +166,24 @@ class Game {
     return game;
   }
 
-  compute() {
+  get totals() {
+    if (this.totals_) return this.totals_;
+
     const suffixes = {};
     const anagrams = {};
     const groups = new Set();
     const easy = new Set();
 
+    const goal = new Set();
     for (const word of this.possible) {
       // Suffixes
       for (const suffix of SUFFIXES) {
         if (word.endsWith(suffix)) {
-          const root = word.slice(0, word.length - suffix.lengh);
+          const root = word.slice(0, word.length - suffix.length);
           if (this.possible.has(root)) {
             suffixes[word] = root;
+          } else if (suffix.startsWith('E') && this.possible.has(`${root}E`)) {
+            suffixes[word] = `${root}E`;
           }
         }
       }
@@ -185,33 +195,48 @@ class Game {
       const data = this.dict[word];
 
       // Groups
-      if (this.type && data.type && data.type.includes(this.type)) {
+      if (this.type &&
+        data.type &&
+        (data.type.includes(this.type) ||
+         this.type === 'd' && data.type.includes('b'))) {
         groups.add(word);
+        goal.add(word);
       }
 
       // Easy
       if (data.freq && data.freq[0] <= FREQUENCY) {
         easy.add(word);
+        goal.add(word);
       }
     }
 
-    return {suffixes, anagrams, groups, easy};
+    const g = Array.from(goal).reduce((sum, w) => sum + Game.score(w), 0);
+    return this.totals_ = {suffixes, anagrams, groups, easy, goal: g};
   }
 
   progress() {
     const anagrams = {};
-    const groups = new Set();
-    const easy = new Set();
+
+    let total = 0;
+    let invalid = 0;
+    let groups = 0;
+    let easy = 0;
 
     let expected = 0;
     let actual = 0;
     for (const word in this.played) {
+      total++;
+      if (this.played[word] < 0) {
+        invalid++;
+        continue;
+      }
+
       // Suffixes
       for (const suffix of SUFFIXES) {
-        if (this.stats.suffixes[word + suffix]) {
+        if (this.totals.suffixes[word + suffix]) {
           expected++;
         }
-        if (word.endsWith(suffix) && this.stats.suffixes[word]) {
+        if (word.endsWith(suffix) && this.totals.suffixes[word]) {
           actual++;
         }
       }
@@ -220,29 +245,25 @@ class Game {
       const anagram = word.split('').sort().join('');
       anagrams[anagram] = (anagrams[anagram] || 0) + 1; 
 
-      const data = this.dict[word];
-
-      // Groups
-      if (this.type && data.type && data.type.includes(this.type)) {
-        groups.add(word);
-      }
-
-      // Easy
-      if (data.freq && data.freq <= FREQUENCY) {
-        easy.add(word);
-      }
+      if (this.totals.groups.has(word)) groups++;
+      if (this.totals.easy.has(word)) easy++;
     }
 
-    let a = 0;
+    let a = {found: 0, expected: 0};
     for (const anagram in anagrams) {
-      a += this.stats.anagrams[anagram] - anagrams[anagram];
+      a.found += anagrams[anagram];
+      a.expected += this.totals.anagrams[anagram];
     }
 
     return {
+      invalid,
+      total,
+
       suffixes: {expected, actual},
       anagrams: a,
-      groups: groups.size,
-      easy: easy.size,
+
+      groups,
+      easy,
     };
   }
 
@@ -260,22 +281,23 @@ class Game {
       const data = self.dict[w];
       return {
         word: w, 
-        easy: self.stats.easy.has(w),
-        group: self.stats.groups.has(w),
+        easy: self.totals.easy.has(w),
+        group: self.totals.groups.has(w),
+        root: self.totals.suffixes[w],
         defn: data.defn,
       };
     };
 
     return {
-      played: Array.from(Object.entries(this.played)).sort((a, b) => a[1] - b[1]).map(e => {
+      played: Array.from(Object.entries(this.played)).sort((a, b) => Math.abs(a[1]) - Math.abs(b[1])).map(e => {
         const w = e[0];
-        const v = augment(w);
+        const v = e[1] > 0 ? augment(w) : {word: w, invalid: true};
         if (this.overtime.has(w)) v.overtime = true;
         return v;
       }),
       possible: Array.from(this.possible).filter(w => !this.played[w]).sort(fn).map(augment),
       progress: this.progress(),
-      stats: this.stats,
+      totals: this.totals,
     };
   }
 
@@ -284,7 +306,7 @@ class Game {
     const queue = [];
     for (let y = 0; y < this.size; y++) {
       for (let x = 0; x < this.size; x++) {
-        let c = this.board[this.size*y + x];
+        let c = this.board[this.size * y + x];
         let ord = c.charCodeAt(0);
         let node = this.trie.children[ord - 65];
         if (c === 'Qu' && node !== undefined) {
@@ -305,7 +327,7 @@ class Game {
           const hist = h.slice();
           hist.push([x2, y2]);
           
-          let c = this.board[this.size*y2+x2];
+          let c = this.board[this.size * y2 + x2];
           let node2 = node.children[c.charCodeAt(0) - 65];
           if (c === 'Qu' && node2 !== undefined) {
             c = 'QU';

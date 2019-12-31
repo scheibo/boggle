@@ -3,7 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <meta name="description" content="Boggle">
+  <meta name="theme-color" content="#FFF" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Boggle">
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
   <link rel="icon" href="favicon.ico">
+  <link rel="manifest" href="manifest.json">
   <title>Boggle</title>
   <style>
     /* LG-H873 = 360 x 588  */
@@ -143,8 +150,10 @@
       text-align: left;
       outline: none;
       font-family: "Roboto", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
-      font-weight: bold;
       background-color: #fafafa;
+    }
+    .title {
+      font-weight: bold;
     }
     .collapsible-content {
       padding: 5px 18px;
@@ -175,6 +184,13 @@
     }
     .active:after {
       content: '\02796';
+    }
+    .collapsible div {
+      width: 90%;
+      display: inline-block;
+    }
+    .details {
+      float: right;
     }
     @keyframes fade {
       100% { opacity: 0 };
@@ -231,6 +247,28 @@
     /* Laptop */
     @media(min-width: 1024px) {
     }
+
+  #menu {
+    width: 130px;
+    z-index: 1;
+    box-shadow: 7px 7px 5px 3px rgba(0, 0, 0, 0.2);
+    position: absolute;
+    top: 48px;
+    left: 18px;
+    background: #fff;
+  }
+
+  .menu-options {
+    list-style: none;
+    line-height: 20px;
+    padding: 0px 0px;
+    margin: 0px 0px;
+  }
+
+  .menu-option {
+    padding: 20px 8px;
+    cursor: pointer;
+  }
   </style>
 </head>
 <body>
@@ -241,6 +279,14 @@
     <div id="game" class="hidden">
       <header id="topbar">
         <div id="refresh"><img height="20" src="img/refresh.svg" /></div>
+        <div id="menu" class="hidden">
+            <ul class="menu-options">
+              <li class="menu-option">NEW (4x4)</li>
+              <li class="menu-option">OLD (4x4)</li>
+              <li class="menu-option">BIG (5x5)</li>
+              <li class="menu-option">DAD (5x5)</li>
+            </ul>
+          </div>
         <div id="timer">3:00</div>
         <div id="score">0</div>
       </header>
@@ -250,8 +296,17 @@
       <div id="defn"></div>
     </div>
   </div>
+  <script type="application/javascript" src="longpress.js"></script>
   <script type="application/javascript" src="boggle.js"></script>
   <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').then(reg => {
+          console.log('Service worker registered.', reg);
+        });
+      });
+    }
+
     var STATE = null;
 
     class Timer {
@@ -318,22 +373,24 @@
       }
     }
 
+    function fromID(id) {
+      if (!id || !['n', 'o', 'b', 'd'].includes(id.charAt(1).toLowerCase())) return ['n', 0];
+      const type = id.charAt(1).toLowerCase();
+      const seed = Number(id.slice(2));
+      return isNaN(seed) ? [type, 0] : [type, seed];
+    }
+
     (async () => {
       setTimeout(() => window.scrollTo(0, 1), 0);
 
       const response = await fetch('data/dict.json', {mode: 'no-cors'});
       const DICT = await response.json();
-
-      const TYPE =
-        document.location.hash.includes('big') ? 'b' : document.location.href.includes('dad') ? 'd' :
-        document.location.href.includes('old') ? 'o' :
-        'n';
+      const [TYPE, SEED] = fromID(document.location.hash);
 
       document.getElementById('display').removeChild(document.getElementById('loader'));
       document.getElementById('game').classList.remove('hidden');
 
       const TRIE = new Trie(DICT);
-      const RANDOM = new Random(Math.floor(Math.random() * 124861247)); // TODO
 
       STATE = refresh();
 
@@ -341,6 +398,7 @@
         (navigator.maxTouchPoints > 0) || 
         (navigator.msMaxTouchPoints > 0);
 
+      const menu = document.getElementById('menu');
       const word = document.getElementById('word');
       const defn = document.getElementById('defn');
       if (!TOUCH) {
@@ -361,11 +419,15 @@
       const adjacent = (a, b) =>
         Math.abs(b.dataset.x - a.dataset.x) <= 1 && Math.abs(b.dataset.y - a.dataset.y) <= 1;
 
-      function refresh(state) {
-        if (state) state.timer.stop();
+      function refresh(state, type, seed) {
+        let random;
+        if (state) {
+          state.timer.stop();
+          random = state.game.random;
+        }
         const timer = new Timer(180 * 1000);
-
-        const game = new Game(TRIE, DICT, RANDOM, TYPE);
+        random = !isNaN(seed) ? new Random(seed) : (random || new Random(SEED));
+        const game = new Game(TRIE, DICT, random, type || TYPE);
         const content = document.getElementById('content');
         if (content.firstChild) content.removeChild(content.firstChild);
 
@@ -379,7 +441,7 @@
             td.textContent = game.board[row*game.size + col];
             if (td.textContent === 'Qu') td.classList.add('qu');
             if (['M', 'W', 'Z'].includes(td.textContent)) td.classList.add('underline');
-            td.classList.add(`rotate${90*RANDOM.next(0, 4)}`);
+            td.classList.add(`rotate${90 * random.next(0, 4)}`);
             const div = document.createElement('div');
             div.classList.add('target');
             div.setAttribute('data-x', row);
@@ -443,6 +505,9 @@
         defn.classList.remove('hidden');
 
         timer.start();
+        if (document.location.hash !== `#${game.id}`) {
+          window.history.pushState(null, null, `#${game.id}`);
+        }
         return {timer, game};
       }
 
@@ -457,7 +522,7 @@
           document.getElementById('defn').textContent = DICT[w].defn;
         } else {
           const o = word.textContent;
-          if (!state.game.played[w]) word.classList.add('error');
+          if (state.game.played[w] < 0) word.classList.add('error');
           word.classList.add('fade');
           const animationend = () => {
             clearWord(o);
@@ -467,19 +532,42 @@
         }
       }
 
-      document.getElementById('refresh').addEventListener('click', () => {
+      window.addEventListener('hashchange', e => {
+        if (!document.location.hash) return; // is just a reload...
+        const [type, seed] = fromID(document.location.hash);
+        STATE = refresh(STATE, type, seed);
+      });
+
+      document.getElementById('refresh').addEventListener('mouseup', () => {
         STATE = refresh(STATE);
+      });
+
+      document.getElementById('refresh').addEventListener('long-press', e => {
+        console.log('REFRESH LONG PRESS');
+        document.getElementById('menu').classList.toggle('hidden');
+        // TODO: unhide type menu, rehide if click outside of menu area!
       });
 
       document.getElementById('timer').addEventListener('click', () => {
         STATE.timer.pause();
       });
 
-      function makeCollapsible(seed, display = 'block') {
+      function makeCollapsible(title, details, display = 'block') {
         const button = document.createElement('button');
         button.setAttribute('type', 'button');
         button.classList.add('collapsible');
-        button.textContent = seed;
+
+        const div = document.createElement('div');
+        const titleSpan = document.createElement('span');
+        titleSpan.classList.add('title');
+        titleSpan.textContent = title;
+        const detailsSpan = document.createElement('span');
+        detailsSpan.classList.add('details');
+        detailsSpan.textContent = details;
+        div.appendChild(titleSpan);
+        div.appendChild(detailsSpan);
+        button.appendChild(div);
+
         button.addEventListener('click', function() {
           this.classList.toggle('active');
           const content = this.nextElementSibling;
@@ -493,14 +581,16 @@
       }
 
       function displayPlayed(state, div, expanded) {
-        const button = makeCollapsible('PLAYED: 0/0/0/0', 'table');
+        const button = makeCollapsible('PLAYED', '0/0/0/0', 'table');
         const table = document.createElement('table');
         table.classList.add('collapsible-content');
         table.classList.add('results');
         table.classList.add('played');
-        for (const {word, easy, group, defn} of state.played) {
+        for (const {word, easy, group, root, defn, invalid} of state.played) {
           const tr = document.createElement('tr');
-          if (group) {
+          if (invalid) {
+            tr.classList.add('error');
+          } else if (group) {
             tr.classList.add('group');
           } else if (!easy) {
             tr.classList.add('hard');
@@ -508,12 +598,22 @@
 
           let td = document.createElement('td');
           const b = document.createElement('b');
-          b.textContent = word;
+          if (root) {
+            const rootSpan = document.createElement('span');
+            rootSpan.textContent = root;
+            const suffixSpan = document.createElement('span');
+            suffixSpan.classList.add('suffix');
+            suffixSpan.textContent = word.slice(root.length);
+            b.appendChild(rootSpan);
+            b.appendChild(suffixSpan);
+          } else {
+            b.textContent = word;
+          }
           td.appendChild(b);
           tr.appendChild(td);
 
           td = document.createElement('td');
-          td.textContent = defn;
+          if (defn) td.textContent = defn;
           tr.appendChild(td);
 
           table.appendChild(tr);
@@ -527,12 +627,15 @@
       }
 
       function displayPossible(state, div, expanded) {
-        const button = makeCollapsible('POSSIBLE: 10/10/10/10', 'table');
+        // TODO: words, points, % words, % points
+        const details = `S:?/${Object.keys(state.totals.suffixes).length}` +
+        `A:?/${Object.entries(state.totals.anagrams).reduce((sum, e) => sum + e[1], 0)}`;
+        const button = makeCollapsible('POSSIBLE', details, 'table');
         const table = document.createElement('table');
         table.classList.add('collapsible-content');
         table.classList.add('results');
         table.classList.add('possible');
-        for (const {word, easy, group, defn} of state.possible) {
+        for (const {word, easy, group, root, defn} of state.possible) {
           const tr = document.createElement('tr');
           if (group) {
             tr.classList.add('group');
@@ -542,7 +645,17 @@
 
           let td = document.createElement('td');
           const b = document.createElement('b');
-          b.textContent = word;
+          if (root) {
+            const rootSpan = document.createElement('span');
+            rootSpan.textContent = root;
+            const suffixSpan = document.createElement('span');
+            suffixSpan.classList.add('suffix');
+            suffixSpan.textContent = word.slice(root.length);
+            b.appendChild(rootSpan);
+            b.appendChild(suffixSpan);
+          } else {
+            b.textContent = word;
+          }
           td.appendChild(b);
           tr.appendChild(td);
 
@@ -575,7 +688,9 @@
           // TODO iterate through ALL states...
           const state = STATE.game.state();
           // TODO remember collapsible state..., also stop recalculating solutions of old games (on demand, then cache)
-          const current = makeCollapsible(STATE.game.toJSON().seed); // FIXME INCLUDE PERCENT
+          const score = STATE.game.score.regular + STATE.game.score.overtime;
+          const details = `${score}/${state.totals.goal} (${Math.round(score / state.totals.goal * 100).toFixed(0)}%)`;
+          const current = makeCollapsible(STATE.game.toJSON().seed, details);
           const div = document.createElement('div');
           div.classList.add('collapsible-content');
           displayPlayed(state, div, true); // TODO only current played...
