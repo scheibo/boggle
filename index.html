@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
   <meta name="description" content="Boggle">
   <meta name="theme-color" content="#FFF" />
-  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="Boggle">
   <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
@@ -307,6 +307,8 @@
       });
     }
 
+    const HISTORY = JSON.parse(localStorage.getItem('history')) || [];
+    console.log(HISTORY);
     var STATE = null;
 
     class Timer {
@@ -385,7 +387,9 @@
 
       const response = await fetch('data/dict.json', {mode: 'no-cors'});
       const DICT = await response.json();
-      const [TYPE, SEED] = fromID(document.location.hash);
+      const last = HISTORY.length && HISTORY[HISTORY.length - 1].seed;
+      console.log('HASH', document.location.hash, 'HISTORY', HISTORY.map(g => g.seed));
+      const [TYPE, SEED] = fromID(document.location.hash || last);
 
       document.getElementById('display').removeChild(document.getElementById('loader'));
       document.getElementById('game').classList.remove('hidden');
@@ -422,6 +426,8 @@
       function refresh(state, type, seed) {
         let random;
         if (state) {
+          HISTORY.push(state.game.toJSON());
+          localStorage.setItem('history', JSON.stringify(HISTORY));
           state.timer.stop();
           random = state.game.random;
         }
