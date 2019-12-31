@@ -15,6 +15,7 @@ self.addEventListener('install', e => {
                 '/manifest.json',
                 '/favicon.ico',
                 '/img/refresh.svg',
+                '/img/back.svg',
                 '/img/android-chrome-192x192.png',
                 '/img/android-chrome-512x512.png',
                 '/img/apple-touch-icon.png',

@@ -100,6 +100,9 @@
     .details {
       float: right;
     }
+    .csw {
+      color: #aaa;
+    }
     @keyframes spinner {
       to { transform: rotate(360deg); }
     }
@@ -184,7 +187,7 @@
     (async () => {
       setTimeout(() => window.scrollTo(0, 1), 0);
 
-      const TYPE = 'n'; // TODO
+      const TYPE = document.location.hash ? document.location.hash.slice(1) : 'n';
       const response = await fetch('data/dict.json', {mode: 'no-cors'});
       const DICT = await response.json();
 
@@ -208,21 +211,22 @@
         const ordered = RANDOM.shuffle(Object.keys(GROUPS));
         for (const g of ordered) {
           const group = GROUPS[g];
-          const button = makeCollapsible(g, 'table');
+          const button = makeCollapsible(RANDOM.shuffle(g.split('')).join(''), 'table');
           const table = document.createElement('table');
           table.classList.add('collapsible-content');
           table.classList.add('results');
-          for (const word of group) {
+          for (const w of RANDOM.shuffle(group)) {
+            const word = DICT[w];
             const tr = document.createElement('tr');
+            if (word.csw) tr.classList.add('csw');
 
             let td = document.createElement('td');
             const b = document.createElement('b');
-            b.textContent = word;
+            b.textContent = w;
             td.appendChild(b);
             tr.appendChild(td);
-
             td = document.createElement('td');
-            td.textContent = DICT[word].defn;
+            td.textContent = word.defn;
             tr.appendChild(td);
 
             table.appendChild(tr);

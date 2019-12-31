@@ -68,6 +68,17 @@ async function buildDictionary() {
   }
 
   lines = readline.createInterface({
+    input: fs.createReadStream(path.join(DATA, 'twl.txt')),
+    crlfDelay: Infinity
+  });
+
+  const twl = new Set();
+  for await (const word of lines) {
+    if (word.length < MIN_LENGTH) continue;
+    twl.add(word.toUpperCase());
+  }
+
+  lines = readline.createInterface({
     input: fs.createReadStream(path.join(DATA, 'csw.txt')),
     crlfDelay: Infinity
   });
@@ -86,6 +97,8 @@ async function buildDictionary() {
 
     const freq = freqs[word];
     if (freq) val.freq = freq;
+
+    if (!twl.has(word)) val.csw = true;
 
     let type = '';
     if (n.has(word)) type += 'n';

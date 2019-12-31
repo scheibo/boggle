@@ -45,18 +45,19 @@ class Random {
 }
 
 class Trie {
-  constructor(dict) {
+  constructor(dict, csw) {
     const root = new Node(undefined, '');
     for (const word in dict) {
-        let current = root;
-        for (var i = 0; i < word.length; i++) {
-            const letter = word[i];
-            const ord = letter.charCodeAt(0);
-            let next = current.children[ord - 65];
-            if (next === undefined) next = new Node(current, letter);
-            current = next;
-        }
-        current.isWord = true;
+      if (!csw && dict[word].csw) continue;
+      let current = root;
+      for (var i = 0; i < word.length; i++) {
+          const letter = word[i];
+          const ord = letter.charCodeAt(0);
+          let next = current.children[ord - 65];
+          if (next === undefined) next = new Node(current, letter);
+          current = next;
+      }
+      current.isWord = true;
     }
     return root;
   }
@@ -134,7 +135,7 @@ class Game {
     if (!this.played[word]) {
       if (this.possible.has(word)) {
         this.played[word] = +new Date();
-        const score = Game.score(word);
+        const score = Game.score(word, this.size);
         if (this.expired) this.overtime.add(word);
 
         const bucket = this.expired ? 'overtime' : 'regular';
@@ -154,6 +155,7 @@ class Game {
       start: this.start,
       expired: this.expired,
       words: this.played,
+      goal: this.totals.goal,
     }
   }
 
@@ -176,6 +178,7 @@ class Game {
     const easy = new Set();
 
     const goal = new Set();
+    let total = 0;
     for (const word of this.possible) {
       // Suffixes
       for (const suffix of SUFFIXES) {
@@ -211,20 +214,23 @@ class Game {
       }
     }
 
-    const g = Array.from(goal).reduce((sum, w) => sum + Game.score(w), 0);
+    const g = Array.from(goal).reduce((sum, w) => sum + Game.score(w, this.size), 0);
     return this.totals_ = {suffixes, anagrams, groups, easy, goal: g};
   }
 
   progress() {
-    const anagrams = {};
+    // const anagrams = {};
 
     let total = 0;
     let invalid = 0;
+
+    let suffixes = 0;
+    let anagrams = 0;
     let groups = 0;
     let easy = 0;
 
-    let expected = 0;
-    let actual = 0;
+    // let expected = 0;
+    // let actual = 0;
     for (const word in this.played) {
       total++;
       if (this.played[word] < 0) {
@@ -233,6 +239,7 @@ class Game {
       }
 
       // Suffixes
+      /*
       for (const suffix of SUFFIXES) {
         if (this.totals.suffixes[word + suffix]) {
           expected++;
@@ -245,24 +252,27 @@ class Game {
       // Anagrams
       const anagram = word.split('').sort().join('');
       anagrams[anagram] = (anagrams[anagram] || 0) + 1; 
+      */
 
-      if (this.totals.groups.has(word)) groups++;
-      if (this.totals.easy.has(word)) easy++;
+      const score = Game.score(word, this.type);
+      if (this.totals.suffixes[word]) suffixes += score;
+      if (this.totals.anagrams[word]) anagrams += score;
+      if (this.totals.groups.has(word)) groups += score;
+      if (this.totals.easy.has(word)) easy += score;
     }
 
-    let a = {found: 0, expected: 0};
-    for (const anagram in anagrams) {
-      a.found += anagrams[anagram];
-      a.expected += this.totals.anagrams[anagram];
-    }
+    // let a = {found: 0, expected: 0};
+    // for (const anagram in anagrams) {
+    //   a.found += anagrams[anagram];
+    //   a.expected += this.totals.anagrams[anagram];
+    // }
 
     return {
       invalid,
       total,
 
-      suffixes: {expected, actual},
-      anagrams: a,
-
+      suffixes,
+      anagrams,
       groups,
       easy,
     };
@@ -279,24 +289,27 @@ class Game {
 
     const self = this;
     const augment = w => {
-      const data = self.dict[w];
+      const val = self.dict[w];
       return {
         word: w, 
         easy: self.totals.easy.has(w),
         group: self.totals.groups.has(w),
         root: self.totals.suffixes[w],
-        defn: data.defn,
+        defn: val ? val.defn : '',
       };
     };
 
     return {
+      type: this.type,
       played: Array.from(Object.entries(this.played)).sort((a, b) => Math.abs(a[1]) - Math.abs(b[1])).map(e => {
         const w = e[0];
-        const v = e[1] > 0 ? augment(w) : {word: w, invalid: true};
+        const v = augment(w);
+        if (e[1] < 0) v.invalid = true;
         if (this.overtime.has(w)) v.overtime = true;
         return v;
       }),
       possible: Array.from(this.possible).filter(w => !this.played[w]).sort(fn).map(augment),
+      possible2: this.possible, // TODO rename...
       progress: this.progress(),
       totals: this.totals,
     };
@@ -345,8 +358,8 @@ class Game {
     return words;
   }
 
-  static score(word) {
-    if (word.length < (this.size === 5 ? 4 : 3)) return 0;
+  static score(word, size) {
+    if (word.length < (size === 5 ? 4 : 3)) return 0;
     if (word.length <= 4) return 1;
     if (word.length == 5) return 2;
     if (word.length == 6) return 3;

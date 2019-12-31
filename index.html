@@ -51,7 +51,7 @@
       text-align: center;
       font-weight: bold;
     }
-    #refresh, #score {
+    #refresh, #score, #back {
       width: 20%;
     }
     #timer {
@@ -144,7 +144,7 @@
       padding: 18px;
       width: 95%;
       display: block;
-      margin: 0px auto;
+      margin: 3px auto;
       border: 3px solid black;
       border-radius: 8px;
       text-align: left;
@@ -279,6 +279,7 @@
     <div id="game" class="hidden">
       <header id="topbar">
         <div id="refresh"><img height="20" src="img/refresh.svg" /></div>
+        <div id="back" class="hidden"><img height="20" src="img/back.svg" /></div>
         <div id="menu" class="hidden">
             <ul class="menu-options">
               <li class="menu-option">NEW (4x4)</li>
@@ -308,7 +309,6 @@
     }
 
     const HISTORY = JSON.parse(localStorage.getItem('history')) || [];
-    console.log(HISTORY);
     var STATE = null;
 
     class Timer {
@@ -388,13 +388,12 @@
       const response = await fetch('data/dict.json', {mode: 'no-cors'});
       const DICT = await response.json();
       const last = HISTORY.length && HISTORY[HISTORY.length - 1].seed;
-      console.log('HASH', document.location.hash, 'HISTORY', HISTORY.map(g => g.seed));
       const [TYPE, SEED] = fromID(document.location.hash || last);
 
       document.getElementById('display').removeChild(document.getElementById('loader'));
       document.getElementById('game').classList.remove('hidden');
 
-      const TRIE = new Trie(DICT);
+      const TRIE = new Trie(DICT, false); // TODO: csw
 
       STATE = refresh();
 
@@ -496,7 +495,7 @@
         });
 
         content.appendChild(table);
-        document.getElementById('score').textContent = 0;
+        document.getElementById('score').textContent = '0';
 
         // Cleanup
         const wrapper = document.getElementById('wrapper');
@@ -517,7 +516,7 @@
         return {timer, game};
       }
 
-      const formatScore = score => score.overtime ? `${score.regular} / ${score.overtime}` : `${score.regular}`;
+      const formatScore = score => score.overtime ? `${score.regular} / ${score.overtime} (pct` : `${score.regular}`;
 
       function play(state, word) {
         const w = word.textContent.toUpperCase();
@@ -549,7 +548,7 @@
       });
 
       document.getElementById('refresh').addEventListener('long-press', e => {
-        console.log('REFRESH LONG PRESS');
+        console.log('REFRESH LONG PRESS'); // FIXME
         document.getElementById('menu').classList.toggle('hidden');
         // TODO: unhide type menu, rehide if click outside of menu area!
       });
@@ -558,7 +557,7 @@
         STATE.timer.pause();
       });
 
-      function makeCollapsible(title, details, display = 'block') {
+      function makeCollapsible(title, details, display, fn) {
         const button = document.createElement('button');
         button.setAttribute('type', 'button');
         button.classList.add('collapsible');
@@ -580,6 +579,7 @@
           if (content.style.display === display) {
             content.style.display = 'none';
           } else {
+            if (fn) fn();
             content.style.display = display;
           }
         });
@@ -587,7 +587,14 @@
       }
 
       function displayPlayed(state, div, expanded) {
-        const button = makeCollapsible('PLAYED', '0/0/0/0', 'table');
+        const details =
+          `${state.progress.suffixes}/` +
+          `${state.progress.anagrams}/` +
+          `${state.progress.groups}/` +
+          `${state.progress.easy} ` +
+          `(${state.progress.invalid}/${state.progress.total})`;
+
+        const button = makeCollapsible('PLAYED', details, 'table');
         const table = document.createElement('table');
         table.classList.add('collapsible-content');
         table.classList.add('results');
@@ -633,9 +640,16 @@
       }
 
       function displayPossible(state, div, expanded) {
+        const score = words => words.reduce((sum, w) => sum + Game.score(w, state.type), 0);
+
         // TODO: words, points, % words, % points
-        const details = `S:?/${Object.keys(state.totals.suffixes).length}` +
-        `A:?/${Object.entries(state.totals.anagrams).reduce((sum, e) => sum + e[1], 0)}`;
+        const details =
+          `${score(Array.from(Object.keys(state.totals.suffixes)))}/` +
+          `${Array.from(Object.entries(state.totals.anagrams)).reduce((sum, e) => sum + ((e[1] - 1) * Game.score(e[0], state.type)), 0)}/` +
+          `${score(Array.from(state.totals.groups))}/` +
+          `${score(Array.from(state.totals.easy))} ` +
+          `(${score(Array.from(state.possible2))})`;
+
         const button = makeCollapsible('POSSIBLE', details, 'table');
         const table = document.createElement('table');
         table.classList.add('collapsible-content');
@@ -680,48 +694,84 @@
       }
 
       document.getElementById('score').addEventListener('click', () => {
-        const display = document.getElementById('display');
-        const board = document.getElementById('board');
         const wrapper = document.getElementById('wrapper');
         if (!wrapper) {
+          const display = document.getElementById('display');
+          const board = document.getElementById('board');
           board.classList.add('hidden');
           word.classList.add('hidden');
           defn.classList.add('hidden');
+          document.getElementById('refresh').classList.add('hidden');
+          document.getElementById('back').classList.remove('hidden');
 
           const wrapper = document.createElement('div');
           wrapper.setAttribute('id', 'wrapper');
 
-          // TODO iterate through ALL states...
           const state = STATE.game.state();
-          // TODO remember collapsible state..., also stop recalculating solutions of old games (on demand, then cache)
           const score = STATE.game.score.regular + STATE.game.score.overtime;
           const details = `${score}/${state.totals.goal} (${Math.round(score / state.totals.goal * 100).toFixed(0)}%)`;
-          const current = makeCollapsible(STATE.game.toJSON().seed, details);
+          const current = makeCollapsible(STATE.game.toJSON().seed, details, 'block');
           const div = document.createElement('div');
           div.classList.add('collapsible-content');
-          displayPlayed(state, div, true); // TODO only current played...
+          displayPlayed(state, div, true);
           displayPossible(state, div);
           wrapper.appendChild(current);
           wrapper.appendChild(div);
-          
           // Start off with played expanded
           current.classList.add('active');
           div.style.display = 'block';
 
+          for (let i = HISTORY.length - 1; i > 0; i--) {
+            const state = HISTORY[i];
+            const size = (state.seed.startsWith('B') || state.seed.startsWith('D')) ? 5 : 4;
+            let score = 0;
+            for (const [w, t] of Object.entries(state.words)) {
+              if (t > 0) score += Game.score(w, size);
+            }
+            if (!score) continue;
+
+            const details = `${score}/${state.goal} (${Math.round(score / state.goal * 100).toFixed(0)}%)`;
+            const div = document.createElement('div');
+            div.classList.add('collapsible-content');
+            div.classList.add('lazy');
+            const button = makeCollapsible(state.seed, details, 'block', () => {
+              if (div.classList.contains('lazy')) {
+                div.classList.remove('lazy');
+                const game = Game.fromJSON(state, TRIE, DICT) // TODO: handle csw vs. twl
+                const s = game.state();
+                displayPlayed(s, div);
+                displayPossible(s, div);
+              }
+            });
+            wrapper.appendChild(button);
+            wrapper.appendChild(div);
+          }
 
           display.appendChild(wrapper);
         } else {
-          display.removeChild(wrapper);
-          board.classList.remove('hidden');
-          word.classList.remove('hidden');
-          defn.classList.remove('hidden');
+          backToGame();
         }
       });
 
-      // TODO shouldnt work when in score mode!
+      document.getElementById('back').addEventListener('click', backToGame);
+
+      function backToGame() {
+        const display = document.getElementById('display');
+        const board = document.getElementById('board');
+        const wrapper = document.getElementById('wrapper');
+        // TODO: hide instead of remove to avoid recompute...
+        display.removeChild(wrapper);
+        board.classList.remove('hidden');
+        word.classList.remove('hidden');
+        defn.classList.remove('hidden');
+        document.getElementById('refresh').classList.remove('hidden');
+        document.getElementById('back').classList.add('hidden');
+      }
+
+      // TODO: shouldnt work when in score mode!
       document.addEventListener('keydown', e => {
         if (kept) clearWord();
-        word.focus(); // TODO fix cursor locaton
+        word.focus(); // TODO: fix cursor locaton
         const key = e.keyCode;
         if (key === 13 || key === 32) {
           play(STATE, word);
