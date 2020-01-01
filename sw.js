@@ -10,7 +10,6 @@ self.addEventListener('install', e => {
             cache.addAll([
                 '/',
                 '/index.html',
-                '/longpress.js',
                 '/boggle.js',
                 '/manifest.json',
                 '/favicon.ico',

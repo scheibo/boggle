@@ -297,7 +297,6 @@
       <div id="defn"></div>
     </div>
   </div>
-  <script type="application/javascript" src="longpress.js"></script>
   <script type="application/javascript" src="boggle.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
@@ -516,7 +515,7 @@
         return {timer, game};
       }
 
-      const formatScore = score => score.overtime ? `${score.regular} / ${score.overtime} (pct` : `${score.regular}`;
+      const formatScore = score => score.overtime ? `${score.regular} / ${score.overtime}` : `${score.regular}`;
 
       function play(state, word) {
         const w = word.textContent.toUpperCase();
