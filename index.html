@@ -386,7 +386,14 @@
 
       const response = await fetch('data/dict.json', {mode: 'no-cors'});
       const DICT = await response.json();
-      const last = HISTORY.length && HISTORY[HISTORY.length - 1].seed;
+
+      let last;
+      if (HISTORY.length) {
+        const seed = HISTORY[HISTORY.length - 1].seed;
+        const rand = new Random(Number(seed.slice(1)));
+        rand.next();
+        last = `#${seed.charAt(0)}${rand.seed}`;
+      }
       const [TYPE, SEED] = fromID(document.location.hash || last);
 
       document.getElementById('display').removeChild(document.getElementById('loader'));
