@@ -367,3 +367,11 @@ class Game {
     /* if (word.length >= 8) */ return 11;
   }
 }
+
+if (typeof module !== 'undefined') {
+  module.exports = {
+    Random,
+    Trie,
+    Game,
+  }
+}
