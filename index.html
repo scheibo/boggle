@@ -233,49 +233,22 @@
     }
 
     /* iPhone 6S Plus = 414 x 736 */
+    /* TODO */
 
-    /* Mobile - Medium */
-    @media(min-width: 375px) { }
-    /* Mobile - Large */
-    @media(min-width: 425px) { }
     /* Tablet */
     @media(min-width: 768px) {
       body {
         margin-top: 20px;
       }
     }
-    /* Laptop */
-    @media(min-width: 1024px) {
-    }
 
+    /* Installed (no URL bar) */
     @media all and (display-mode: standalone) {
       body { margin-top: 20px; }
       #content {
         margin: 10px 0px;
       }
     }
-
-  #menu {
-    width: 130px;
-    z-index: 1;
-    box-shadow: 7px 7px 5px 3px rgba(0, 0, 0, 0.2);
-    position: absolute;
-    top: 48px;
-    left: 18px;
-    background: #fff;
-  }
-
-  .menu-options {
-    list-style: none;
-    line-height: 20px;
-    padding: 0px 0px;
-    margin: 0px 0px;
-  }
-
-  .menu-option {
-    padding: 20px 8px;
-    cursor: pointer;
-  }
   </style>
 </head>
 <body>
@@ -287,14 +260,6 @@
       <header id="topbar">
         <div id="refresh"><img height="20" src="img/refresh.svg" /></div>
         <div id="back" class="hidden"><img height="20" src="img/back.svg" /></div>
-        <div id="menu" class="hidden">
-            <ul class="menu-options">
-              <li class="menu-option">NEW (4x4)</li>
-              <li class="menu-option">OLD (4x4)</li>
-              <li class="menu-option">BIG (5x5)</li>
-              <li class="menu-option">DAD (5x5)</li>
-            </ul>
-          </div>
         <div id="timer">3:00</div>
         <div id="score">0</div>
       </header>
@@ -305,6 +270,7 @@
     </div>
   </div>
   <script type="application/javascript" src="boggle.js"></script>
+  <script type="application/javascript" src="longpress.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
@@ -315,6 +281,7 @@
     }
 
     const HISTORY = JSON.parse(localStorage.getItem('history')) || [];
+    const SETTINGS = JSON.parse(localStorage.getItem('settings')) || {dice: 'New', dict: 'TWL'};
     var STATE = null;
 
     class Timer {
@@ -381,11 +348,22 @@
       }
     }
 
-    function fromID(id) {
-      if (!id || !['n', 'o', 'b', 'd'].includes(id.charAt(1).toLowerCase())) return ['n', 0];
-      const type = id.charAt(1).toLowerCase();
-      const seed = Number(id.slice(2));
-      return isNaN(seed) ? [type, 0] : [type, seed];
+    function setup() {
+      if (document.location.hash && document.location.hash.length > 1) {
+        const [settings, seed] = Game.decodeID(document.location.hash.slice(1));
+        if (!isNaN(seed)) return [settings, seed];
+      }
+
+      if (HISTORY.length) {
+        const id = HISTORY[HISTORY.length - 1].seed;
+        const [settings, seed] = Game.decodeID(id);
+        const rand = new Random(seed);
+        rand.next();
+
+        return [settings, rand.seed];
+      }
+
+      return [SETTINGS, 0];
     }
 
     (async () => {
@@ -394,19 +372,14 @@
       const response = await fetch('data/dict.json', {mode: 'no-cors'});
       const DICT = await response.json();
 
-      let last;
-      if (HISTORY.length) {
-        const seed = HISTORY[HISTORY.length - 1].seed;
-        const rand = new Random(Number(seed.slice(1)));
-        rand.next();
-        last = `#${seed.charAt(0)}${rand.seed}`;
-      }
-      const [TYPE, SEED] = fromID(document.location.hash || last);
+      const [settings, SEED] = setup();
+      Object.assign(SETTINGS, settings);
+      localStorage.setItem('settings', JSON.stringify(SETTINGS));
 
       document.getElementById('display').removeChild(document.getElementById('loader'));
       document.getElementById('game').classList.remove('hidden');
 
-      const TRIE = new Trie(DICT, false); // TODO: csw
+      const TRIE = new Trie(DICT);
 
       STATE = refresh();
 
@@ -432,10 +405,12 @@
         kept = false;
       };
 
-      const adjacent = (a, b) =>
-        Math.abs(b.dataset.x - a.dataset.x) <= 1 && Math.abs(b.dataset.y - a.dataset.y) <= 1;
+      // TODO: use...
+      function adjacent(a, b) {
+        return Math.abs(b.dataset.x - a.dataset.x) <= 1 && Math.abs(b.dataset.y - a.dataset.y) <= 1;
+      }
 
-      function refresh(state, type, seed) {
+      function refresh(state, settings, seed) {
         let random;
         if (state) {
           HISTORY.push(state.game.toJSON());
@@ -443,15 +418,17 @@
           state.timer.stop();
           random = state.game.random;
         }
+
         const timer = new Timer(180 * 1000);
         random = !isNaN(seed) ? new Random(seed) : (random || new Random(SEED));
-        const game = new Game(TRIE, DICT, random, type || TYPE);
+        const game = new Game(TRIE, DICT, random, settings);
         const content = document.getElementById('content');
         if (content.firstChild) content.removeChild(content.firstChild);
 
         const table = document.createElement('table');
         table.setAttribute('id', 'board');
         if (game.size > 4) table.classList.add('big');
+
         for (let row = 0; row < game.size; row++) {
           const tr = document.createElement('tr');
           for (let col = 0; col < game.size; col++) {
@@ -460,10 +437,14 @@
             if (td.textContent === 'Qu') td.classList.add('qu');
             if (['M', 'W', 'Z'].includes(td.textContent)) td.classList.add('underline');
             td.classList.add(`rotate${90 * random.next(0, 4)}`);
+            td.setAttribute('data-x', row);
+            td.setAttribute('data-y', col);
+
             const div = document.createElement('div');
             div.classList.add('target');
             div.setAttribute('data-x', row);
             div.setAttribute('data-y', col);
+
             td.appendChild(div);
             tr.appendChild(td);
           }
@@ -508,16 +489,18 @@
         });
 
         content.appendChild(table);
-        document.getElementById('score').textContent = '0';
+        document.getElementById('score').textContent = game.settings.blind ? '?' : '0';
 
         // Cleanup
         const wrapper = document.getElementById('wrapper');
         if (wrapper) document.getElementById('display').removeChild(wrapper);
+
         const word = document.getElementById('word');
         word.textContent = '';
         word.classList.remove('hidden');
         word.classList.remove('error');
         word.classList.remove('fade');
+
         const defn = document.getElementById('defn');
         defn.textContent = '';
         defn.classList.remove('hidden');
@@ -526,21 +509,25 @@
         if (document.location.hash !== `#${game.id}`) {
           window.history.pushState(null, null, `#${game.id}`);
         }
+
         return {timer, game};
       }
 
-      const formatScore = score => score.overtime ? `${score.regular} / ${score.overtime}` : `${score.regular}`;
+      function formatScore(score) {
+        return score.overtime ? `${score.regular} / ${score.overtime}` : `${score.regular}`;
+      }
 
       function play(state, word) {
         const w = word.textContent.toUpperCase();
         const score = state.game.play(w);
-        document.getElementById('score').textContent = formatScore(state.game.score);
+        const display = !state.game.settings.blind && score;
         kept = true;
-        if (score) {
+        if (display) {
+          document.getElementById('score').textContent = formatScore(state.game.score);
           document.getElementById('defn').textContent = DICT[w].defn;
         } else {
           const o = word.textContent;
-          if (state.game.played[w] < 0) word.classList.add('error');
+          if (!state.game.settings.blind && state.game.played[w] < 0) word.classList.add('error');
           word.classList.add('fade');
           const animationend = () => {
             clearWord(o);
@@ -552,8 +539,14 @@
 
       window.addEventListener('hashchange', e => {
         if (!document.location.hash) return; // is just a reload...
-        const [type, seed] = fromID(document.location.hash);
-        STATE = refresh(STATE, type, seed);
+        const [settings, seed] = Game.decodeID(document.location.hash.slice(1));
+
+        if (!isNaN(seed)) {
+          Object.assign(SETTINGS, settings);
+          localStorage.setItem('settings', JSON.stringify(SETTINGS));
+        }
+
+        STATE = refresh(STATE, settings, seed);
       });
 
       document.getElementById('refresh').addEventListener('mouseup', () => {
@@ -562,7 +555,7 @@
 
       document.getElementById('refresh').addEventListener('long-press', e => {
         console.log('REFRESH LONG PRESS'); // FIXME
-        document.getElementById('menu').classList.toggle('hidden');
+        //document.getElementById('menu').classList.toggle('hidden');
         // TODO: unhide type menu, rehide if click outside of menu area!
       });
 
@@ -576,12 +569,15 @@
         button.classList.add('collapsible');
 
         const div = document.createElement('div');
+
         const titleSpan = document.createElement('span');
         titleSpan.classList.add('title');
         titleSpan.textContent = title;
+
         const detailsSpan = document.createElement('span');
         detailsSpan.classList.add('details');
         detailsSpan.textContent = details;
+
         div.appendChild(titleSpan);
         div.appendChild(detailsSpan);
         button.appendChild(div);
@@ -596,6 +592,7 @@
             content.style.display = display;
           }
         });
+
         return button;
       }
 
@@ -608,10 +605,12 @@
           `(${state.progress.invalid}/${state.progress.total})`;
 
         const button = makeCollapsible('PLAYED', details, 'table');
+
         const table = document.createElement('table');
         table.classList.add('collapsible-content');
         table.classList.add('results');
         table.classList.add('played');
+
         for (const {word, easy, group, root, defn, invalid} of state.played) {
           const tr = document.createElement('tr');
           if (invalid) {
@@ -644,30 +643,33 @@
 
           table.appendChild(tr);
         }
+
         if (expanded) {
           button.classList.add('active');
           table.style.display = 'table';
         }
+
         div.appendChild(button);
         div.appendChild(table);
       }
 
       function displayPossible(state, div, expanded) {
-        const score = words => words.reduce((sum, w) => sum + Game.score(w, state.type), 0);
+        const score = words => words.reduce((sum, w) => sum + Game.score(w), 0);
 
         // TODO: words, points, % words, % points
         const details =
           `${score(Array.from(Object.keys(state.totals.suffixes)))}/` +
-          `${Array.from(Object.entries(state.totals.anagrams)).reduce((sum, e) => sum + ((e[1] - 1) * Game.score(e[0], state.type)), 0)}/` +
+          `${Array.from(Object.entries(state.totals.anagrams)).reduce((sum, e) => sum + ((e[1] - 1) * Game.score(e[0])), 0)}/` +
           `${score(Array.from(state.totals.groups))}/` +
           `${score(Array.from(state.totals.easy))} ` +
-          `(${score(Array.from(state.possible2))})`;
+          `(${score(Object.keys(state.possible2))})`;
 
         const button = makeCollapsible('POSSIBLE', details, 'table');
         const table = document.createElement('table');
         table.classList.add('collapsible-content');
         table.classList.add('results');
         table.classList.add('possible');
+
         for (const {word, easy, group, root, defn} of state.possible) {
           const tr = document.createElement('tr');
           if (group) {
@@ -698,15 +700,49 @@
 
           table.appendChild(tr);
         }
+
         if (expanded) {
           button.classList.add('active');
           table.style.display = 'table';
         }
+
         div.appendChild(button);
         div.appendChild(table);
       }
 
-      document.getElementById('score').addEventListener('click', () => {
+      document.getElementById('score').addEventListener('long-press', e => {
+        const size = STATE.game.size;
+        const weights = [];
+        for (let row = 0; row < size; row++) {
+          const a = [];
+          for (let col = 0; col < size; col++) {
+            a.push(0);
+          }
+          weights.push(a);
+        }
+        let total = 0;
+        for (const word in STATE.game.possible) {
+          if (STATE.game.played[word]) continue;
+          const score = Game.score(word);
+          total += score;
+          for (const p of STATE.game.possible[word]) {
+            weights[p[1]][p[0]] += score;
+          }
+        }
+
+        for (const td of document.getElementById('board').getElementsByTagName('td')) {
+          const w = weights[Number(td.dataset.x)][Number(td.dataset.y)] / total;
+          td.style.backgroundColor = `rgba(255,0,0,${w})`;
+        }
+      });
+
+      document.getElementById('score').addEventListener('long-press-up', e => {
+        for (const td of document.getElementById('board').getElementsByTagName('td')) {
+          td.style.backgroundColor = 'inherit';
+        }
+      });
+
+      document.getElementById('score').addEventListener('mouseup', () => {
         const wrapper = document.getElementById('wrapper');
         if (!wrapper) {
           const display = document.getElementById('display');
@@ -736,10 +772,9 @@
 
           for (let i = HISTORY.length - 1; i > 0; i--) {
             const state = HISTORY[i];
-            const size = (state.seed.startsWith('B') || state.seed.startsWith('D')) ? 5 : 4;
             let score = 0;
             for (const [w, t] of Object.entries(state.words)) {
-              if (t > 0) score += Game.score(w, size);
+              if (t > 0) score += Game.score(w);
             }
             if (!score) continue;
 
@@ -772,8 +807,10 @@
         const display = document.getElementById('display');
         const board = document.getElementById('board');
         const wrapper = document.getElementById('wrapper');
-        // TODO: hide instead of remove to avoid recompute...
+
+        // TODO FIXME: hide instead of remove to avoid recompute...
         display.removeChild(wrapper);
+
         board.classList.remove('hidden');
         word.classList.remove('hidden');
         defn.classList.remove('hidden');

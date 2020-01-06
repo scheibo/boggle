@@ -11,6 +11,7 @@ self.addEventListener('install', e => {
                 '/',
                 '/index.html',
                 '/boggle.js',
+                '/longpress.js',
                 '/manifest.json',
                 '/favicon.ico',
                 '/img/refresh.svg',

@@ -1,8 +1,14 @@
 'use strict';
 
 class Random {
-  constructor(seed = 4 /* https://xkcd.com/221/ */) {
-    this.seed = seed;
+  constructor(n = 4 /* https://xkcd.com/221/ */) {
+    // Hash: https://burtleburtle.net/bob/hash/integer.html
+    // n = n ^ 61 ^ (n >>> 16);
+    // n = n + (n << 3);
+    // n = n ^ (n >>> 4);
+    // n = Math.imul(n, 0x27d4eb2d);
+    // n = n ^ (n >>> 15);
+    this.seed = n /*>>> 0 */;
   }
 
   // Mulberry32: https://gist.github.com/tommyettinger/46a874533244883189143505d203312c
@@ -45,10 +51,9 @@ class Random {
 }
 
 class Trie {
-  constructor(dict, csw) {
+  constructor(dict) {
     const root = new Node(undefined, '');
     for (const word in dict) {
-      if (!csw && dict[word].csw) continue;
       let current = root;
       for (var i = 0; i < word.length; i++) {
           const letter = word[i];
@@ -57,7 +62,7 @@ class Trie {
           if (next === undefined) next = new Node(current, letter);
           current = next;
       }
-      current.isWord = true;
+      current.isWord = dict[word].csw ? 'CSW' : 'TWL';
     }
     return root;
   }
@@ -99,15 +104,15 @@ const SUFFIXES = ['S', 'ER', 'ED', 'ING'];
 const FREQUENCY = 10000;
 
 class Game {
-  constructor(trie, dict, random, type = 'n') {
+  constructor(trie, dict, random, settings = {dice: 'New', dict: 'TWL'}) {
     this.trie = trie;
     this.dict = dict;
+    this.settings = settings;
 
-    this.type = type;
-    this.dice =
-      this.type === 'd' || this.type ===  'b' ? BIG_DICE :
-      this.type === 'o' ? OLD_DICE : NEW_DICE;
+    this.dice = this.settings.dice ===  'Big' ? BIG_DICE :
+      this.settings.dice === 'Old' ? OLD_DICE : NEW_DICE;
     this.size = Math.sqrt(this.dice.length);
+    this.settings.min = this.settings.min || this.size - 1;
 
     this.random = random;
     do {
@@ -119,10 +124,9 @@ class Game {
       }
       this.random.shuffle(this.board);
       this.possible = this.solve();
-    } while (this.possible.size === 0);
+    } while (!Object.keys(this.possible).length);
 
-    this.id = `${this.type.toUpperCase()}${this.seed}`;
-
+    this.id = Game.encodeID(this.settings, this.seed);
     this.played = {};
     this.overtime = new Set();
     this.score = {regular: 0, overtime: 0};
@@ -132,10 +136,10 @@ class Game {
   }
 
   play(word) {
-    if (!this.played[word] && word.length >= (this.size - 1)) { // TODO: variable min size
-      if (this.possible.has(word)) {
+    if (!this.played[word] && word.length >= this.settings.min) {
+      if (this.possible[word]) {
         this.played[word] = +new Date();
-        const score = Game.score(word, this.size);
+        const score = Game.score(word);
         if (this.expired) this.overtime.add(word);
 
         const bucket = this.expired ? 'overtime' : 'regular';
@@ -159,16 +163,43 @@ class Game {
     }
   }
 
+  static encodeID(s, seed) {
+    return `${s.dict.charAt(0)}${s.min}${s.dice.charAt(0)}${s.blind ? '?' : ''}${seed}`;
+  }
+
+  static decodeID(id) {
+    if (id.charAt(0) !== 'T' && id.charAt(0) !== 'C') {
+      // Legacy
+      const dice = id.charAt(0) === 'B' ? 'Big' : id.charAt(2) === 'O' ? 'Old' : 'New';
+
+      const seed = Number(id.slice(1));
+
+      return [{dice, dict: 'TWL'}, seed];
+    } else {
+      const dict = id.charAt(0) === 'T' ? 'TWL' : 'CSW';
+      const min = Number(id.charAt(1));
+      const dice = id.charAt(2) === 'B' ? 'Big' : id.charAt(2) === 'O' ? 'Old' : 'New';
+      const blind = id.charAt(3) === '?';
+
+      const seed = Number(id.slice(blind ? 4 : 3));
+
+      return [{dice, min, dict, blind}, seed];
+    }
+  }
+
   static fromJSON(json, trie, dict) {
-    const type = json.seed[0];
-    const random = new Random(Number(json.seed.slice(1)));
-    const game = new Game(trie, dict, random, type.toLowerCase());
+    const [settings, seed] = Game.decodeID(json.seed);
+    const random = new Random(seed);
+    const game = new Game(trie, dict, random, settings);
+
     game.start = json.start;
     game.expired = json.expired;
     game.played = json.words;
+
     return game;
   }
 
+  // FIXME
   get totals() {
     if (this.totals_) return this.totals_;
 
@@ -179,14 +210,14 @@ class Game {
 
     const goal = new Set();
     let total = 0;
-    for (const word of this.possible) {
+    for (const word in this.possible) {
       // Suffixes
       for (const suffix of SUFFIXES) {
         if (word.endsWith(suffix)) {
           const root = word.slice(0, word.length - suffix.length);
-          if (this.possible.has(root)) {
+          if (this.possible[root]) {
             suffixes[word] = root;
-          } else if (suffix.startsWith('E') && this.possible.has(`${root}E`)) {
+          } else if (suffix.startsWith('E') && this.possible[`${root}E`]) {
             suffixes[word] = `${root}E`;
           }
         }
@@ -214,10 +245,11 @@ class Game {
       }
     }
 
-    const g = Array.from(goal).reduce((sum, w) => sum + Game.score(w, this.size), 0);
+    const g = Array.from(goal).reduce((sum, w) => sum + Game.score(w), 0);
     return this.totals_ = {suffixes, anagrams, groups, easy, goal: g};
   }
 
+  // FIXME
   progress() {
     // const anagrams = {};
 
@@ -254,7 +286,7 @@ class Game {
       anagrams[anagram] = (anagrams[anagram] || 0) + 1; 
       */
 
-      const score = Game.score(word, this.type);
+      const score = Game.score(word);
       if (this.totals.suffixes[word]) suffixes += score;
       if (this.totals.anagrams[word]) anagrams += score;
       if (this.totals.groups.has(word)) groups += score;
@@ -278,6 +310,7 @@ class Game {
     };
   }
 
+  // FIXME
   state() {
     const fn = (a, b) => {
       if (a.length > b.length) return 1;
@@ -308,7 +341,7 @@ class Game {
         if (this.overtime.has(w)) v.overtime = true;
         return v;
       }),
-      possible: Array.from(this.possible).filter(w => !this.played[w]).sort(fn).map(augment),
+      possible: Object.keys(this.possible).filter(w => !this.played[w]).sort(fn).map(augment),
       possible2: this.possible, // TODO rename...
       progress: this.progress(),
       totals: this.totals,
@@ -316,7 +349,7 @@ class Game {
   }
 
   solve() {
-    const words = new Set();
+    const words = {};
     const queue = [];
     for (let y = 0; y < this.size; y++) {
       for (let x = 0; x < this.size; x++) {
@@ -349,7 +382,8 @@ class Game {
           }
           if (node2 !== undefined) {
             const s2 = s + c;
-            if (node2.isWord && s2.length >= this.size - (this.type !== 'd')) words.add(s2);
+            const isWord = this.settings.dict === 'TWL' ? node2.isWord === 'TWL' : node2.isWord;
+            if (isWord && s2.length >= this.settings.min) words[s2] = hist;
             queue.push([x2, y2, s2, node2, hist]);
           }
         }
@@ -358,8 +392,8 @@ class Game {
     return words;
   }
 
-  static score(word, size) {
-    if (word.length < (size === 5 ? 4 : 3)) return 0;
+  static score(word) {
+    if (word.length < 3) return 0;
     if (word.length <= 4) return 1;
     if (word.length == 5) return 2;
     if (word.length == 6) return 3;
