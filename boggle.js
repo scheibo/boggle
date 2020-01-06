@@ -132,7 +132,7 @@ class Game {
   }
 
   play(word) {
-    if (!this.played[word]) {
+    if (!this.played[word] && word.length >= (this.size - 1)) { // TODO: variable min size
       if (this.possible.has(word)) {
         this.played[word] = +new Date();
         const score = Game.score(word, this.size);
