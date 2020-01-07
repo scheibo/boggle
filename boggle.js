@@ -62,7 +62,7 @@ class Trie {
           if (next === undefined) next = new Node(current, letter);
           current = next;
       }
-      current.isWord = dict[word].csw ? 'CSW' : 'TWL';
+      current.isWord = dict[word].twl ? 'TWL' : 'CSW';
     }
     return root;
   }
@@ -109,7 +109,7 @@ class Game {
     this.dict = dict;
     this.settings = settings;
 
-    this.dice = this.settings.dice ===  'Big' ? BIG_DICE :
+    this.dice = this.settings.dice === 'Big' ? BIG_DICE :
       this.settings.dice === 'Old' ? OLD_DICE : NEW_DICE;
     this.size = Math.sqrt(this.dice.length);
     this.settings.min = this.settings.min || this.size - 1;
@@ -159,7 +159,13 @@ class Game {
       start: this.start,
       expired: this.expired,
       words: this.played,
-      goal: this.totals.goal,
+      goal: {
+        S: this.totals.s,
+        A: this.totals.a,
+        B: this.totals.b,
+        C: this.totals.c,
+        D: this.totals.d
+      }
     }
   }
 
@@ -199,19 +205,25 @@ class Game {
     return game;
   }
 
-  // FIXME
+  static grade(word, dict, dice = 'New', type = 'TWL') {
+    const val = dict[word];
+    if (!val) return undefined;
+    // val.csw gets dropped if its the same as val.twl or empty
+    const encoded = type === 'CSW' ? (val.csw || val.twl || ' ') : val.twl;
+    // duplicate grades get encoded as as a single value
+    if (!encoded || encoded.length === 1) return encoded;
+    const d = dice.charAt(0).toLowerCase();
+    const i = d === 'n' ? 0 : d === 'o' ? 1 : 2;
+    return encoded.charAt(i);
+  }
+
   get totals() {
     if (this.totals_) return this.totals_;
 
-    const suffixes = {};
+    const suffixes = {}
     const anagrams = {};
-    const groups = new Set();
-    const easy = new Set();
-
-    const goal = new Set();
-    let total = 0;
+    const grades = {};
     for (const word in this.possible) {
-      // Suffixes
       for (const suffix of SUFFIXES) {
         if (word.endsWith(suffix)) {
           const root = word.slice(0, word.length - suffix.length);
@@ -222,97 +234,66 @@ class Game {
           }
         }
       }
-
-      // Anagrams
       const anagram = word.split('').sort().join('');
       anagrams[anagram] = (anagrams[anagram] || 0) + 1;
 
-      const data = this.dict[word];
-
-      // Groups
-      if (this.type &&
-        data.type &&
-        (data.type.includes(this.type) ||
-         this.type === 'd' && data.type.includes('b'))) {
-        groups.add(word);
-        goal.add(word);
-      }
-
-      // Easy
-      if (data.freq && data.freq[0] <= FREQUENCY) {
-        easy.add(word);
-        goal.add(word);
-      }
+      const g = Game.grade(word, this.dict, this.settings.dice, this.settings.dict);
+      if (!g) throw new Error(`No grade for ${word} with ${this.settings.dice} dice in ${this.settings.dict}`);
+      grades[g] = (grades[g] || 0) + Game.score(word);
     }
 
-    const g = Array.from(goal).reduce((sum, w) => sum + Game.score(w), 0);
-    return this.totals_ = {suffixes, anagrams, groups, easy, goal: g};
+    const d = grades.D || 0;
+    const c = d + (grades.C || 0);
+    const b = c + (grades.B || 0);
+    const a = b + (grades.A || 0);
+    const s = a + (grades[' '] || 0);
+
+    return this.totals_ = { s, a, b, c, d, anagrams, suffixes };
   }
 
-  // FIXME
   progress() {
-    // const anagrams = {};
-
     let total = 0;
     let invalid = 0;
-
+    let valid = 0;
     let suffixes = 0;
-    let anagrams = 0;
-    let groups = 0;
-    let easy = 0;
+    // TODO subwords! - not subword anagrams, just subwords
 
-    // let expected = 0;
-    // let actual = 0;
+    const anagrams = {};
     for (const word in this.played) {
       total++;
       if (this.played[word] < 0) {
         invalid++;
         continue;
       }
+      valid++;
 
-      // Suffixes
-      /*
       for (const suffix of SUFFIXES) {
-        if (this.totals.suffixes[word + suffix]) {
-          expected++;
-        }
-        if (word.endsWith(suffix) && this.totals.suffixes[word]) {
-          actual++;
-        }
+        const suffixed = `${word}${suffix}`;
+        if (this.possible[suffixed] && !this.played[suffixed]) suffixes++;
       }
 
       // Anagrams
       const anagram = word.split('').sort().join('');
-      anagrams[anagram] = (anagrams[anagram] || 0) + 1; 
-      */
-
-      const score = Game.score(word);
-      if (this.totals.suffixes[word]) suffixes += score;
-      if (this.totals.anagrams[word]) anagrams += score;
-      if (this.totals.groups.has(word)) groups += score;
-      if (this.totals.easy.has(word)) easy += score;
+      anagrams[anagram] = (anagrams[anagram] || 0) + 1;
     }
 
-    // let a = {found: 0, expected: 0};
-    // for (const anagram in anagrams) {
-    //   a.found += anagrams[anagram];
-    //   a.expected += this.totals.anagrams[anagram];
-    // }
+    let missing = 0;
+    for (const anagram in anagrams) {
+      missing += this.totals.anagrams[anagram] - anagrams[anagram];
+    }
 
-    return {
-      invalid,
-      total,
-
-      suffixes,
-      anagrams,
-      groups,
-      easy,
-    };
+    return { invalid, valid, total, suffixes, anagrams: missing };
   }
 
-  // FIXME
   state() {
+    const gr = w => Game.grade(w, this.dict, this.settings.dice, this.settings.dict);
+    // grade, length, anagrams, alphabetical
     const fn = (a, b) => {
+      const ga = gr(a);
+      const gb = gr(b);
+      // POST: ga and gb can't be undefined!
+      if (ga > gb) return -1;
+      if (gb > ga) return 1;
       if (a.length > b.length) return 1;
       if (b.length > a.length) return -1;
       const sa = a.split('').sort().join('');
@@ -325,8 +306,7 @@ class Game {
       const val = self.dict[w];
       return {
         word: w, 
-        easy: self.totals.easy.has(w),
-        group: self.totals.groups.has(w),
+        grade: gr(w),
         root: self.totals.suffixes[w],
         defn: val ? val.defn : '',
       };
@@ -341,8 +321,7 @@ class Game {
         if (this.overtime.has(w)) v.overtime = true;
         return v;
       }),
-      possible: Object.keys(this.possible).filter(w => !this.played[w]).sort(fn).map(augment),
-      possible2: this.possible, // TODO rename...
+      remaining: Object.keys(this.possible).filter(w => !this.played[w]).sort(fn).map(augment),
       progress: this.progress(),
       totals: this.totals,
     };

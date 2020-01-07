@@ -132,7 +132,7 @@
     .hard {
       color: #aaa;
     }
-    .group {
+    .overtime {
       font-style: italic;
     }
     .suffix {
@@ -281,7 +281,7 @@
     }
 
     const HISTORY = JSON.parse(localStorage.getItem('history')) || [];
-    const SETTINGS = JSON.parse(localStorage.getItem('settings')) || {dice: 'New', dict: 'TWL'};
+    const SETTINGS = JSON.parse(localStorage.getItem('settings')) || {dice: 'New', dict: 'TWL', grade: 'C'};
     var STATE = null;
 
     class Timer {
@@ -597,12 +597,8 @@
       }
 
       function displayPlayed(state, div, expanded) {
-        const details =
-          `${state.progress.suffixes}/` +
-          `${state.progress.anagrams}/` +
-          `${state.progress.groups}/` +
-          `${state.progress.easy} ` +
-          `(${state.progress.invalid}/${state.progress.total})`;
+        const p = state.progress;
+        const details = `${p.suffixes}/${p.anagrams}/${p.invalid} (${p.total})`;
 
         const button = makeCollapsible('PLAYED', details, 'table');
 
@@ -611,15 +607,11 @@
         table.classList.add('results');
         table.classList.add('played');
 
-        for (const {word, easy, group, root, defn, invalid} of state.played) {
+        for (const {word, grade, overtime, root, defn, invalid} of state.played) {
           const tr = document.createElement('tr');
-          if (invalid) {
-            tr.classList.add('error');
-          } else if (group) {
-            tr.classList.add('group');
-          } else if (!easy) {
-            tr.classList.add('hard');
-          }
+          if (grade < SETTINGS.grade) tr.classList.add('hard');
+          if (invalid) tr.classList.add('error');
+          if (overtime) tr.classList.add('overtime');
 
           let td = document.createElement('td');
           const b = document.createElement('b');
@@ -654,15 +646,8 @@
       }
 
       function displayPossible(state, div, expanded) {
-        const score = words => words.reduce((sum, w) => sum + Game.score(w), 0);
-
-        // TODO: words, points, % words, % points
-        const details =
-          `${score(Array.from(Object.keys(state.totals.suffixes)))}/` +
-          `${Array.from(Object.entries(state.totals.anagrams)).reduce((sum, e) => sum + ((e[1] - 1) * Game.score(e[0])), 0)}/` +
-          `${score(Array.from(state.totals.groups))}/` +
-          `${score(Array.from(state.totals.easy))} ` +
-          `(${score(Object.keys(state.possible2))})`;
+        const tot = state.totals;
+        const details = `${tot.d}/${tot.c}/${tot.b}/${tot.a} (${tot.s})`;
 
         const button = makeCollapsible('POSSIBLE', details, 'table');
         const table = document.createElement('table');
@@ -670,13 +655,10 @@
         table.classList.add('results');
         table.classList.add('possible');
 
-        for (const {word, easy, group, root, defn} of state.possible) {
+        for (const {word, grade, overtime, root, defn} of state.remaining) {
           const tr = document.createElement('tr');
-          if (group) {
-            tr.classList.add('group');
-          } else if (!easy) {
-            tr.classList.add('hard');
-          }
+          if (grade < SETTINGS.grade) tr.classList.add('hard');
+          if (overtime) tr.classList.add('overtime');
 
           let td = document.createElement('td');
           const b = document.createElement('b');
@@ -758,7 +740,8 @@
 
           const state = STATE.game.state();
           const score = STATE.game.score.regular + STATE.game.score.overtime;
-          const details = `${score}/${state.totals.goal} (${Math.round(score / state.totals.goal * 100).toFixed(0)}%)`;
+          const goal = state.totals[SETTINGS.grade.toLowerCase()];
+          const details = `${score}/${goal} (${Math.round(score / goal * 100).toFixed(0)}%)`;
           const current = makeCollapsible(STATE.game.toJSON().seed, details, 'block');
           const div = document.createElement('div');
           div.classList.add('collapsible-content');
@@ -778,14 +761,14 @@
             }
             if (!score) continue;
 
-            const details = `${score}/${state.goal} (${Math.round(score / state.goal * 100).toFixed(0)}%)`;
+            const details = `${score}/${state.goal[SETTINGS.grade]} (${Math.round(score / state.goal[SETTINGS.grade] * 100).toFixed(0)}%)`;
             const div = document.createElement('div');
             div.classList.add('collapsible-content');
             div.classList.add('lazy');
             const button = makeCollapsible(state.seed, details, 'block', () => {
               if (div.classList.contains('lazy')) {
                 div.classList.remove('lazy');
-                const game = Game.fromJSON(state, TRIE, DICT) // TODO: handle csw vs. twl
+                const game = Game.fromJSON(state, TRIE, DICT);
                 const s = game.state();
                 displayPlayed(s, div);
                 displayPossible(s, div);

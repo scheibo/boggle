@@ -7,7 +7,6 @@ const readline = require('readline');
 
 const DATA = path.resolve(__dirname, '../data');
 const MIN_LENGTH = 3;
-const PRECISION = 1e4;
 
 function splitFirst(str, delimiter, limit = 1) {
   const splitStr = [];
@@ -101,20 +100,10 @@ async function buildDictionary() {
   });
 
   const fd = p => {
-    if (p === undefined) return 'S';
-    if (p >= 99) return 'S';
+    if (p === undefined || p >= 99) return ' ';
     if (p >= 96) return 'A';
     if (p >= 93) return 'B';
     if (p >= 86) return 'C';
-    return 'D';
-  }
-
-  const d = p => {
-    if (p === undefined) return 'S';
-    if (p >= 75) return 'S';
-    if (p >= 50) return 'A';
-    if (p >= 25) return 'B';
-    if (p >= 10) return 'C';
     return 'D';
   }
 
@@ -126,27 +115,37 @@ async function buildDictionary() {
       .replace(/\s*?\[.*?\]\s*?/g, '')
     if (word.length < MIN_LENGTH) continue;
     const val = {defn};
-    // TODO combine these into one value => take the lowest of either!
     const f = fd(freqs[word]);
-
-    const a = toAnagram(word);
-    if (twl.has(word)) {
-      const v = `${d(n.twl.words[word])}${d(o.twl.words[word])}${d(b.twl.words[word])}` +
-        `${d(n.twl.anagrams[a])}${d(o.twl.anagrams[a])}${d(b.twl.anagrams[a])}`;
-      if (v !== 'SSSSSS') {
-        val.twl = v 
-      } else { // we still need to indicate that the word is valid in TWL
-        val.twl = 'S';
-      }
-    }
-    const v = `${d(n.csw.words[word])}${d(o.csw.words[word])}${d(b.csw.words[word])}` +
-        `${d(n.csw.anagrams[a])}${d(o.csw.anagrams[a])}${d(b.csw.anagrams[a])}`;
-    if (v !== 'SSSSSS') val.csw = v;
+    if (twl.has(word)) val.twl = encode(n.twl, o.twl, b.twl,  word, f);
+    const v = encode(n.csw, o.csw, b.csw, word, f);
+    if (v !== ' ' && v !== val.twl) val.csw = v;
 
     dict[word] = val;
   }
 
   return dict;
+}
+
+function encode(n, o, b, w, f) {
+  const a = toAnagram(w);
+  const grade = p => {
+    if (p === undefined || p >= 75) return ' ';
+    if (p >= 50) return 'A';
+    if (p >= 25) return 'B';
+    if (p >= 10) return 'C';
+    return 'D';
+  }
+  const combine = (p1, p2) => {
+    const g1 = grade(p1);
+    const g2 = grade(p2);
+    const g = g1 < g2 ? g2 : g1;
+    return g < f ? f : g;
+  }
+  const encoded =
+    `${combine(n.words[w], n.anagrams[a])}` +
+    `${combine(o.words[w], o.anagrams[a])}` +
+    `${combine(b.words[w], b.anagrams[a])}`;
+  return encoded.split('').every(c => c === encoded[0]) ? encoded[0] : encoded;
 }
 
 function percentilize(obj, n) {
