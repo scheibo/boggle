@@ -598,7 +598,7 @@
 
       function displayPlayed(state, div, expanded) {
         const p = state.progress;
-        const details = `${p.suffixes}/${p.anagrams}/${p.invalid} (${p.total})`;
+        const details = `${p.suffixes}/${p.subwords}/${p.anagrams}/${p.invalid} (${p.total})`;
 
         const button = makeCollapsible('PLAYED', details, 'table');
 

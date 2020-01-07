@@ -110,6 +110,7 @@ async function buildDictionary() {
   const dict = {};
   for await (const line of lines) {
     const [word, def] = splitFirst(line, ' ');
+    // TODO: improve definitions by following references...
     const defn = def.replace(/\{(.*?)=.*?\}/g, '$1')
       .replace(/<(.*?)=.*?>/g, '$1')
       .replace(/\s*?\[.*?\]\s*?/g, '')
@@ -128,17 +129,17 @@ async function buildDictionary() {
 
 function encode(n, o, b, w, f) {
   const a = toAnagram(w);
-  const grade = p => {
-    if (p === undefined || p >= 75) return ' ';
-    if (p >= 50) return 'A';
-    if (p >= 25) return 'B';
-    if (p >= 10) return 'C';
-    return 'D';
+  const rank = p => {
+    if (p === undefined || p >= 75) return 0;
+    if (p >= 50) return 1;
+    if (p >= 25) return 2;
+    if (p >= 10) return 3;
+    return 4;
   }
   const combine = (p1, p2) => {
-    const g1 = grade(p1);
-    const g2 = grade(p2);
-    const g = g1 < g2 ? g2 : g1;
+    const r1 = rank(p1);
+    const r2 = rank(p2);
+    const g = [' ', 'A', 'B', 'C', 'D'][Math.ceil((r1 + r2) / 2)];
     return g < f ? f : g;
   }
   const encoded =

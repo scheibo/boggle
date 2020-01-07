@@ -77,6 +77,19 @@ class Node {
   }
 }
 
+function subs(word, min) {
+  const words = new Set();
+
+  for (let b = 0; b < word.length; b++) {
+    for (let e = 1; e <= word.length - b; e++) {
+      const s = word.substr(b, e);
+      if (s.length >= min) words.add(word);
+    }
+  }
+
+  return words;
+}
+
 const NEW_DICE = [
   'AAEEGN', 'ELRTTY', 'AOOTTW', 'ABBJOO',
   'EHRTVW', 'CIMOTU', 'DISTTY', 'EIOSST',
@@ -256,7 +269,7 @@ class Game {
     let invalid = 0;
     let valid = 0;
     let suffixes = 0;
-    // TODO subwords! - not subword anagrams, just subwords
+    let subwords = 0;
 
     const anagrams = {};
     for (const word in this.played) {
@@ -272,9 +285,13 @@ class Game {
         if (this.possible[suffixed] && !this.played[suffixed]) suffixes++;
       }
 
-      // Anagrams
       const anagram = word.split('').sort().join('');
       anagrams[anagram] = (anagrams[anagram] || 0) + 1;
+
+      for (const sub of subs(word, this.settings.min)) {
+        // possible must be true...
+        if (this.possible[sub] && !this.played[sub]) subwords++;
+      }
     }
 
     let missing = 0;
@@ -282,7 +299,7 @@ class Game {
       missing += this.totals.anagrams[anagram] - anagrams[anagram];
     }
 
-    return { invalid, valid, total, suffixes, anagrams: missing };
+    return { invalid, valid, total, suffixes, subwords, anagrams: missing };
   }
 
   state() {
