@@ -6,7 +6,6 @@ const path = require('path');
 const readline = require('readline');
 
 const DATA = path.resolve(__dirname, '../data');
-const MIN_LENGTH = 3;
 
 function splitFirst(str, delimiter, limit = 1) {
   const splitStr = [];
@@ -70,7 +69,6 @@ async function buildDictionary() {
   let total = 0;
   for await (const line of lines) {
     const [word, freq] = splitFirst(line, '\t');
-    if (word.length < MIN_LENGTH) continue;
     const f = Number(freq);
     total += f;
     freqs[word.toUpperCase()] = f;
@@ -84,7 +82,6 @@ async function buildDictionary() {
 
   const twl = new Set();
   for await (const word of lines) {
-    if (word.length < MIN_LENGTH) continue;
     twl.add(word.toUpperCase());
   }
 
@@ -109,12 +106,7 @@ async function buildDictionary() {
 
   const dict = {};
   for await (const line of lines) {
-    const [word, def] = splitFirst(line, ' ');
-    // TODO: improve definitions by following references...
-    const defn = def.replace(/\{(.*?)=.*?\}/g, '$1')
-      .replace(/<(.*?)=.*?>/g, '$1')
-      .replace(/\s*?\[.*?\]\s*?/g, '')
-    if (word.length < MIN_LENGTH) continue;
+    const [word, defn] = splitFirst(line, ' ');
     const val = {defn};
     const f = fd(freqs[word]);
     if (twl.has(word)) val.twl = encode(n.twl, o.twl, b.twl,  word, f);
@@ -122,6 +114,24 @@ async function buildDictionary() {
     if (v !== ' ' && v !== val.twl) val.csw = v;
 
     dict[word] = val;
+  }
+
+  // improve the definitions by following references and cleaning
+  const re = /[{<](.*?)?=.*?[>}]/g;
+  for (const word in dict) {
+    let def = dict[word].defn;
+    const match = re.exec(def);
+    if (match) {
+      const m = dict[match[1].toUpperCase()];
+      if (!m || !m.defn) {
+        def = match[1];
+      } else {
+        def = `${match[1]} (${m.defn})`;
+      }
+    }
+    dict[word].defn = def.replace(/\{(.*?)=.*?\}/g, '$1')
+      .replace(/<(.*?)=.*?>/g, '$1')
+      .replace(/\s*?\[.*?\]\s*?/g, '');
   }
 
   return dict;
