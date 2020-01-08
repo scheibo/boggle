@@ -83,11 +83,15 @@ function subs(word, min) {
   for (let b = 0; b < word.length; b++) {
     for (let e = 1; e <= word.length - b; e++) {
       const s = word.substr(b, e);
-      if (s.length >= min) words.add(word);
+      if (s.length >= min) words.add(s);
     }
   }
 
   return words;
+}
+
+function toAnagram(word) {
+  return word.split('').sort().join('');
 }
 
 const NEW_DICE = [
@@ -183,7 +187,7 @@ class Game {
   }
 
   static encodeID(s, seed) {
-    return `${s.dict.charAt(0)}${s.min}${s.dice.charAt(0)}${s.blind ? '?' : ''}${seed}`;
+    return `${s.dict.charAt(0)}${s.min}${s.dice.charAt(0)}${seed}`;
   }
 
   static decodeID(id) {
@@ -198,11 +202,10 @@ class Game {
       const dict = id.charAt(0) === 'T' ? 'TWL' : 'CSW';
       const min = Number(id.charAt(1));
       const dice = id.charAt(2) === 'B' ? 'Big' : id.charAt(2) === 'O' ? 'Old' : 'New';
-      const blind = id.charAt(3) === '?';
 
-      const seed = Number(id.slice(blind ? 4 : 3));
+      const seed = Number(id.slice(3));
 
-      return [{dice, min, dict, blind}, seed];
+      return [{dict, min, dice}, seed];
     }
   }
 
@@ -233,22 +236,12 @@ class Game {
   get totals() {
     if (this.totals_) return this.totals_;
 
-    const suffixes = {}
     const anagrams = {};
     const grades = {};
     for (const word in this.possible) {
-      for (const suffix of SUFFIXES) {
-        if (word.endsWith(suffix)) {
-          const root = word.slice(0, word.length - suffix.length);
-          if (this.possible[root]) {
-            suffixes[word] = root;
-          } else if (suffix.startsWith('E') && this.possible[`${root}E`]) {
-            suffixes[word] = `${root}E`;
-          }
-        }
-      }
-      const anagram = word.split('').sort().join('');
-      anagrams[anagram] = (anagrams[anagram] || 0) + 1;
+      const anagram = toAnagram(word);
+      anagrams[anagram] = anagrams[anagram] || []
+      anagrams[anagram].push(word);
 
       const g = Game.grade(word, this.dict, this.settings.dice, this.settings.dict);
       grades[g] = (grades[g] || 0) + Game.score(word);
@@ -260,15 +253,15 @@ class Game {
     const a = b + (grades.A || 0);
     const s = a + (grades[' '] || 0);
 
-    return this.totals_ = { s, a, b, c, d, anagrams, suffixes };
+    return this.totals_ = { s, a, b, c, d, anagrams };
   }
 
   progress() {
     let total = 0;
     let invalid = 0;
     let valid = 0;
-    let suffixes = 0;
-    let subwords = 0;
+    let suffixes = [];
+    let subwords = [];
 
     const anagrams = {};
     for (const word in this.played) {
@@ -281,39 +274,51 @@ class Game {
 
       for (const suffix of SUFFIXES) {
         const suffixed = `${word}${suffix}`;
-        if (this.possible[suffixed] && !this.played[suffixed]) suffixes++;
+        if (this.possible[suffixed] && !this.played[suffixed]) suffixes.push(suffixed);
       }
 
-      const anagram = word.split('').sort().join('');
-      anagrams[anagram] = (anagrams[anagram] || 0) + 1;
+      const anagram = toAnagram(word);
+      anagrams[anagram] = anagrams[anagram] || [];
+      anagrams[anagram].push(word);
 
       for (const sub of subs(word, this.settings.min)) {
-        // possible must be true...
-        if (this.possible[sub] && !this.played[sub]) subwords++;
+        if (this.possible[sub] && !this.played[sub]) subwords.push(sub);
       }
     }
 
-    let missing = 0;
+    let missing = [];
     for (const anagram in anagrams) {
-      missing += this.totals.anagrams[anagram] - anagrams[anagram];
+      missing = missing.concat(this.totals.anagrams[anagram].filter(w => !anagrams[anagram].includes(w)));
     }
 
-    return { invalid, valid, total, suffixes, subwords, anagrams: missing };
+    return {
+      invalid, valid, total,
+      suffixes: suffixes.length,
+      subwords: subwords.length,
+      anagrams: missing.length,
+      missing: new Set([...suffixes, ...subwords, ...missing])
+    };
   }
 
   state() {
+    const progress = this.progress();
     const gr = w => Game.grade(w, this.dict, this.settings.dice, this.settings.dict);
-    // grade, length, anagrams, alphabetical
+    // missing, grade, length, anagrams, alphabetical
     const fn = (a, b) => {
+      const ma = progress.missing.has(a);
+      const mb = progress.missing.has(b);
+      if (ma && !mb) return -1;
+      if (mb && !ma) return 1;
+
       const ga = gr(a);
       const gb = gr(b);
       if (ga > gb) return -1;
       if (gb > ga) return 1;
+
       if (a.length > b.length) return 1;
       if (b.length > a.length) return -1;
-      const sa = a.split('').sort().join('');
-      const sb = b.split('').sort().join('');
-      return sa.localeCompare(sb);
+
+      return toAnagram(a).localeCompare(toAnagram(b));
     };
 
     const self = this;
@@ -322,7 +327,6 @@ class Game {
       return {
         word: w, 
         grade: gr(w),
-        root: self.totals.suffixes[w],
         defn: val ? val.defn : '',
       };
     };
@@ -336,8 +340,12 @@ class Game {
         if (this.overtime.has(w)) v.overtime = true;
         return v;
       }),
-      remaining: Object.keys(this.possible).filter(w => !this.played[w]).sort(fn).map(augment),
-      progress: this.progress(),
+      remaining: Object.keys(this.possible).filter(w => !this.played[w]).sort(fn).map(w => {
+        const v = augment(w);
+        if (progress.missing.has(w)) v.missing = true;
+        return v;
+      }),
+      progress,
       totals: this.totals,
     };
   }

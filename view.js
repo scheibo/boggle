@@ -357,7 +357,7 @@ function setup() {
     table.classList.add('results');
     table.classList.add('played');
 
-    for (const {word, grade, overtime, root, defn, invalid} of state.played) {
+    for (const {word, grade, overtime, defn, invalid} of state.played) {
       const tr = document.createElement('tr');
       if (grade < SETTINGS.grade) tr.classList.add('hard');
       if (invalid) tr.classList.add('error');
@@ -365,17 +365,7 @@ function setup() {
 
       let td = document.createElement('td');
       const b = document.createElement('b');
-      if (root) {
-        const rootSpan = document.createElement('span');
-        rootSpan.textContent = root;
-        const suffixSpan = document.createElement('span');
-        suffixSpan.classList.add('suffix');
-        suffixSpan.textContent = word.slice(root.length);
-        b.appendChild(rootSpan);
-        b.appendChild(suffixSpan);
-      } else {
-        b.textContent = word;
-      }
+      b.textContent = word;
       td.appendChild(b);
       tr.appendChild(td);
 
@@ -405,24 +395,15 @@ function setup() {
     table.classList.add('results');
     table.classList.add('possible');
 
-    for (const {word, grade, overtime, root, defn} of state.remaining) {
+    for (const {word, grade, overtime, missing, defn} of state.remaining) {
       const tr = document.createElement('tr');
       if (grade < SETTINGS.grade) tr.classList.add('hard');
       if (overtime) tr.classList.add('overtime');
 
       let td = document.createElement('td');
       const b = document.createElement('b');
-      if (root) {
-        const rootSpan = document.createElement('span');
-        rootSpan.textContent = root;
-        const suffixSpan = document.createElement('span');
-        suffixSpan.classList.add('suffix');
-        suffixSpan.textContent = word.slice(root.length);
-        b.appendChild(rootSpan);
-        b.appendChild(suffixSpan);
-      } else {
-        b.textContent = word;
-      }
+      if (missing) b.classList.add('underline');
+      b.textContent = word;
       td.appendChild(b);
       tr.appendChild(td);
 
@@ -617,6 +598,7 @@ function setup() {
     defn.classList.remove('hidden');
 
     document.getElementById('refresh').classList.remove('hidden');
+    document.getElementById('back').classList.add('hidden');
     document.getElementById('play').classList.add('hidden');
     document.getElementById('score').classList.remove('hidden');
     document.getElementById('timer').style.visibility = 'inherit';
