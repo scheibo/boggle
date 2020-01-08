@@ -224,7 +224,7 @@ class Game {
     // val.csw gets dropped if its the same as val.twl or empty
     const encoded = type === 'CSW' ? (val.csw || val.twl || ' ') : val.twl;
     // duplicate grades get encoded as as a single value
-    if (!encoded || encoded.length === 1) return ' ';
+    if (!encoded || encoded.length === 1) return encoded || ' ';
     const d = dice.charAt(0).toLowerCase();
     const i = d === 'n' ? 0 : d === 'o' ? 1 : 2;
     return encoded.charAt(i);

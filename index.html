@@ -234,7 +234,7 @@
     .toggle {
       text-align: center;
       border: 3px solid black;
-      padding: 8px 8px;
+      padding: 14px 8px;
       position: relative;
       cursor: pointer;
       background: #fff;
@@ -292,7 +292,7 @@
 
     #settings .row {
       text-align: center;
-      padding: 10px;
+      padding: 14px;
     }
 
     /* Pixel = 393 x 714 */
@@ -863,33 +863,69 @@
         }
       });
 
+      function separate(obj, fn) {
+        const grouped = [];
+        const solo = [];
+        for (const [k, group] of Object.entries(obj)) {
+          const gs = group.filter(w => fn(Game.grade(w, DICT, SETTINGS.dice, SETTINGS.dict)));
+
+          if (gs.length > 1) {
+            for (const g of gs) {
+              if (RANDOM.next(0, k.length) < 1) grouped.push(k);
+            }
+          } else {
+            if (RANDOM.next(0, Math.pow(k.length, 2.7)) < k.length) solo.push(k);
+          }
+        }
+        return [grouped, solo];
+      }
+
       function trainingGroups() {
         const less = {};
         const equal = {};
         for (const word in DICT) {
+          if (SETTINGS.dict === 'TWL' && !DICT[word].twl) continue;
           const grade = Game.grade(word, DICT, SETTINGS.dice, SETTINGS.dict);
-          if (grade < SETTINGS.grade) continue;
-
           const anagram = word.split('').sort().join('');
-          const obj = grade === SETTINGS.grade ? equal : less;
+
+          let obj;
+          if (equal[anagram]) {
+            obj = equal;
+          } else if (less[anagram]) {
+            obj = less;
+          } else if (grade < SETTINGS.grade) {
+            continue;
+          } else {
+            obj = grade === SETTINGS.grade ? equal : less;
+          }
+
           obj[anagram] = (obj[anagram] || []);
           obj[anagram].push(word);
         }
 
-        const lessKeys = RANDOM.shuffle(Object.keys(less));
-        const equalKeys = RANDOM.shuffle(Object.keys(equal));
+        const [groupLessKeys, soloLessKeys] = separate(less, g => g > SETTINGS.grade);
+        const [groupEqualKeys, soloEqualKeys] = separate(equal, g => g >= SETTINGS.grade);
 
-        // TODO: add preference for groups of size > 1?
         const groups = [];
+        let lessKeys, equalKeys;
         for (let i = 0; i < 100; i++) {
+          if (RANDOM.next(0, 100) < 90) {
+            lessKeys = groupLessKeys;
+            equalKeys = groupEqualKeys;
+          } else {
+            lessKeys = soloLessKeys;
+            equalKeys = soloEqualKeys;
+          }
+
           let key, group;
-          if (lessKeys.length && RANDOM.next(1, 100) <= 80) {
-            key = lessKeys.pop();
+          if (lessKeys.length && RANDOM.next(0, 100) < 80) {
+            key = RANDOM.sample(lessKeys, true);
             group = less[key];
           } else {
-            key = equalKeys.pop();
+            key = RANDOM.sample(equalKeys, true);
             group = equal[key];
           }
+          if (!key) break; // in case we somehow ran out of words!
 
           // try to find a permutation which isn't in the group
           for (let i = 0; i < 10; i++) {
@@ -935,7 +971,8 @@
           for (const w of group) {
             const word = DICT[w];
             const tr = document.createElement('tr');
-            if (!word.twl) tr.classList.add('csw');
+            const grade = Game.grade(w, DICT, SETTINGS.dice, SETTINGS.dict);
+            if (grade < SETTINGS.grade) tr.classList.add('hard');
 
             let td = document.createElement('td');
             const b = document.createElement('b');

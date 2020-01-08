@@ -134,6 +134,12 @@ async function buildDictionary() {
       .replace(/\s*?\[.*?\]\s*?/g, '');
   }
 
+  // We left around the 2 letter words to be able to follow references
+  // above, but at this point they just confuse things.
+  for (const word in dict) {
+    if (word.length < 3) delete dict[word];
+  }
+
   return dict;
 }
 
