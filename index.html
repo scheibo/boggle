@@ -51,7 +51,7 @@
       text-align: center;
       font-weight: bold;
     }
-    #refresh, #score, #back {
+    #refresh, #score, #back, #practice, #play {
       width: 20%;
     }
     #timer {
@@ -262,11 +262,16 @@
         <div id="back" class="hidden"><img height="20" src="img/back.svg" /></div>
         <div id="timer">3:00</div>
         <div id="score">0</div>
+        <div id="practice" class="hidden"><img height="20" src="img/practice.svg" /></div>
+        <div id="play" class="hidden"><img height="20" src="img/play.svg" /></div>
       </header>
       <div id="content">
       </div>
       <div id="word"></div>
       <div id="defn"></div>
+      <div id="settings" class="hidden">
+        <h1>HELLO SETTINGS</h1>
+      </div>
     </div>
   </div>
   <script type="application/javascript" src="boggle.js"></script>
@@ -373,6 +378,7 @@
       const DICT = await response.json();
 
       const [settings, SEED] = setup();
+      const RANDOM = new Random(SEED); // used by train
       Object.assign(SETTINGS, settings);
       localStorage.setItem('settings', JSON.stringify(SETTINGS));
 
@@ -550,13 +556,31 @@
       });
 
       document.getElementById('refresh').addEventListener('mouseup', () => {
-        STATE = refresh(STATE);
+        if (document.getElementById('wrapper')) {
+          train();
+        } else {
+          STATE = refresh(STATE);
+        }
       });
 
       document.getElementById('refresh').addEventListener('long-press', e => {
-        console.log('REFRESH LONG PRESS'); // FIXME
-        //document.getElementById('menu').classList.toggle('hidden');
-        // TODO: unhide type menu, rehide if click outside of menu area!
+        const wrapper = document.getElementById('wrapper');
+
+        if (wrapper) display.removeChild(wrapper);
+
+        document.getElementById('refresh').classList.add('hidden');
+        document.getElementById('back').classList.remove('hidden');
+
+        document.getElementById('practice').classList.remove('hidden');
+        document.getElementById('play').classList.add('hidden');
+        document.getElementById('score').classList.add('hidden');
+
+        document.getElementById('settings').classList.remove('hidden');
+
+        const board = document.getElementById('board');
+        board.classList.add('hidden');
+        word.classList.add('hidden');
+        defn.classList.add('hidden');
       });
 
       document.getElementById('timer').addEventListener('click', () => {
@@ -724,6 +748,123 @@
         }
       });
 
+      function trainingGroups() {
+        const less = {};
+        const equal = {};
+        for (const word in DICT) {
+          const grade = Game.grade(word, DICT, SETTINGS.dice, SETTINGS.dict);
+          if (grade < SETTINGS.grade) continue;
+
+          const anagram = word.split('').sort().join('');
+          const obj = grade === SETTINGS.grade ? equal : less;
+          obj[anagram] = (obj[anagram] || []);
+          obj[anagram].push(word);
+        }
+
+        const lessKeys = RANDOM.shuffle(Object.keys(less));
+        const equalKeys = RANDOM.shuffle(Object.keys(equal));
+
+        // TODO: add preference for groups of size > 1?
+        const groups = [];
+        for (let i = 0; i < 100; i++) {
+          let key, group;
+          if (lessKeys.length && RANDOM.next(1, 100) <= 80) {
+            key = lessKeys.pop();
+            group = less[key];
+          } else {
+            key = equalKeys.pop();
+            group = equal[key];
+          }
+
+          // try to find a permutation which isn't in the group
+          for (let i = 0; i < 10; i++) {
+            key = RANDOM.shuffle(key.split('')).join('');
+            if (!group.includes(key)) break;
+          }
+
+          groups.push({label: key, group: RANDOM.shuffle(group)});
+        }
+
+        return groups;
+      }
+
+      function train() {
+        let wrapper = document.getElementById('wrapper');
+        const display = document.getElementById('display');
+        const board = document.getElementById('board');
+        if (wrapper) {
+          display.removeChild(wrapper);
+        } else {
+
+          HISTORY.push(STATE.game.toJSON());
+          localStorage.setItem('history', JSON.stringify(HISTORY));
+          STATE.timer.stop();
+          document.getElementById('timer').style.visibility = 'hidden';
+
+          board.classList.add('hidden');
+          word.classList.add('hidden');
+          defn.classList.add('hidden');
+
+          document.getElementById('settings').classList.add('hidden');
+          document.getElementById('refresh').classList.remove('hidden');
+          document.getElementById('back').classList.add('hidden');
+          document.getElementById('play').classList.remove('hidden');
+          document.getElementById('practice').classList.add('hidden');
+        }
+
+        wrapper = document.createElement('div');
+        wrapper.setAttribute('id', 'wrapper');
+        wrapper.classList.add('train');
+
+        for (const {label, group} of trainingGroups()) {
+          const button = makeCollapsible(label, '', 'table');
+          const table = document.createElement('table');
+          table.classList.add('collapsible-content');
+          table.classList.add('results');
+          for (const w of group) {
+            const word = DICT[w];
+            const tr = document.createElement('tr');
+            if (!word.twl) tr.classList.add('csw');
+
+            let td = document.createElement('td');
+            const b = document.createElement('b');
+            b.textContent = w;
+            td.appendChild(b);
+            tr.appendChild(td);
+            td = document.createElement('td');
+            td.textContent = word.defn;
+            tr.appendChild(td);
+
+            table.appendChild(tr);
+          }
+          wrapper.appendChild(button);
+          wrapper.appendChild(table);
+        }
+
+        display.appendChild(wrapper);
+      }
+
+      document.getElementById('practice').addEventListener('click', train);
+
+      document.getElementById('play').addEventListener('click', () => {
+        const display = document.getElementById('display');
+        const board = document.getElementById('board');
+        const wrapper = document.getElementById('wrapper');
+
+        if (wrapper) display.removeChild(wrapper);
+
+        board.classList.remove('hidden');
+        word.classList.remove('hidden');
+        defn.classList.remove('hidden');
+
+        document.getElementById('refresh').classList.remove('hidden');
+        document.getElementById('play').classList.add('hidden');
+        document.getElementById('score').classList.remove('hidden');
+        document.getElementById('timer').style.visibility = 'inherit';
+
+        STATE = refresh(STATE);
+      });
+
       document.getElementById('score').addEventListener('mouseup', () => {
         const wrapper = document.getElementById('wrapper');
         if (!wrapper) {
@@ -737,6 +878,7 @@
 
           const wrapper = document.createElement('div');
           wrapper.setAttribute('id', 'wrapper');
+          wrapper.classList.add('score');
 
           const state = STATE.game.state();
           const score = STATE.game.score.regular + STATE.game.score.overtime;
@@ -792,13 +934,17 @@
         const wrapper = document.getElementById('wrapper');
 
         // TODO FIXME: hide instead of remove to avoid recompute...
-        display.removeChild(wrapper);
+        if (wrapper) display.removeChild(wrapper);
 
         board.classList.remove('hidden');
         word.classList.remove('hidden');
         defn.classList.remove('hidden');
         document.getElementById('refresh').classList.remove('hidden');
+        document.getElementById('score').classList.remove('hidden');
+        document.getElementById('timer').style.visibility = 'inherit';
         document.getElementById('back').classList.add('hidden');
+        document.getElementById('practice').classList.add('hidden');
+        document.getElementById('settings').classList.add('hidden');
       }
 
       // TODO: shouldnt work when in score mode!

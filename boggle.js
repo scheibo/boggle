@@ -220,11 +220,11 @@ class Game {
 
   static grade(word, dict, dice = 'New', type = 'TWL') {
     const val = dict[word];
-    if (!val) return undefined;
+    if (!val) return ' ';
     // val.csw gets dropped if its the same as val.twl or empty
     const encoded = type === 'CSW' ? (val.csw || val.twl || ' ') : val.twl;
     // duplicate grades get encoded as as a single value
-    if (!encoded || encoded.length === 1) return encoded;
+    if (!encoded || encoded.length === 1) return ' ';
     const d = dice.charAt(0).toLowerCase();
     const i = d === 'n' ? 0 : d === 'o' ? 1 : 2;
     return encoded.charAt(i);
@@ -251,7 +251,6 @@ class Game {
       anagrams[anagram] = (anagrams[anagram] || 0) + 1;
 
       const g = Game.grade(word, this.dict, this.settings.dice, this.settings.dict);
-      if (!g) throw new Error(`No grade for ${word} with ${this.settings.dice} dice in ${this.settings.dict}`);
       grades[g] = (grades[g] || 0) + Game.score(word);
     }
 
@@ -308,7 +307,6 @@ class Game {
     const fn = (a, b) => {
       const ga = gr(a);
       const gb = gr(b);
-      // POST: ga and gb can't be undefined!
       if (ga > gb) return -1;
       if (gb > ga) return 1;
       if (a.length > b.length) return 1;
