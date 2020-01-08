@@ -856,7 +856,7 @@
 
       document.getElementById('score').addEventListener('long-press-up', e => {
         for (const td of document.getElementById('board').getElementsByTagName('td')) {
-          td.style.backgroundColor = 'inherit';
+          td.style.removeProperty('background-color');
         }
       });
 
