@@ -71,7 +71,17 @@
       font-weight: bold;
       text-transform: uppercase;
     }
-    #word:focus {
+    #seed {
+      width: 100%;
+      height: 40px;
+      line-height: 40px;
+      vertical-align: middle;
+      text-align: center;
+      font-size: 25px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+    #word:focus, #seed:focus {
       outline: none;
     }
     #defn {
@@ -221,6 +231,70 @@
     .rotate270 { transform: rotate(270deg); }
     .underline { text-decoration: underline; }
 
+    .toggle {
+      text-align: center;
+      border: 3px solid black;
+      padding: 8px 8px;
+      position: relative;
+      cursor: pointer;
+      background: #fff;
+      margin: -1px -3px 0;
+      display: inline-block;
+      width: 5em;
+      border-radius: 8px;
+      width: 4em;
+    }
+
+    .toggle-group label {
+      border-radius: 0;
+    }
+    .toggle-group.horizontal label:first-of-type {
+      border-top-left-radius: 8px;
+      border-bottom-left-radius: 8px;
+    }
+    .toggle-group.horizontal label:last-of-type {
+      border-top-right-radius: 8px;
+      border-bottom-right-radius: 8px;
+    }
+
+    /* Add visual indication when focusing on visually hidden elements */
+    .hide:focus + .toggle,
+    .toggle:hover {
+      z-index: 10;
+      background: #f5f5f5;
+    }
+    .hide:checked + .toggle, button.checked {
+      font-weight: bold;
+      background: #e3e3e3;
+    }
+    .hide[type="radio"]:checked + .toggle {
+      cursor: default;
+    }
+
+    /* Hide element visually, but not from screen readers.
+       See http://adrianroselli.com/2017/05/under-engineered-custom-radio-buttons-and-checkboxen.html */
+    .hide {
+      clip: rect(1px, 1px, 1px, 1px);
+      height: 1px;
+      overflow: hidden;
+      position: absolute;
+      top: auto;
+    }
+
+    .hide:disabled + .toggle {
+      color: #999999;
+    }
+
+    #settings {
+      display: table;
+      margin: 0px auto;
+    }
+
+    #settings .row {
+      text-align: center;
+      padding: 10px;
+    }
+
     /* Pixel = 393 x 714 */
     @media(min-width: 393px) {
       #display {
@@ -270,7 +344,40 @@
       <div id="word"></div>
       <div id="defn"></div>
       <div id="settings" class="hidden">
-        <h1>HELLO SETTINGS</h1>
+        <div class="row">
+          <div id="seed" contenteditable="true"></div> <!-- TODO handle updating the UI if the setting info changes! -->
+        </div>
+        <div class="row">
+          <span id="dice" class="toggle-group horizontal" role="radiogroup">
+            <input class="hide" type="radio" name="dice" value="New" id="diceNew" checked="checked"  /><label class="toggle" for="diceNew">NEW</label>
+            <input class="hide" type="radio" name="dice" value="Old" id="diceOld" /><label class="toggle" for="diceOld">OLD</label>
+            <input class="hide" type="radio" name="dice" value="Big" id="diceBig" /><label class="toggle" for="diceBig">BIG</label>
+          </span>
+        </div>
+        <div class="row">
+          <span id="min" class="toggle-group horizontal" role="radiogroup">
+            <input class="hide" type="radio" name="min" value="3" id="min3" checked="checked" /><label class="toggle" for="min3">3</label>
+            <input class="hide" type="radio" name="min" value="4" id="min4" /><label class="toggle" for="min4">4</label>
+            <input class="hide" type="radio" name="min" value="5" id="min5" /><label class="toggle" for="min5">5</label>
+          </span>
+        </div>
+        <div class="row">
+          <span id="dict" class="toggle-group horizontal" role="radiogroup">
+            <input class="hide" type="radio" name="dict" value="TWL" id="dictTWL" checked="checked" /><label class="toggle" for="dictTWL">TWL</label>
+            <input class="hide" type="radio" name="dict" value="CSW" id="dictCSW" /><label class="toggle" for="dictCSW">CSW</label>
+          </span>
+        </div>
+         <div class="row">
+          <span id="grade" class="toggle-group horizontal" role="radiogroup">
+            <input class="hide" type="radio" name="grade" value="A" id="gradeA" /><label class="toggle" for="gradeA">A</label>
+            <input class="hide" type="radio" name="grade" value="B" id="gradeB" /><label class="toggle" for="gradeB">B</label>
+            <input class="hide" type="radio" name="grade" value="C" id="gradeC" checked="checked" /><label class="toggle" for="gradeC">C</label>
+            <input class="hide" type="radio" name="grade" value="D" id="gradeD" /><label class="toggle" for="gradeD">D</label>
+          </span>
+        </div>
+        <div class="row">
+          <input type="checkbox" id="blind" /><b>HIDE</b><!-- TODO make visually like radio toggle! -->
+        </div>
       </div>
     </div>
   </div>
@@ -579,6 +686,8 @@
         document.getElementById('score').classList.add('hidden');
 
         document.getElementById('settings').classList.remove('hidden');
+
+        document.getElementById('seed').textContent = STATE.game.id;
 
         const board = document.getElementById('board');
         board.classList.add('hidden');
@@ -946,7 +1055,7 @@
         document.getElementById('settings').classList.add('hidden');
       }
 
-      // TODO: shouldnt work when in score mode!
+      // TODO: shouldnt work when in score mode or settings!
       document.addEventListener('keydown', e => {
         if (kept) clearWord();
         word.focus(); // TODO: fix cursor locaton
