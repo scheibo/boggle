@@ -8,7 +8,11 @@ if ('serviceWorker' in navigator) {
 
 const HISTORY = JSON.parse(localStorage.getItem('history')) || [];
 const SETTINGS = JSON.parse(localStorage.getItem('settings')) || {dice: 'New', dict: 'TWL', grade: 'C'};
+
 var STATE = null;
+var RANDOM = null;
+var TRAINING = null;
+var DICT = null;
 
 class Timer {
   constructor(duration) {
@@ -115,7 +119,7 @@ function separate(obj, fn) {
       for (const g of gs) {
         grouped.push(k);
       }
-    } else if (k.length <= 7) {
+    } else {
       solo.push(k);
     }
   }
@@ -126,8 +130,9 @@ function createTrainingPools() {
   const less = {};
   const equal = {};
   for (const word in DICT) {
-    // TODO: consider checking word.length > 7 here instead?
+    if (word.length > 7) continue;
     if (SETTINGS.dict === 'TWL' && !DICT[word].twl) continue;
+
     const grade = Game.grade(word, DICT, SETTINGS.dice, SETTINGS.dict);
     const anagram = word.split('').sort().join('');
 
@@ -157,19 +162,19 @@ function createTrainingPools() {
       equal: sequal.grouped,
     },
     solo: {
-      less: sless.grouped,
-      equal: sequal.less,
+      less: sless.solo,
+      equal: sequal.solo,
     }
   }
 }
 
-function foo() {
+function getTrainingGroups(training) {
   const groups = [];
   for (let i = 0; i < 100; i++) {
     const type = RANDOM.next(0, 100) < 90 ? 'group' : 'solo';
     const level = RANDOM.next(0, 100) < 80 ? 'equal' : 'less';
 
-    const key = TRAINING[type][level].choose();
+    let key = TRAINING[type][level].choose();
     const group = TRAINING[level][key];
 
     // try to find a permutation which isn't in the group
@@ -182,6 +187,13 @@ function foo() {
   }
 
   return groups;
+}
+
+function updateSettings(settings) {
+  Object.assign(SETTINGS, settings);
+  localStorage.setItem('settings', JSON.stringify(SETTINGS));
+
+  TRAINING = createTrainingPools();
 }
 
 function setup() {
@@ -206,17 +218,16 @@ function setup() {
   setTimeout(() => window.scrollTo(0, 1), 0);
 
   const response = await fetch('data/dict.json', {mode: 'no-cors'});
-  const DICT = await response.json();
+  DICT = await response.json();
 
   const [settings, SEED] = setup();
-  const RANDOM = new Random(SEED); // used by train
-  Object.assign(SETTINGS, settings);
-  localStorage.setItem('settings', JSON.stringify(SETTINGS));
+  RANDOM = new Random(SEED);
+  updateSettings(settings);
+
+  const TRIE = new Trie(DICT);
 
   document.getElementById('display').removeChild(document.getElementById('loader'));
   document.getElementById('game').classList.remove('hidden');
-
-  const TRIE = new Trie(DICT);
 
   STATE = refresh();
 
@@ -377,12 +388,7 @@ function setup() {
   window.addEventListener('hashchange', e => {
     if (!document.location.hash) return; // is just a reload...
     const [settings, seed] = Game.decodeID(document.location.hash.slice(1));
-
-    if (!isNaN(seed)) {
-      Object.assign(SETTINGS, settings);
-      localStorage.setItem('settings', JSON.stringify(SETTINGS));
-    }
-
+    if (!isNaN(seed)) updateSettings(settings);
     STATE = refresh(STATE, settings, seed);
   });
 
@@ -589,7 +595,7 @@ function setup() {
     wrapper.setAttribute('id', 'wrapper');
     wrapper.classList.add('train');
 
-    for (const {label, group} of trainingGroups()) {
+    for (const {label, group} of getTrainingGroups()) {
       const button = makeCollapsible(label, '', 'table');
       const table = document.createElement('table');
       table.classList.add('collapsible-content');
