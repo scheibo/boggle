@@ -412,21 +412,38 @@ function setup() {
     }
   });
 
+  function updateVisibility(opts) {
+    if (opts.show) {
+      for (const id of opts.show) {
+        const e = document.getElementById(id);
+        if (id === 'timer') {
+          e.style.visibility = 'inherit';
+        } else {
+          e.classList.remove('hidden');
+        }
+      }
+    }
+    if (opts.hide) {
+      for (const id of opts.hide) {
+        const e = document.getElementById(id);
+        if (id === 'timer') {
+          e.style.visibility = 'hidden';
+        } else {
+          e.classList.add('hidden');
+        }
+      }
+    }
+  }
+
   document.getElementById('refresh').addEventListener('long-press', e => {
     const wrapper = document.getElementById('wrapper');
 
     if (wrapper) display.removeChild(wrapper);
 
-    document.getElementById('refresh').classList.add('hidden');
-    document.getElementById('back').classList.remove('hidden');
-
-    document.getElementById('timer').style.visibility = 'inherit';
-
-    document.getElementById('practice').classList.remove('hidden');
-    document.getElementById('play').classList.add('hidden');
-    document.getElementById('score').classList.add('hidden');
-
-    document.getElementById('settings').classList.remove('hidden');
+    updateVisibility({
+      show: ['back', 'timer', 'practice', 'settings'],
+      hide: ['refresh', 'play', 'score']
+    });
 
     document.getElementById('seed').textContent = STATE.game.id;
 
@@ -605,11 +622,7 @@ function setup() {
       word.classList.add('hidden');
       defn.classList.add('hidden');
 
-      document.getElementById('settings').classList.add('hidden');
-      document.getElementById('refresh').classList.remove('hidden');
-      document.getElementById('back').classList.add('hidden');
-      document.getElementById('play').classList.remove('hidden');
-      document.getElementById('practice').classList.add('hidden');
+      updateVisibility({show: ['refresh', 'play'], hide: ['settings', 'back', 'practice']});
     }
 
     wrapper = document.createElement('div');
@@ -658,11 +671,7 @@ function setup() {
     word.classList.remove('hidden');
     defn.classList.remove('hidden');
 
-    document.getElementById('refresh').classList.remove('hidden');
-    document.getElementById('back').classList.add('hidden');
-    document.getElementById('play').classList.add('hidden');
-    document.getElementById('score').classList.remove('hidden');
-    document.getElementById('timer').style.visibility = 'inherit';
+    updateVisibility({show: ['refresh', 'score', 'timer'], hide: ['back', 'play']});
 
     STATE = refresh(STATE);
   });
@@ -675,8 +684,8 @@ function setup() {
       board.classList.add('hidden');
       word.classList.add('hidden');
       defn.classList.add('hidden');
-      document.getElementById('refresh').classList.add('hidden');
-      document.getElementById('back').classList.remove('hidden');
+
+      updateVisibility({show: ['back'], hide: ['refresh']});
 
       const wrapper = document.createElement('div');
       wrapper.setAttribute('id', 'wrapper');
@@ -741,12 +750,8 @@ function setup() {
     board.classList.remove('hidden');
     word.classList.remove('hidden');
     defn.classList.remove('hidden');
-    document.getElementById('refresh').classList.remove('hidden');
-    document.getElementById('score').classList.remove('hidden');
-    document.getElementById('timer').style.visibility = 'inherit';
-    document.getElementById('back').classList.add('hidden');
-    document.getElementById('practice').classList.add('hidden');
-    document.getElementById('settings').classList.add('hidden');
+
+    updateVisibility({show: ['refresh', 'score', 'timer'], hide: ['back', 'practice', 'settings']});
   }
 
   // TODO: shouldnt work when in score mode or settings!
