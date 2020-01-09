@@ -74,6 +74,116 @@ class Timer {
   }
 }
 
+class Pool {
+  constructor(possible) {
+    this.possible = possible;
+    this.unused = new Set();
+  }
+
+  reset() {
+    this.unused = new Set(RANDOM.shuffle(this.possible));
+    this.iter = this.unused.values();
+  }
+
+  next(num) {
+    if (!num) return this.choose();
+    const chosen = [];
+    for (let i = 0; i < num; i++) {
+      chosen.push(this.choose());
+    }
+    return chosen;
+  }
+
+  choose() {
+    if (!this.unused.size) this.reset();
+
+    // NOTE: this.unused.size <-> !this.iter.done
+    const next = this.iter.next();
+    this.unused.delete(next.value);
+
+    return next.value;
+  }
+}
+
+function separate(obj, fn) {
+  const grouped = [];
+  const solo = [];
+  for (const [k, group] of Object.entries(obj)) {
+    // Only members of the group that are of the correct grade count
+    const gs = group.filter(w => fn(Game.grade(w, DICT, SETTINGS.dice, SETTINGS.dict)));
+    if (gs.length > 1) {
+      for (const g of gs) {
+        grouped.push(k);
+      }
+    } else if (k.length <= 7) {
+      solo.push(k);
+    }
+  }
+  return {grouped: new Pool(grouped), solo: new Pool(solo)};
+}
+
+function createTrainingPools() {
+  const less = {};
+  const equal = {};
+  for (const word in DICT) {
+    // TODO: consider checking word.length > 7 here instead?
+    if (SETTINGS.dict === 'TWL' && !DICT[word].twl) continue;
+    const grade = Game.grade(word, DICT, SETTINGS.dice, SETTINGS.dict);
+    const anagram = word.split('').sort().join('');
+
+    let obj;
+    if (equal[anagram]) {
+      obj = equal;
+    } else if (less[anagram]) {
+      obj = less;
+    } else if (grade < SETTINGS.grade) {
+      continue;
+    } else {
+      obj = grade === SETTINGS.grade ? equal : less;
+    }
+
+    obj[anagram] = (obj[anagram] || []);
+    obj[anagram].push(word);
+  }
+
+  const sless = separate(less, g => g > SETTINGS.grade);
+  const sequal = separate(equal, g => g >= SETTINGS.grade);
+
+  return {
+    less,
+    equal,
+    group: {
+      less: sless.grouped,
+      equal: sequal.grouped,
+    },
+    solo: {
+      less: sless.grouped,
+      equal: sequal.less,
+    }
+  }
+}
+
+function foo() {
+  const groups = [];
+  for (let i = 0; i < 100; i++) {
+    const type = RANDOM.next(0, 100) < 90 ? 'group' : 'solo';
+    const level = RANDOM.next(0, 100) < 80 ? 'equal' : 'less';
+
+    const key = TRAINING[type][level].choose();
+    const group = TRAINING[level][key];
+
+    // try to find a permutation which isn't in the group
+    for (let i = 0; i < 10; i++) {
+      key = RANDOM.shuffle(key.split('')).join('');
+      if (!group.includes(key)) break;
+    }
+
+    groups.push({label: key, group: RANDOM.shuffle(group)});
+  }
+
+  return groups;
+}
+
 function setup() {
   if (document.location.hash && document.location.hash.length > 1) {
     const [settings, seed] = Game.decodeID(document.location.hash.slice(1));
@@ -454,82 +564,6 @@ function setup() {
       td.style.removeProperty('background-color');
     }
   });
-
-  function separate(obj, fn) {
-    const grouped = [];
-    const solo = [];
-    for (const [k, group] of Object.entries(obj)) {
-      const gs = group.filter(w => fn(Game.grade(w, DICT, SETTINGS.dice, SETTINGS.dict)));
-
-      if (gs.length > 1) {
-        for (const g of gs) {
-          if (RANDOM.next(0, k.length) < 1) grouped.push(k);
-        }
-      } else {
-        if (RANDOM.next(0, Math.pow(k.length, 2.7)) < k.length) solo.push(k);
-      }
-    }
-    return [grouped, solo];
-  }
-
-  function trainingGroups() {
-    const less = {};
-    const equal = {};
-    for (const word in DICT) {
-      if (SETTINGS.dict === 'TWL' && !DICT[word].twl) continue;
-      const grade = Game.grade(word, DICT, SETTINGS.dice, SETTINGS.dict);
-      const anagram = word.split('').sort().join('');
-
-      let obj;
-      if (equal[anagram]) {
-        obj = equal;
-      } else if (less[anagram]) {
-        obj = less;
-      } else if (grade < SETTINGS.grade) {
-        continue;
-      } else {
-        obj = grade === SETTINGS.grade ? equal : less;
-      }
-
-      obj[anagram] = (obj[anagram] || []);
-      obj[anagram].push(word);
-    }
-
-    const [groupLessKeys, soloLessKeys] = separate(less, g => g > SETTINGS.grade);
-    const [groupEqualKeys, soloEqualKeys] = separate(equal, g => g >= SETTINGS.grade);
-
-    const groups = [];
-    let lessKeys, equalKeys;
-    for (let i = 0; i < 100; i++) {
-      if (RANDOM.next(0, 100) < 90) {
-        lessKeys = groupLessKeys;
-        equalKeys = groupEqualKeys;
-      } else {
-        lessKeys = soloLessKeys;
-        equalKeys = soloEqualKeys;
-      }
-
-      let key, group;
-      if (lessKeys.length && RANDOM.next(0, 100) < 80) {
-        key = RANDOM.sample(lessKeys, true);
-        group = less[key];
-      } else {
-        key = RANDOM.sample(equalKeys, true);
-        group = equal[key];
-      }
-      if (!key) break; // in case we somehow ran out of words!
-
-      // try to find a permutation which isn't in the group
-      for (let i = 0; i < 10; i++) {
-        key = RANDOM.shuffle(key.split('')).join('');
-        if (!group.includes(key)) break;
-      }
-
-      groups.push({label: key, group: RANDOM.shuffle(group)});
-    }
-
-    return groups;
-  }
 
   function train() {
     let wrapper = document.getElementById('wrapper');
