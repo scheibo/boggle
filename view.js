@@ -13,6 +13,7 @@ var STATE = null;
 var RANDOM = null;
 var TRAINING = null;
 var DICT = null;
+var ORIGINAL_SETTINGS = Object.assign({}, SETTINGS);
 
 class Timer {
   constructor(duration) {
@@ -189,13 +190,6 @@ function getTrainingGroups(training) {
   return groups;
 }
 
-function updateSettings(settings) {
-  Object.assign(SETTINGS, settings);
-  localStorage.setItem('settings', JSON.stringify(SETTINGS));
-
-  TRAINING = createTrainingPools();
-}
-
 function setup() {
   if (document.location.hash && document.location.hash.length > 1) {
     const [settings, seed] = Game.decodeID(document.location.hash.slice(1));
@@ -259,8 +253,13 @@ function setup() {
   }
 
   function refresh(state, settings, seed) {
+    if (!settingsEqual(ORIGINAL_SETTINGS, SETTINGS)) {
+      TRAINING = createTrainingPools();
+      ORIGINAL_SETTINGS = SETTINGS;
+    }
+
     let random;
-    if (state) {
+    if (state) { // TODO why not just STATE?
       HISTORY.push(state.game.toJSON());
       localStorage.setItem('history', JSON.stringify(HISTORY));
       state.timer.stop();
@@ -344,6 +343,11 @@ function setup() {
     document.getElementById('score').textContent = game.settings.blind ? '?' : '0';
 
     // Cleanup
+    updateVisibility({
+      show: ['refresh', 'score', 'timer'],
+      hide: ['back', 'practice', 'settings']
+    });
+
     const wrapper = document.getElementById('wrapper');
     if (wrapper) document.getElementById('display').removeChild(wrapper);
 
@@ -403,14 +407,16 @@ function setup() {
     STATE = refresh(STATE, settings, seed);
   });
 
-  document.getElementById('refresh').addEventListener('mouseup', () => {
+  function refreshClick() {
     if (document.getElementById('wrapper')) {
       train();
     } else {
       document.getElementById('timer').style.visibility = 'inherit';
       STATE = refresh(STATE);
     }
-  });
+  }
+
+  document.getElementById('refresh').addEventListener('mouseup', refreshClick);
 
   function updateVisibility(opts) {
     if (opts.show) {
@@ -434,24 +440,6 @@ function setup() {
       }
     }
   }
-
-  document.getElementById('refresh').addEventListener('long-press', e => {
-    const wrapper = document.getElementById('wrapper');
-
-    if (wrapper) display.removeChild(wrapper);
-
-    updateVisibility({
-      show: ['back', 'timer', 'practice', 'settings'],
-      hide: ['refresh', 'play', 'score']
-    });
-
-    document.getElementById('seed').textContent = STATE.game.id;
-
-    const board = document.getElementById('board');
-    board.classList.add('hidden');
-    word.classList.add('hidden');
-    defn.classList.add('hidden');
-  });
 
   document.getElementById('timer').addEventListener('click', () => {
     STATE.timer.pause();
@@ -610,6 +598,11 @@ function setup() {
   });
 
   function train() {
+    if (!settingsEqual(ORIGINAL_SETTINGS, SETTINGS)) {
+      TRAINING = createTrainingPools();
+      ORIGINAL_SETTINGS = SETTINGS;
+    }
+
     let wrapper = document.getElementById('wrapper');
     const display = document.getElementById('display');
     const board = document.getElementById('board');
@@ -740,6 +733,11 @@ function setup() {
   document.getElementById('back').addEventListener('click', backToGame);
 
   function backToGame() {
+    if (!settingsEqual(ORIGINAL_SETTINGS, SETTINGS)) {
+      TRAINING = createTrainingPools();
+      ORIGINAL_SETTINGS = SETTINGS;
+    }
+
     const display = document.getElementById('display');
     const board = document.getElementById('board');
     const wrapper = document.getElementById('wrapper');
@@ -767,4 +765,98 @@ function setup() {
       e.preventDefault();
     }
   });
+
+  // Settings
+
+  document.getElementById('refresh').addEventListener('long-press', e => {
+    if (!document.getElementById('settings').contains('hidden')) {
+      refreshClick();
+      return;
+    }
+
+    const wrapper = document.getElementById('wrapper');
+    if (wrapper) display.removeChild(wrapper);
+
+    const board = document.getElementById('board');
+    board.classList.add('hidden');
+    word.classList.add('hidden');
+    defn.classList.add('hidden');
+
+    updateVisibility({
+      show: ['back', 'timer', 'practice', 'settings'],
+      hide: ['refresh', 'play', 'score']
+    });
+
+    // TODO: also need to handle seed!
+    ORIGINAL_SETTINGS = Object.assign({}, SETTINGS);
+
+    updateDOMSettings();
+  });
+
+  document.getElementById('blind').addEventListener('click', e => {
+    console.log('BLIND', document.getElementById('blind').checked);
+  });
+  for (const radio of document.querySelectorAll('input[name=dice]')) {
+    radio.addEventListener('click', e => {
+      if (radio.value === 'Big') {
+        document.getElementById('min4').checked = true;
+      } else {
+        document.getElementById('min3').checked = true;
+      }
+      updateSetting({dice: radio.value, min: radio.value === 'Big' ? 4 : 3});
+    });
+  }
+  for (const radio of document.querySelectorAll('input[name=min]')) {
+    radio.addEventListener('click', () => updateSetting({min: Number(radio.value)}));
+  }
+  for (const radio of document.querySelectorAll('input[name=dict]')) {
+    radio.addEventListener('click', () => updateSetting({dict: radio.value}));
+  }
+  for (const radio of document.querySelectorAll('input[name=grade]')) {
+    radio.addEventListener('click', () => updateSetting({grade: radio.value}));
+  }
+
+  function updateDOMSettings() {
+    document.getElementById('seed').textContent = STATE.game.id;
+    document.getElementById(`dice${SETTINGS.dice}`).checked = true;
+    document.getElementById(`min${SETTINGS.min}`).checked = true;
+    document.getElementById(`dict${SETTINGS.dict}`).checked = true;
+    document.getElementById(`grade${SETTINGS.grade}`).checked = true;
+    document.getElementById('blind').checked = !!SETTINGS.blind;
+  }
+
+  function settingsEqual(a, b) {
+    return a.dice === b.dice &&
+      a.min === b.min &&
+      a.dict === b.dict &&
+      // TODO: technically these two shouldn't require a refresh
+      a.grade === b.grade &&
+      a.blind === b.blind;
+  }
+
+  function updateSetting(setting) {
+    console.log('UPDATE SETTING', setting); // TODO DEBUG
+
+    // TODO: update seed and update field based on setting and vice versa
+    // TODO: also update hash, but avoid the auto refresh!
+
+    Object.assign(SETTINGS, setting);
+    localStorage.setItem('settings', JSON.stringify(SETTINGS));
+    // Updating training pools is expensive, so we only do it if changed.
+
+    if (settingsEqual(ORIGINAL_SETTINGS, SETTINGS)) {
+      document.getElementById('refresh').classList.add('hidden');
+      document.getElementById('back').classList.remove('hidden');
+    } else {
+      document.getElementById('back').classList.add('hidden');
+      document.getElementById('refresh').classList.remove('hidden');
+    }
+  }
+
+  function updateSettings(settings) {
+    Object.assign(SETTINGS, settings);
+    localStorage.setItem('settings', JSON.stringify(SETTINGS));
+
+    TRAINING = createTrainingPools();
+  }
 })();
