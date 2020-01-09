@@ -260,7 +260,7 @@ class Game {
     let total = 0;
     let invalid = 0;
     let valid = 0;
-    let suffixes = [];
+    let suffixes = {};
     let subwords = [];
 
     const anagrams = {};
@@ -273,8 +273,15 @@ class Game {
       valid++;
 
       for (const suffix of SUFFIXES) {
-        const suffixed = `${word}${suffix}`;
-        if (this.possible[suffixed] && !this.played[suffixed]) suffixes.push(suffixed);
+        let suffixed;
+        if (['ER', 'ED'].includes(suffix) && word.endsWith('E')) {
+          suffixed = `${word}${suffix.charAt(1)}`;
+        } else if (suffix === 'S' && (word.endsWith('S') || word.endsWith('X'))) {
+          suffixed = `${word}ES`;
+        } else {
+          suffixed = `${word}${suffix}`;
+        }
+        if (this.possible[suffixed] && !this.played[suffixed]) suffixes[suffixed] = word;
       }
 
       const anagram = toAnagram(word);
@@ -291,12 +298,13 @@ class Game {
       missing = missing.concat(this.totals.anagrams[anagram].filter(w => !anagrams[anagram].includes(w)));
     }
 
+    const words = new Set([...Object.keys(suffixes), ...subwords, ...missing]);
+    const score = this.score.regular + this.score.overtime + Array.from(words).reduce((sum, w) => Game.score(w) + sum, 0);
     return {
-      invalid, valid, total,
-      suffixes: suffixes.length,
+      invalid, valid, total, score, suffixes,
       subwords: subwords.length,
       anagrams: missing.length,
-      missing: new Set([...suffixes, ...subwords, ...missing])
+      missing: words,
     };
   }
 
@@ -332,7 +340,6 @@ class Game {
     };
 
     return {
-      type: this.type,
       played: Array.from(Object.entries(this.played)).sort((a, b) => Math.abs(a[1]) - Math.abs(b[1])).map(e => {
         const w = e[0];
         const v = augment(w);
@@ -343,6 +350,7 @@ class Game {
       remaining: Object.keys(this.possible).filter(w => !this.played[w]).sort(fn).map(w => {
         const v = augment(w);
         if (progress.missing.has(w)) v.missing = true;
+        if (progress.suffixes[w]) v.root = progress.suffixes[w];
         return v;
       }),
       progress,

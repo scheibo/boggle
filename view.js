@@ -307,17 +307,8 @@ function setup() {
         td.classList.remove('selected');
       }
     };
-    table.addEventListener('touchstart', () => {
-      clearWord();
-      deselect();
-      touched = new Set();
-      lastTouched = null;
-    });
-    table.addEventListener('touchend', () => {
-      deselect();
-      play(STATE, word);
-    });
-    table.addEventListener('touchmove', e => {
+
+    const registerTouch = e => {
       const touch = e.touches[0];
       const cell = document.elementFromPoint(touch.clientX, touch.clientY);
       if (cell && cell.matches('.target')) {
@@ -334,7 +325,20 @@ function setup() {
           word.textContent += td.textContent;
         }
       }
+    };
+    table.addEventListener('touchstart', e => {
+      clearWord();
+      deselect();
+      touched = new Set();
+      lastTouched = null;
+
+      registerTouch(e);
     });
+    table.addEventListener('touchend', () => {
+      deselect();
+      play(STATE, word);
+    });
+    table.addEventListener('touchmove', registerTouch);
 
     content.appendChild(table);
     document.getElementById('score').textContent = game.settings.blind ? '?' : '0';
@@ -365,9 +369,16 @@ function setup() {
     return score.overtime ? `${score.regular} / ${score.overtime}` : `${score.regular}`;
   }
 
+  var LAST = '';
   function play(state, word) {
-    const w = word.textContent.toUpperCase();
+    let w = word.textContent.toUpperCase();
+    if (SUFFIXES.includes(w)) {
+      w = `${LAST}${w}`;
+      word.textContent = w;
+    }
     const score = state.game.play(w);
+    LAST = w;
+
     const display = !state.game.settings.blind && score;
     kept = true;
     if (display) {
@@ -464,7 +475,7 @@ function setup() {
 
   function displayPlayed(state, div, expanded) {
     const p = state.progress;
-    const details = `${p.suffixes}/${p.subwords}/${p.anagrams}/${p.invalid} (${p.total})`;
+    const details = `(${p.invalid}/${p.total}) ${Object.keys(p.suffixes).length}/${p.subwords}/${p.anagrams} (${p.score})`;
 
     const button = makeCollapsible('PLAYED', details, 'table');
 
@@ -511,15 +522,25 @@ function setup() {
     table.classList.add('results');
     table.classList.add('possible');
 
-    for (const {word, grade, overtime, missing, defn} of state.remaining) {
+    for (const {word, grade, overtime, root, missing, defn} of state.remaining) {
       const tr = document.createElement('tr');
       if (grade < SETTINGS.grade) tr.classList.add('hard');
       if (overtime) tr.classList.add('overtime');
 
       let td = document.createElement('td');
       const b = document.createElement('b');
-      if (missing) b.classList.add('underline');
-      b.textContent = word;
+      if (root) {
+        const rootSpan = document.createElement('span');
+        rootSpan.textContent = root;
+        const suffixSpan = document.createElement('span');
+        suffixSpan.classList.add('underline');
+        suffixSpan.textContent = word.slice(root.length);
+        b.appendChild(rootSpan);
+        b.appendChild(suffixSpan);
+      } else {
+        if (missing) b.classList.add('underline');
+        b.textContent = word;
+      }
       td.appendChild(b);
       tr.appendChild(td);
 
