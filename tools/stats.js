@@ -92,11 +92,11 @@ function stats(dice, dict, data) {
   const pct = v => Number((v * 100 / data.total).toFixed(2));
   // TODO: note anagrams are not cumulative...
   console.log(dice, dict, {
-    D: [dc, pct(ds), grades.D.anagrams],
-    C: [cc, pct(cs), grades.C.anagrams],
-    B: [bc, pct(bs), grades.B.anagrams],
-    A: [ac, pct(as), grades.A.anagrams],
-    S: [sc, pct(ss), grades[' '].anagrams],
+    D: [dc, pct(ds), /*grades.D.anagrams*/],
+    C: [cc, pct(cs), /*grades.C.anagrams*/],
+    B: [bc, pct(bs), /*grades.B.anagrams*/],
+    A: [ac, pct(as), /*grades.A.anagrams*/],
+    S: [sc, pct(ss), /*grades[' '].anagrams*/],
   });
 }
 
