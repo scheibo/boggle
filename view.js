@@ -377,7 +377,7 @@ function setup() {
   var LAST = '';
   function play(word) {
     let w = word.textContent.toUpperCase();
-    if (w.length < SETTINGS.min || SUFFIXES.includes(w)) {
+    if (w.length < 3 || SUFFIXES.includes(w)) {
       w = `${LAST}${w}`;
       word.textContent = w;
     }
