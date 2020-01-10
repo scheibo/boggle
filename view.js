@@ -112,66 +112,66 @@ class Pool {
   }
 }
 
-function separate(obj, fn) {
-  const grouped = [];
-  const solo = [];
-  for (const [k, group] of Object.entries(obj)) {
-    // Only members of the group that are of the correct grade count
-    const gs = group.filter(w => fn(Game.grade(w, DICT, SETTINGS.dice, SETTINGS.dict)));
-    if (gs.length > 1) {
-      for (const g of gs) {
-        grouped.push(k);
-      }
-    } else {
-      solo.push(k);
-    }
-  }
-  return {grouped: new Pool(grouped), solo: new Pool(solo)};
-}
-
 function createTrainingPools() {
-  const less = {};
-  const equal = {};
+  const anagrams = {};
   for (const word in DICT) {
     if (word.length > 7) continue;
     if (SETTINGS.dict === 'TWL' && !DICT[word].twl) continue;
 
-    const grade = Game.grade(word, DICT, SETTINGS.dice, SETTINGS.dict);
     const anagram = word.split('').sort().join('');
-
-    let obj;
-    if (equal[anagram]) {
-      obj = equal;
-    } else if (less[anagram]) {
-      obj = less;
-    } else if (grade < SETTINGS.grade) {
-      continue;
-    } else {
-      obj = grade === SETTINGS.grade ? equal : less;
-    }
-
-    obj[anagram] = (obj[anagram] || []);
-    obj[anagram].push(word);
+    anagrams[anagram] = (anagrams[anagram] || []);
+    anagrams[anagram].push(word);
   }
 
-  const sless = separate(less, g => g > SETTINGS.grade);
-  const sequal = separate(equal, g => g >= SETTINGS.grade);
+  const s = {
+    less: {},
+    equal: {},
+    group: { less: [], equal: [], },
+    solo: { less: [], equal: [] },
+  };
+
+  const gr = w => Game.grade(w, DICT, SETTINGS.dice, SETTINGS.dict);
+
+  for (const [k, group] of Object.entries(anagrams)) {
+    // Determine the lowest grade of the group
+    let grade = ' ';
+    for (const w of group) {
+      const g = gr(w);
+      if (g > grade) grade = g;
+    }
+
+    // If the grade is too high = move on; otherwise figure out where to sort
+    if (grade < SETTINGS.grade) continue;
+    const type = group > SETTINGS.grade ? 'less' : 'equal';
+    s[type][k] = group;
+
+    // Only members of the group that are of the correct grade count
+    const fn = type === 'equal' ? g => g === SETTINGS.grade : g => g > SETTINGS.grade;
+    const gs = group.filter(w => fn(Game.grade(w, DICT, SETTINGS.dice, SETTINGS.dict)));
+    if (gs.length > 1) {
+      for (const g of gs) {
+        s.group[type].push(k);
+      }
+    } else {
+      s.solo[type].push(k);
+    }
+  }
 
   return {
-    less,
-    equal,
+    less: s.less,
+    equal: s.equal,
     group: {
-      less: sless.grouped,
-      equal: sequal.grouped,
+      less: new Pool(s.group.less),
+      equal: new Pool(s.group.equal),
     },
     solo: {
-      less: sless.solo,
-      equal: sequal.solo,
+      less: new Pool(s.solo.less),
+      equal: new Pool(s.equal.less),
     }
   }
 }
 
-function getTrainingGroups(training) {
+function getTrainingGroups() {
   const groups = [];
   for (let i = 0; i < 100; i++) {
     const type = RANDOM.next(0, 100) < 90 ? 'group' : 'solo';
