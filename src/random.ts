@@ -1,6 +1,6 @@
-'use strict';
+export class Random {
+  /* private */ seed: number;
 
-class Random {
   constructor(n = 4 /* https://xkcd.com/221/ */) {
     // Hash: https://burtleburtle.net/bob/hash/integer.html
     // n = n ^ 61 ^ (n >>> 16);
@@ -12,7 +12,7 @@ class Random {
   }
 
   // Mulberry32: https://gist.github.com/tommyettinger/46a874533244883189143505d203312c
-  next(min, max) {
+  next(min?: number, max?: number) {
     if (min) min = Math.floor(min);
     if (max) max = Math.floor(max);
 
@@ -27,7 +27,7 @@ class Random {
     return Math.floor(n * (max - min)) + min;
   }
 
-  shuffle(arr) {
+  shuffle<T>(arr: T[]) {
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(this.next() * (i + 1));
       [arr[i], arr[j]] = [arr[j], arr[i]];
@@ -35,7 +35,7 @@ class Random {
     return arr;
   }
 
-  sample(arr, remove = false) {
+  sample<T>(arr: T[], remove = false) {
     if (arr.length === 0) throw new RangeError('Cannot sample an empty array');
     const index = this.next(arr.length);
     const val = arr[index];
@@ -49,5 +49,3 @@ class Random {
     return val;
   }
 }
-
-

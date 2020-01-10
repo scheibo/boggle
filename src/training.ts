@@ -1,25 +1,43 @@
-'use strict';
+import { Dictionary } from './dict';
+import { Random } from './random';
+import { Settings } from './settings_';
 
 class TrainingPool {
-  constructor(dict, random, settings) {
-    const anagrams = {};
+  private readonly random: Random;
+  private readonly data: {
+    less: { [anagram: string]: string[] };
+    equal: { [anagram: string]: string[] };
+    group: { less: Pool; equal: Pool };
+    solo: { less: Pool; equal: Pool };
+  };
+
+  constructor(dict: Dictionary, random: Random, settings: Settings) {
+    const anagrams: { [anagram: string]: string[] } = {};
     for (const word in dict) {
       if (word.length > 7) continue;
       if (settings.dict === 'TWL' && !dict[word].twl) continue;
 
-      const anagram = word.split('').sort().join('');
-      anagrams[anagram] = (anagrams[anagram] || []);
+      const anagram = word
+        .split('')
+        .sort()
+        .join('');
+      anagrams[anagram] = anagrams[anagram] || [];
       anagrams[anagram].push(word);
     }
 
-    const s = {
+    const s: {
+      less: { [anagram: string]: string[] };
+      equal: { [anagram: string]: string[] };
+      group: { less: string[]; equal: string[] };
+      solo: { less: string[]; equal: string[] };
+    } = {
       less: {},
       equal: {},
-      group: { less: [], equal: [], },
+      group: { less: [], equal: [] },
       solo: { less: [], equal: [] },
     };
 
-    const gr = w => Game.grade(w, dict, settings.dice, settings.dict);
+    const gr = (w: string) => Game.grade(w, dict, settings.dice, settings.dict);
 
     for (const [k, group] of Object.entries(anagrams)) {
       // Determine the lowest grade of the group
@@ -31,11 +49,12 @@ class TrainingPool {
 
       // If the grade is too high = move on; otherwise figure out where to sort
       if (grade < settings.grade) continue;
-      const type = group > settings.grade ? 'less' : 'equal';
+      const type = grade > settings.grade ? 'less' : 'equal';
       s[type][k] = group;
 
       // Only members of the group that are of the correct grade count
-      const fn = type === 'equal' ? g => g === settings.grade : g => g > settings.grade;
+      const fn =
+        type === 'equal' ? (g: string) => g === settings.grade : (g: string) => g > settings.grade;
       const gs = group.filter(w => fn(Game.grade(w, dict, settings.dice, settings.dict)));
       if (gs.length > 1) {
         for (const g of gs) {
@@ -57,10 +76,9 @@ class TrainingPool {
       solo: {
         less: new Pool(s.solo.less, random),
         equal: new Pool(s.equal.less, random),
-      }
+      },
     };
   }
-
 
   next() {
     const groups = [];
@@ -77,7 +95,7 @@ class TrainingPool {
         if (!group.includes(key)) break;
       }
 
-      groups.push({label: key, group: this.random.shuffle(group)});
+      groups.push({ label: key, group: this.random.shuffle(group) });
     }
 
     return groups;
@@ -85,11 +103,17 @@ class TrainingPool {
 }
 
 class Pool {
-  constructor(possible, random) {
+  private readonly possible: string[];
+  private readonly random: Random;
+  private unused: Set<string>;
+  private iter: Iterator<string> | null;
+
+  constructor(possible: string[], random: Random) {
     this.possible = possible;
     this.random = random;
 
     this.unused = new Set();
+    this.iter = null;
   }
 
   reset() {
@@ -97,7 +121,7 @@ class Pool {
     this.iter = this.unused.values();
   }
 
-  next(num) {
+  next(num?: number) {
     if (!num) return this.choose();
     const chosen = [];
     for (let i = 0; i < num; i++) {
@@ -110,7 +134,7 @@ class Pool {
     if (!this.unused.size) this.reset();
 
     // NOTE: this.unused.size <-> !this.iter.done
-    const next = this.iter.next();
+    const next = this.iter!.next();
     this.unused.delete(next.value);
 
     return next.value;

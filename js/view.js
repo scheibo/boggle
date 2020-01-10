@@ -20,7 +20,7 @@ let kept = false;
 
   const response = await fetch('data/dict.json', {mode: 'no-cors'});
   DICT = await response.json();
-  TRIE = new Trie(DICT);
+  TRIE = Trie.create(DICT);
 
   const initial = setup();
   SEED = initial.seed;

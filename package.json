@@ -1,0 +1,26 @@
+{
+  "name": "boggle",
+  "version": "0.0.1",
+  "description": "Boggle",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/scheibo/boggle.git"
+  },
+  "author": "Kirk Scheibelhut",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^13.1.6",
+    "gts": "^1.1.2",
+    "typescript": "^3.7.4"
+  },
+  "scripts": {
+    "check": "gts check",
+    "clean": "gts clean",
+    "compile": "tsc -p .",
+    "fix": "gts fix",
+    "test": "true",
+    "prepare": "npm run compile",
+    "pretest": "npm run compile",
+    "posttest": "npm run check"
+  }
+}
