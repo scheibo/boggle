@@ -411,7 +411,7 @@ function setup() {
     if (HASH_REFRESH) {
       STATE = refresh();
     } else {
-      updateDOMSettings(Game.encodeID(SETTINGS, SEED));
+      updateDOMSettings();
     }
   });
 
@@ -794,13 +794,12 @@ function setup() {
       hide: ['refresh', 'play', 'score']
     });
 
-
     ORIGINAL = {settings: Object.assign({}, SETTINGS), seed: SEED};
-    updateDOMSettings(STATE.game.id);
+    updateDOMSettings();
   });
 
-  function updateDOMSettings(id) {
-    document.getElementById('seed').textContent = id;
+  function updateDOMSettings() {
+    document.getElementById('seed').textContent = Game.encodeID(SETTINGS, SEED);
     document.getElementById(`dice${SETTINGS.dice}`).checked = true;
     document.getElementById(`min${SETTINGS.min}`).checked = true;
     document.getElementById(`dict${SETTINGS.dict}`).checked = true;
