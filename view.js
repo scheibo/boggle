@@ -13,7 +13,9 @@ var STATE = null;
 var RANDOM = null;
 var TRAINING = null;
 var DICT = null;
-var ORIGINAL_SETTINGS = Object.assign({}, SETTINGS);
+var HASH_REFRESH = true;
+var SEED = 0;
+var ORIGINAL = {settings: Object.assign({}, SETTINGS), seed: SEED};
 
 class Timer {
   constructor(duration) {
@@ -193,7 +195,7 @@ function getTrainingGroups(training) {
 function setup() {
   if (document.location.hash && document.location.hash.length > 1) {
     const [settings, seed] = Game.decodeID(document.location.hash.slice(1));
-    if (!isNaN(seed)) return [settings, seed];
+    if (!isNaN(seed)) return {settings, seed};
   }
 
   if (HISTORY.length) {
@@ -202,10 +204,10 @@ function setup() {
     const rand = new Random(seed);
     rand.next();
 
-    return [settings, rand.seed];
+    return {settings, seed: rand.seed};
   }
 
-  return [SETTINGS, 0];
+  return {settings: SETTINGS, seed: SEED};
 }
 
 (async () => {
@@ -214,9 +216,12 @@ function setup() {
   const response = await fetch('data/dict.json', {mode: 'no-cors'});
   DICT = await response.json();
 
-  const [settings, SEED] = setup();
+  const initial = setup();
+  SEED = initial.seed;
   RANDOM = new Random(SEED);
-  updateSettings(settings);
+  Object.assign(SETTINGS, initial.settings);
+  localStorage.setItem('settings', JSON.stringify(SETTINGS));
+  TRAINING = createTrainingPools();
 
   const TRIE = new Trie(DICT);
 
@@ -252,23 +257,17 @@ function setup() {
     return Math.abs(b.dataset.x - a.dataset.x) <= 1 && Math.abs(b.dataset.y - a.dataset.y) <= 1;
   }
 
-  function refresh(state, settings, seed) {
-    if (!settingsEqual(ORIGINAL_SETTINGS, SETTINGS)) {
-      TRAINING = createTrainingPools();
-      ORIGINAL_SETTINGS = SETTINGS;
-    }
+  function refresh() {
+    maybePerformUpdate();
 
-    let random;
-    if (state) { // TODO why not just STATE?
-      HISTORY.push(state.game.toJSON());
+    if (STATE) {
+      HISTORY.push(STATE.game.toJSON());
       localStorage.setItem('history', JSON.stringify(HISTORY));
-      state.timer.stop();
-      random = state.game.random;
+      STATE.timer.stop();
     }
 
     const timer = new Timer(180 * 1000);
-    random = !isNaN(seed) ? new Random(seed) : (random || new Random(SEED));
-    const game = new Game(TRIE, DICT, random, settings);
+    const game = new Game(TRIE, DICT, new Random(SEED), SETTINGS);
     const content = document.getElementById('content');
     if (content.firstChild) content.removeChild(content.firstChild);
 
@@ -283,7 +282,7 @@ function setup() {
         td.textContent = game.board[row*game.size + col];
         if (td.textContent === 'Qu') td.classList.add('qu');
         if (['M', 'W', 'Z'].includes(td.textContent)) td.classList.add('underline');
-        td.classList.add(`rotate${90 * random.next(0, 4)}`);
+        td.classList.add(`rotate${90 * game.random.next(0, 4)}`);
         td.setAttribute('data-x', row);
         td.setAttribute('data-y', col);
 
@@ -297,6 +296,8 @@ function setup() {
       }
       table.appendChild(tr);
     }
+    SEED = game.random.seed;
+    ORIGINAL.seed = SEED;
     
     let touched;
     let lastTouched = null;
@@ -314,7 +315,7 @@ function setup() {
         // TODO: make sure is adjacent to last td!
         /* if (lastTouched && !adjacent(cell, lastTouched)) {
           deselect();
-          play(STATE, word);
+          play(word);
         } */
         const td = cell.parentNode;
         td.classList.add('selected');
@@ -335,7 +336,7 @@ function setup() {
     });
     table.addEventListener('touchend', () => {
       deselect();
-      play(STATE, word);
+      play(word);
     });
     table.addEventListener('touchmove', registerTouch);
 
@@ -374,23 +375,23 @@ function setup() {
   }
 
   var LAST = '';
-  function play(state, word) {
+  function play(word) {
     let w = word.textContent.toUpperCase();
     if (SUFFIXES.includes(w)) {
       w = `${LAST}${w}`;
       word.textContent = w;
     }
-    const score = state.game.play(w);
+    const score = STATE.game.play(w);
     LAST = w;
 
-    const display = !state.game.settings.blind && score;
+    const display = !STATE.game.settings.blind && score;
     kept = true;
     if (display) {
-      document.getElementById('score').textContent = formatScore(state.game.score);
+      document.getElementById('score').textContent = formatScore(STATE.game.score);
       document.getElementById('defn').textContent = DICT[w].defn;
     } else {
       const o = word.textContent;
-      if (!state.game.settings.blind && state.game.played[w] < 0) word.classList.add('error');
+      if (!STATE.game.settings.blind && STATE.game.played[w] < 0) word.classList.add('error');
       word.classList.add('fade');
       const animationend = () => {
         clearWord(o);
@@ -401,18 +402,27 @@ function setup() {
   }
 
   window.addEventListener('hashchange', e => {
-    if (!document.location.hash) return; // is just a reload...
+    if (!document.location.hash) return;
     const [settings, seed] = Game.decodeID(document.location.hash.slice(1));
-    if (!isNaN(seed)) updateSettings(settings);
-    STATE = refresh(STATE, settings, seed);
+    if (!isNaN(seed)) {
+      updateSettings(settings);
+      SEED = seed;
+    }
+    if (HASH_REFRESH) {
+      STATE = refresh();
+    } else {
+      updateDOMSettings(Game.encodeID(SETTINGS, SEED));
+    }
   });
 
   function refreshClick() {
+    HASH_REFRESH = true;
+
     if (document.getElementById('wrapper')) {
       train();
     } else {
       document.getElementById('timer').style.visibility = 'inherit';
-      STATE = refresh(STATE);
+      STATE = refresh();
     }
   }
 
@@ -598,10 +608,8 @@ function setup() {
   });
 
   function train() {
-    if (!settingsEqual(ORIGINAL_SETTINGS, SETTINGS)) {
-      TRAINING = createTrainingPools();
-      ORIGINAL_SETTINGS = SETTINGS;
-    }
+    HASH_REFRESH = true;
+    maybePerformUpdate();
 
     let wrapper = document.getElementById('wrapper');
     const display = document.getElementById('display');
@@ -733,10 +741,7 @@ function setup() {
   document.getElementById('back').addEventListener('click', backToGame);
 
   function backToGame() {
-    if (!settingsEqual(ORIGINAL_SETTINGS, SETTINGS)) {
-      TRAINING = createTrainingPools();
-      ORIGINAL_SETTINGS = SETTINGS;
-    }
+    maybePerformUpdate();
 
     const display = document.getElementById('display');
     const board = document.getElementById('board');
@@ -758,7 +763,7 @@ function setup() {
     word.focus(); // TODO: fix cursor locaton
     const key = e.keyCode;
     if (key === 13 || key === 32) {
-      play(STATE, word);
+      play(word);
       e.preventDefault(); 
       word.focus();
     } else if ((key < 65 || key > 90) && key !== 8) {
@@ -769,10 +774,12 @@ function setup() {
   // Settings
 
   document.getElementById('refresh').addEventListener('long-press', e => {
-    if (!document.getElementById('settings').contains('hidden')) {
+    if (!document.getElementById('settings').classList.contains('hidden')) {
       refreshClick();
       return;
     }
+
+    HASH_REFRESH = false;
 
     const wrapper = document.getElementById('wrapper');
     if (wrapper) display.removeChild(wrapper);
@@ -787,14 +794,22 @@ function setup() {
       hide: ['refresh', 'play', 'score']
     });
 
-    // TODO: also need to handle seed!
-    ORIGINAL_SETTINGS = Object.assign({}, SETTINGS);
 
-    updateDOMSettings();
+    ORIGINAL = {settings: Object.assign({}, SETTINGS), seed: SEED};
+    updateDOMSettings(STATE.game.id);
   });
 
+  function updateDOMSettings(id) {
+    document.getElementById('seed').textContent = id;
+    document.getElementById(`dice${SETTINGS.dice}`).checked = true;
+    document.getElementById(`min${SETTINGS.min}`).checked = true;
+    document.getElementById(`dict${SETTINGS.dict}`).checked = true;
+    document.getElementById(`grade${SETTINGS.grade}`).checked = true;
+    document.getElementById('blind').checked = !!SETTINGS.blind;
+  }
+
   document.getElementById('blind').addEventListener('click', e => {
-    console.log('BLIND', document.getElementById('blind').checked);
+    updateSettings({blind: document.getElementById('blind').checked});
   });
   for (const radio of document.querySelectorAll('input[name=dice]')) {
     radio.addEventListener('click', e => {
@@ -803,60 +818,56 @@ function setup() {
       } else {
         document.getElementById('min3').checked = true;
       }
-      updateSetting({dice: radio.value, min: radio.value === 'Big' ? 4 : 3});
+      updateSettings({dice: radio.value, min: radio.value === 'Big' ? 4 : 3});
     });
   }
   for (const radio of document.querySelectorAll('input[name=min]')) {
-    radio.addEventListener('click', () => updateSetting({min: Number(radio.value)}));
+    radio.addEventListener('click', () => updateSettings({min: Number(radio.value)}));
   }
   for (const radio of document.querySelectorAll('input[name=dict]')) {
-    radio.addEventListener('click', () => updateSetting({dict: radio.value}));
+    radio.addEventListener('click', () => updateSettings({dict: radio.value}));
   }
   for (const radio of document.querySelectorAll('input[name=grade]')) {
-    radio.addEventListener('click', () => updateSetting({grade: radio.value}));
-  }
-
-  function updateDOMSettings() {
-    document.getElementById('seed').textContent = STATE.game.id;
-    document.getElementById(`dice${SETTINGS.dice}`).checked = true;
-    document.getElementById(`min${SETTINGS.min}`).checked = true;
-    document.getElementById(`dict${SETTINGS.dict}`).checked = true;
-    document.getElementById(`grade${SETTINGS.grade}`).checked = true;
-    document.getElementById('blind').checked = !!SETTINGS.blind;
+    radio.addEventListener('click', () => updateSettings({grade: radio.value}));
   }
 
   function settingsEqual(a, b) {
     return a.dice === b.dice &&
       a.min === b.min &&
       a.dict === b.dict &&
-      // TODO: technically these two shouldn't require a refresh
       a.grade === b.grade &&
       a.blind === b.blind;
   }
 
-  function updateSetting(setting) {
-    console.log('UPDATE SETTING', setting); // TODO DEBUG
+  function updateRequired() {
+    return SEED !== ORIGINAL.seed || !settingsEqual(SETTINGS, ORIGINAL.settings);
+  }
 
-    // TODO: update seed and update field based on setting and vice versa
-    // TODO: also update hash, but avoid the auto refresh!
-
-    Object.assign(SETTINGS, setting);
-    localStorage.setItem('settings', JSON.stringify(SETTINGS));
-    // Updating training pools is expensive, so we only do it if changed.
-
-    if (settingsEqual(ORIGINAL_SETTINGS, SETTINGS)) {
-      document.getElementById('refresh').classList.add('hidden');
-      document.getElementById('back').classList.remove('hidden');
-    } else {
-      document.getElementById('back').classList.add('hidden');
-      document.getElementById('refresh').classList.remove('hidden');
+  function maybePerformUpdate() {
+    if (updateRequired()) {
+      RANDOM = new Random(seed);
+      TRAINING = createTrainingPools();
+      ORIGINAL.settings = SETTINGS;
+      ORIGINAL.seed = SEED;
     }
   }
 
   function updateSettings(settings) {
+    // TODO: update seed and update field based on setting and vice versa
+
     Object.assign(SETTINGS, settings);
     localStorage.setItem('settings', JSON.stringify(SETTINGS));
 
-    TRAINING = createTrainingPools();
+    const id = Game.encodeID(SETTINGS, SEED);
+    document.getElementById('seed').textContent = id;
+    window.history.pushState(null, null, `#${id}`);
+
+    if (updateRequired()) {
+      document.getElementById('back').classList.add('hidden');
+      document.getElementById('refresh').classList.remove('hidden');
+    } else {
+      document.getElementById('refresh').classList.add('hidden');
+      document.getElementById('back').classList.remove('hidden');
+    }
   }
 })();
