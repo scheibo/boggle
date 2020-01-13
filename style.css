@@ -237,7 +237,6 @@ body {
 .rotate180 { transform: rotate(180deg); }
 .rotate270 { transform: rotate(270deg); }
 .underline { text-decoration: underline; }
-
 img {
   pointer-events: none;
   -webkit-touch-callout: none;
@@ -247,7 +246,6 @@ img {
   -ms-user-select: none;
   user-select: none;
 }
-
 .toggle {
   text-align: center;
   border: 3px solid var(--fg-color);
@@ -261,7 +259,6 @@ img {
   border-radius: 8px;
   width: 4em;
 }
-
 .toggle-group label {
   border-radius: 0;
 }
@@ -310,6 +307,7 @@ img {
   text-align: center;
   color: var(--hard-color);
   font-size: 13px;
+  margin-bottom: -15px;
 }
 
 /* Pixel = 393 x 714 */
