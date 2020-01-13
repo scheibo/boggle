@@ -1,6 +1,7 @@
 import { Dictionary } from './dict';
+import { Game } from './game';
 import { Random } from './random';
-import { Settings } from './settings_';
+import { Settings } from './settings';
 
 class TrainingPool {
   private readonly random: Random;
