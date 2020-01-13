@@ -296,7 +296,9 @@ function refresh() {
     STATE.timer.stop();
   }
 
-  const timer = new Timer(180 * 1000);
+  const timer = new Timer(180 * 1000, () => {
+    if (!STATE.game.expired) STATE.game.expired = +new Date();
+  });
   const game = new Game(TRIE, DICT, new Random(SEED), SETTINGS);
   const content = document.getElementById('content');
   if (content.firstChild) content.removeChild(content.firstChild);

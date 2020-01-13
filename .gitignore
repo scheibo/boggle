@@ -5,9 +5,5 @@ package-lock.json
 data/dict.json
 data/clean_1w.txt
 
-js/random.*
-js/dict.*
-js/settings.*
-js/trie.*
-js/training.*
-js/game.*
+js/
+!js/ui

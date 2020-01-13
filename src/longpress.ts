@@ -1,38 +1,44 @@
 /*! Modified from John Doherty's MIT-licensed https://github.com/john-doherty/long-press-event */
 (() => {
   'use strict';
-  const isTouch =
+  const TOUCH =
     (('ontouchstart' in window) ||
-     (navigator.MaxTouchPoints > 0) ||
+     (navigator.maxTouchPoints > 0) ||
      (navigator.msMaxTouchPoints > 0));
 
-  const mouseDown = isTouch ? 'touchstart' : 'mousedown';
-  const mouseUp = isTouch ? 'touchend' : 'mouseup';
-  const mouseMove = isTouch ? 'touchmove' : 'mousemove';
+  const mouseDown = TOUCH ? 'touchstart' : 'mousedown';
+  const mouseUp = TOUCH ? 'touchend' : 'mouseup';
+  const mouseMove = TOUCH ? 'touchmove' : 'mousemove';
 
   const MAX_DIFF = 10;
   const TIMEOUT = 500;
 
-  let timer = null;
+  let timer: {value: number} | null = null;
   let startX = 0;
   let startY = 0;
 
   if (typeof window.CustomEvent !== 'function') {
-    window.CustomEvent = (event, params) => {
+    // @ts-ignore
+    window.CustomEvent = (event: string, params: any) => {
       params = params || { bubbles: false, cancelable: false, detail: undefined };
       const e = document.createEvent('CustomEvent');
       e.initCustomEvent(event, params.bubbles, params.cancelable, params.detail);
       return e;
     };
 
+    // @ts-ignore
     window.CustomEvent.prototype = window.Event.prototype;
   }
 
-  function fireLongPressEvent(element, e) {
-    clearLongPressTimer();
+  function isTouch(e: MouseEvent | TouchEvent): e is TouchEvent {
+    return e instanceof TouchEvent;
+  }
 
-    const clientX = isTouch ? e.touches[0].clientX : e.clientX;
-    const clientY = isTouch ? e.touches[0].clientY : e.clientY;
+  function fireLongPressEvent(element: EventTarget, e: MouseEvent | TouchEvent) {
+    clearLongPressTimer(e);
+
+    const clientX = isTouch(e) ? e.touches[0].clientX : e.clientX;
+    const clientY = isTouch(e) ? e.touches[0].clientY : e.clientY;
 
     const longPress = element.dispatchEvent(
       new CustomEvent(
@@ -43,7 +49,7 @@
         }));
 
     if (longPress) {
-      const longPressUp = e => {
+      const longPressUp = (e: Event) => {
         document.removeEventListener(mouseUp, longPressUp, true);
 
         e.stopImmediatePropagation();
@@ -62,7 +68,7 @@
     }
   }
 
-  function startLongPressTimer(e) {
+  function startLongPressTimer(e: MouseEvent | TouchEvent) {
     clearLongPressTimer(e);
 
     const start = new Date().getTime();
@@ -71,31 +77,31 @@
       const delta = current - start;
 
       if (delta >= TIMEOUT) {
-        fireLongPressEvent(e.target, e);
+        fireLongPressEvent(e.target!, e);
       } else {
-        timer.value = window.requestAnimationFrame(loop);
+        timer!.value = window.requestAnimationFrame(loop);
       }
     };
 
     timer = {value: window.requestAnimationFrame(loop)};
   }
 
-  function clearLongPressTimer(e) {
+  function clearLongPressTimer(e: Event) {
     if (timer) window.cancelAnimationFrame(timer.value);
     timer = null;
   }
 
-  function mouseDownHandler(e) {
-    if (!document.getElementById('board').contains(e.target)) {
-      startX = e.clientX;
-      startY = e.clientY;
+  function mouseDownHandler(e: MouseEvent | TouchEvent) {
+    if (!document.getElementById('board')!.contains(e.target! as Node)) {
+      startX = isTouch(e) ? e.touches[0].clientX : e.clientX;
+      startY = isTouch(e) ? e.touches[0].clientY : e.clientY;
       startLongPressTimer(e);
     }
   }
 
-  function mouseMoveHandler(e) {
-    const diffX = Math.abs(startX - e.clientX);
-    const diffY = Math.abs(startY - e.clientY);
+  function mouseMoveHandler(e: MouseEvent | TouchEvent) {
+    const diffX = Math.abs(startX - (isTouch(e) ? e.touches[0].clientX : e.clientX));
+    const diffY = Math.abs(startY - (isTouch(e) ? e.touches[0].clientY : e.clientY));
     if (diffX >= MAX_DIFF || diffY >= MAX_DIFF) clearLongPressTimer(e);
   }
 

@@ -6,7 +6,9 @@
     "incremental": true,
     "target": "es6",
     "tsBuildInfoFile": ".tsbuildinfo",
-    "noEmitOnError": false
+    "noEmitOnError": false,
+    "target": "es2015",
+    "lib": ["es2017", "dom"]
   },
   "include": [
     "**/*.ts"
