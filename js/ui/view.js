@@ -113,7 +113,7 @@ let kept = false;
 
     updateVisibility({show: ['refresh', 'score', 'timer'], hide: ['back', 'play']});
 
-    STATE = refresh(STATE);
+    STATE = refresh();
   });
 
   document.getElementById('back').addEventListener('click', backToGame);
@@ -380,6 +380,9 @@ function refresh() {
   document.getElementById('score').textContent = game.settings.blind ? '?' : '0';
 
   // Cleanup
+  LAST = '';
+  kept = false;
+
   updateVisibility({
     show: ['refresh', 'score', 'timer'],
     hide: ['back', 'practice', 'settings']

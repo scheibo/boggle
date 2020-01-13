@@ -38,7 +38,7 @@ class TrainingPool {
       solo: { less: [], equal: [] },
     };
 
-    const gr = (w: string) => Game.grade(w, dict, settings.dice, settings.dict);
+    const gr = (w: string) => w.length >= settings.min ? Game.grade(w, dict, settings.dice, settings.dict) : ' ';
 
     for (const [k, group] of Object.entries(anagrams)) {
       // Determine the lowest grade of the group
@@ -76,14 +76,14 @@ class TrainingPool {
       },
       solo: {
         less: new Pool(s.solo.less, random),
-        equal: new Pool(s.equal.less, random),
+        equal: new Pool(s.solo.equal, random),
       },
     };
   }
 
   next() {
     const groups = [];
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 25; i++) {
       const type = this.random.next(0, 100) < 90 ? 'group' : 'solo';
       const level = this.random.next(0, 100) < 80 ? 'equal' : 'less';
 
