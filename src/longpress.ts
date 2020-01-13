@@ -2,9 +2,7 @@
 (() => {
   'use strict';
   const TOUCH =
-    (('ontouchstart' in window) ||
-     (navigator.maxTouchPoints > 0) ||
-     (navigator.msMaxTouchPoints > 0));
+    'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
 
   const mouseDown = TOUCH ? 'touchstart' : 'mousedown';
   const mouseUp = TOUCH ? 'touchend' : 'mouseup';
@@ -13,7 +11,7 @@
   const MAX_DIFF = 10;
   const TIMEOUT = 500;
 
-  let timer: {value: number} | null = null;
+  let timer: { value: number } | null = null;
   let startX = 0;
   let startY = 0;
 
@@ -41,12 +39,12 @@
     const clientY = isTouch(e) ? e.touches[0].clientY : e.clientY;
 
     const longPress = element.dispatchEvent(
-      new CustomEvent(
-        'long-press', {
-          bubbles: true,
-          cancelable: true,
-          detail: { clientX: clientX, clientY: clientY }
-        }));
+      new CustomEvent('long-press', {
+        bubbles: true,
+        cancelable: true,
+        detail: { clientX, clientY },
+      })
+    );
 
     if (longPress) {
       const longPressUp = (e: Event) => {
@@ -60,8 +58,9 @@
           new CustomEvent('long-press-up', {
             bubbles: true,
             cancelable: true,
-            detail: { clientX: clientX, clientY: clientY }
-          }));
+            detail: { clientX, clientY },
+          })
+        );
       };
 
       document.addEventListener(mouseUp, longPressUp, true);
@@ -83,7 +82,7 @@
       }
     };
 
-    timer = {value: window.requestAnimationFrame(loop)};
+    timer = { value: window.requestAnimationFrame(loop) };
   }
 
   function clearLongPressTimer(e: Event) {

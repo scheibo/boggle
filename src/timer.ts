@@ -1,5 +1,4 @@
 export class Timer {
-  
   private readonly duration: number;
   private readonly display: HTMLElement;
 
@@ -13,7 +12,7 @@ export class Timer {
     this.duration = duration;
     this.display = document.getElementById('timer')!;
     this.display.classList.remove('expired');
-    
+
     this.elapsed = 0;
     this.interval = null;
     this.expireFn = expireFn;
@@ -74,4 +73,3 @@ export class Timer {
     this.display.textContent = `${minutes}:${seconds}`;
   }
 }
-

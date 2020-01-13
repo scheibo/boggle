@@ -1,7 +1,7 @@
 'use strict';
 
 const HISTORY = JSON.parse(localStorage.getItem('history')) || [];
-const SETTINGS = JSON.parse(localStorage.getItem('settings')) || {dice: 'New', dict: 'TWL', grade: 'C'};
+const SETTINGS = JSON.parse(localStorage.getItem('settings')) || {dice: 'New', dict: 'TWL', grade: 'C', display: 'Show'};
 
 var STATE = null;
 var RANDOM = null;
@@ -17,6 +17,15 @@ let kept = false;
 
 (async () => {
   setTimeout(() => window.scrollTo(0, 1), 0);
+
+  // If theme has been explicitly set by the user then that trumps the system value
+  if (SETTINGS.theme === undefined) {
+    window.matchMedia('(prefers-color-scheme: dark)').addListener(e => {
+      console.log(e);
+      if (SETTINGS.theme === undefined) setTheme(e.matches ? 'Dark' : 'Light');
+    });
+  }
+  setTheme(SETTINGS.theme || 'Light');
 
   const response = await fetch('data/dict.json', {mode: 'no-cors'});
   DICT = await response.json();
@@ -151,12 +160,22 @@ let kept = false;
   }
 })();
 
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme.toLowerCase());
+  document.getElementById(`theme${theme}`).checked = true;
+}
+
 function updateVisibility(opts) {
   if (opts.show) {
     for (const id of opts.show) {
       const e = document.getElementById(id);
       if (id === 'timer') {
         e.style.visibility = 'inherit';
+      } else if (id === 'score') {
+        e.classList.remove('hidden');
+        if (SETTINGS.display === 'Full') {
+          document.getElementById('full').classList.remove('hidden');
+        }
       } else {
         e.classList.remove('hidden');
       }
@@ -167,6 +186,11 @@ function updateVisibility(opts) {
       const e = document.getElementById(id);
       if (id === 'timer') {
         e.style.visibility = 'hidden';
+      } else if (id === 'score') {
+        e.classList.add('hidden');
+        if (SETTINGS.display === 'Full') {
+          document.getElementById('full').classList.add('hidden');
+        }
       } else {
         e.classList.add('hidden');
       }
@@ -377,7 +401,10 @@ function refresh() {
   table.addEventListener('touchmove', registerTouch);
 
   content.appendChild(table);
-  document.getElementById('score').textContent = game.settings.blind ? '?' : '0';
+  document.getElementById('score').textContent = game.settings.display === 'Hide' ? '?' : '0';
+  if (game.settings.display === 'Full') {
+    document.getElementById('full').textContent = `0/0/0 (0): 0/${game.state().totals[SETTINGS.grade.toLowerCase()]} (0%)`;
+  }
 
   // Cleanup
   LAST = '';
@@ -418,16 +445,25 @@ function play(word) {
   const score = STATE.game.play(w);
   LAST = w;
 
-  const display = !STATE.game.settings.blind && score;
+  const hide = STATE.game.settings.display === 'Hide';
   kept = true;
-  if (display) {
+  if (!hide && score) {
     const s = STATE.game.score;
+    if (STATE.game.settings.display === 'Full') {
+      const state = STATE.game.state();
+      const p = state.progress;
+      const details = `(${p.score}) ${Object.keys(p.suffixes).length}/${p.subwords}/${p.anagrams}`;
+      const score = STATE.game.score.regular + STATE.game.score.overtime;
+      const goal = state.totals[SETTINGS.grade.toLowerCase()];
+      document.getElementById('full').textContent =
+        `${details} - ${score}/${goal} (${Math.round(score / goal * 100).toFixed(0)}%)`;
+    }
     const formatted = s.overtime ? `${s.regular} / ${s.overtime}` : `${s.regular}`;
     document.getElementById('score').textContent = formatted;
     document.getElementById('defn').textContent = DICT[w].defn;
   } else {
     const o = word.textContent;
-    if (!STATE.game.settings.blind && STATE.game.played[w] < 0) word.classList.add('error');
+    if (!hide && STATE.game.played[w] < 0) word.classList.add('error');
     word.classList.add('fade');
     const animationend = () => {
       clearWord(o);

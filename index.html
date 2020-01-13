@@ -28,6 +28,7 @@
         <div id="practice" class="hidden"><img height="20" src="img/practice.svg" /></div>
         <div id="play" class="hidden"><img height="20" src="img/play.svg" /></div>
       </header>
+      <div id="full" class="hidden">0/0/0 (0): 0/0 (0%)</div>
       <div id="content">
       </div>
       <div id="word"></div>
@@ -65,7 +66,17 @@
           </span>
         </div>
         <div class="row">
-          <input class="hide" type="checkbox" id="blind" /><label class="toggle" for="blind">HIDE</label>
+          <span id="scoreDisplay" class="toggle-group horizontal" role="radiogroup">
+            <input class="hide" type="radio" name="scoreDisplay" value="Hide" id="scoreDisplayHide" /><label class="toggle" for="scoreDisplayHide">HIDE</label>
+            <input class="hide" type="radio" name="scoreDisplay" value="Show" id="scoreDisplayShow" checked="checked" /><label class="toggle" for="scoreDisplayShow">SHOW</label>
+            <input class="hide" type="radio" name="scoreDisplay" value="Full" id="scoreDisplayFull" /><label class="toggle" for="scoreDisplayFull">FULL</label>
+          </span>
+        </div>
+        <div class="row">
+          <span id="theme" class="toggle-group horizontal" role="radiogroup">
+            <input class="hide" type="radio" name="theme" value="Light" id="themeLight" checked="checked" /><label class="toggle" for="themeLight">LIGHT</label>
+            <input class="hide" type="radio" name="theme" value="Dark" id="themeDark" /><label class="toggle" for="themeDark">DARK</label>
+          </span>
         </div>
       </div>
     </div>

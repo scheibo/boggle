@@ -5,7 +5,7 @@ function settingsEqual(a, b) {
     a.min === b.min &&
     a.dict === b.dict &&
     a.grade === b.grade &&
-    a.blind === b.blind;
+    a.display === b.display;
 }
 
 function updateRequired() {
@@ -46,7 +46,8 @@ function updateDOMSettings() {
   document.getElementById(`min${SETTINGS.min}`).checked = true;
   document.getElementById(`dict${SETTINGS.dict}`).checked = true;
   document.getElementById(`grade${SETTINGS.grade}`).checked = true;
-  document.getElementById('blind').checked = !!SETTINGS.blind;
+  document.getElementById(`scoreDisplay${SETTINGS.display}`).checked = true;
+  document.getElementById(`theme${SETTINGS.theme || 'Light'}`).checked = true;
 }
 
 (() => {
@@ -94,7 +95,13 @@ function updateDOMSettings() {
   for (const radio of document.querySelectorAll('input[name=grade]')) {
     radio.addEventListener('click', () => updateSettings({grade: radio.value}));
   }
-  document.getElementById('blind').addEventListener('click', e => {
-    updateSettings({blind: document.getElementById('blind').checked});
-  });
+  for (const radio of document.querySelectorAll('input[name=scoreDisplay]')) {
+    radio.addEventListener('click', () => updateSettings({display: radio.value}));
+  }
+  for (const radio of document.querySelectorAll('input[name=theme]')) {
+    radio.addEventListener('click', () => {
+      updateSettings({theme: radio.value});
+      setTheme(radio.value);
+    });
+  }
 })();

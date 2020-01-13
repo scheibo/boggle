@@ -1,9 +1,31 @@
+:root {
+  --bg-color: #fff;
+  --fg-color: #000;
+  --hard-color: #aaa;
+  --toggle-hover-color: #f5f5f5;
+  --toggle-checked-color: #e3e3e3;
+  --collapsible-bg-color: #fafafa;
+  --filter: invert(0%);
+}
+[data-theme="dark"] {
+  --bg-color: #000;
+  --fg-color: #ddd;
+  --hard-color: #555;
+  --toggle-hover-color: #1a1a1a;
+  --toggle-checked-color: #3c3c3c;
+  --collapsible-bg-color: #151515;
+  --filter: invert(87.5%);
+}
+
 /* LG-H873 = 360 x 588  */
 body {
   font-family: "Roboto", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
   margin: 0px;
   touch-action: none;
   user-select: none;
+
+  background-color: var(--bg-color);
+  color: var(--fg-color);
 }
 ::-webkit-scrollbar {
   width: 0px;
@@ -38,6 +60,9 @@ body {
 }
 #refresh, #score, #back, #practice, #play {
   width: 20%;
+}
+#refresh, #back, #practice, #play {
+  filter: var(--filter);
 }
 #timer {
   width: 60%;
@@ -82,7 +107,7 @@ body {
 }
 #board td {
   text-align: center;
-  border: 3px solid black;
+  border: 3px solid var(--fg-color);
   height: 80px;
   width: 80px;
   border-radius: 8px;
@@ -125,24 +150,24 @@ body {
   z-index: -1;
 }
 .hard {
-  color: #aaa;
+  color: var(--hard-color);
 }
 .overtime {
   font-style: italic;
 }
 .collapsible {
-  background-color: #fff;
   cursor: pointer;
   padding: 18px;
   width: 95%;
   display: block;
   margin: 3px auto;
-  border: 3px solid black;
+  border: 3px solid var(--fg-color);
+  color: var(--fg-color);
   border-radius: 8px;
   text-align: left;
   outline: none;
   font-family: "Roboto", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
-  background-color: #fafafa;
+  background-color: var(--collapsible-bg-color);
 }
 .title {
   font-weight: bold;
@@ -153,7 +178,7 @@ body {
   overflow: hidden;
 }
 .collapsible-content .collapsible-content {
-  border: 3px solid black;
+  border: 3px solid var(--fg-color);
   border-top: none;
   border-radius: 0px 0px 8px 8px;
   margin-bottom: 5px;
@@ -170,7 +195,7 @@ body {
 .collapsible:after {
   content: '\02795';
   color: transparent;
-  text-shadow: 0 0 0 black;
+  text-shadow: 0 0 0 var(--fg-color);
   float: right;
   margin-left: 5px;
 }
@@ -225,11 +250,11 @@ img {
 
 .toggle {
   text-align: center;
-  border: 3px solid black;
+  border: 3px solid var(--fg-color);
   padding: 14px 8px;
   position: relative;
   cursor: pointer;
-  background: #fff;
+  background: var(--bg-color);
   margin: -1px -3px 0;
   display: inline-block;
   width: 5em;
@@ -248,21 +273,19 @@ img {
   border-top-right-radius: 8px;
   border-bottom-right-radius: 8px;
 }
-
 /* Add visual indication when focusing on visually hidden elements */
 .hide:focus + .toggle,
 .toggle:hover {
   z-index: 10;
-  background: #f5f5f5;
+  background: var(--toggle-hover-color);
 }
 .hide:checked + .toggle, button.checked {
   font-weight: bold;
-  background: #e3e3e3;
+  background: var(--toggle-checked-color);
 }
 .hide[type="radio"]:checked + .toggle {
   cursor: default;
 }
-
 /* Hide element visually, but not from screen readers.
    See http://adrianroselli.com/2017/05/under-engineered-custom-radio-buttons-and-checkboxen.html */
 .hide {
@@ -272,19 +295,21 @@ img {
   position: absolute;
   top: auto;
 }
-
 .hide:disabled + .toggle {
   color: #999999;
 }
-
 #settings {
   display: table;
   margin: 0px auto;
 }
-
 #settings .row {
   text-align: center;
-  padding: 14px;
+  padding: 10px;
+}
+#full {
+  text-align: center;
+  color: var(--hard-color);
+  font-size: 13px;
 }
 
 /* Pixel = 393 x 714 */
@@ -295,6 +320,9 @@ img {
   }
   #board {
     margin: 40px 0;
+  }
+  #settings .row {
+    padding: 14px;
   }
 }
 
