@@ -19,13 +19,11 @@ let kept = false;
   setTimeout(() => window.scrollTo(0, 1), 0);
 
   // If theme has been explicitly set by the user then that trumps the system value
-  if (SETTINGS.theme === undefined) {
-    window.matchMedia('(prefers-color-scheme: dark)').addListener(e => {
-      console.log(e);
-      if (SETTINGS.theme === undefined) setTheme(e.matches ? 'Dark' : 'Light');
-    });
+  if (SETTINGS.theme !== undefined) {
+    setTheme(SETTINGS.theme);
+  } else {
+    setTheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'Dark' : 'Light');
   }
-  setTheme(SETTINGS.theme || 'Light');
 
   const response = await fetch('data/dict.json', {mode: 'no-cors'});
   DICT = await response.json();
