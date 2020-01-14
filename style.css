@@ -309,7 +309,7 @@ img {
   font-size: 13px;
   margin-bottom: -15px;
   position: relative;
-  top: 7px;
+  top: 3px;
 }
 
 /* Pixel = 393 x 714 */
@@ -317,7 +317,6 @@ img {
   #display {
     width: 393px;
     height: 714px;
-    border: 1px solid red;
   }
   #board {
     margin: 40px 0;

@@ -11,6 +11,7 @@
       defn.classList.add('hidden');
 
       updateVisibility({show: ['back'], hide: ['refresh']});
+      document.getElementById('full').classList.add('hidden');
 
       const wrapper = document.createElement('div');
       wrapper.setAttribute('id', 'wrapper');
