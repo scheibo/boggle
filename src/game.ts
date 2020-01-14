@@ -212,7 +212,7 @@ export class Game {
     let invalid = 0;
     let valid = 0;
     const suffixes: { [suffixed: string]: string } = {};
-    const subwords = [];
+    const subwords = new Set<string>();
 
     const anagrams: { [anagram: string]: string[] } = {};
     for (const word in this.played) {
@@ -240,7 +240,7 @@ export class Game {
       anagrams[anagram].push(word);
 
       for (const sub of subs(word, this.settings.min)) {
-        if (this.possible[sub] && !this.played[sub]) subwords.push(sub);
+        if (this.possible[sub] && !this.played[sub]) subwords.add(sub);
       }
     }
 
@@ -262,7 +262,7 @@ export class Game {
       total,
       score,
       suffixes,
-      subwords: subwords.length,
+      subwords: subwords.size,
       anagrams: missing.length,
       missing: words,
     };
