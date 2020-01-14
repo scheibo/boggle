@@ -255,7 +255,6 @@ img {
   background: var(--bg-color);
   margin: -1px -3px 0;
   display: inline-block;
-  width: 5em;
   border-radius: 8px;
   width: 4em;
 }
@@ -311,6 +310,31 @@ img {
   position: relative;
   top: 3px;
 }
+#rating .toggle {
+  border: 3px solid var(--fg-color);
+  padding: 7px 4px;
+  margin: -1px -3px 0;
+  display: inline-block;
+  width: 3em;
+}
+#rating0 + .toggle { background-color: rgba(255,0,0,0.6); }
+#rating0:focus + .toggle, #rating0 + .toggle:hover { background-color: rgba(255,0,0,0.65); }
+#rating0:checked + .toggle { background-color: rgba(255,0,0,0.7); }
+#rating1 + .toggle { background-color: rgba(255,0,0,0.4); }
+#rating1:focus + .toggle, #rating1 + .toggle:hover { background-color: rgba(255,0,0,0.45); }
+#rating1:checked + .toggle { background-color: rgba(255,0,0,0.5); }
+#rating2 + .toggle { background-color: rgba(255,0,0,0.2); }
+#rating2:focus + .toggle, #rating2 + .toggle:hover { background-color: rgba(255,0,0,0.25); }
+#rating2:checked + .toggle { background-color: rgba(255,0,0,0.3); }
+#rating3 + .toggle { background-color: rgba(0,255,0,0.2); }
+#rating3:focus + .toggle, #rating3 + .toggle:hover { background-color: rgba(0,255,0,0.25); }
+#rating3:checked + .toggle { background-color: rgba(0,255,0,0.3); }
+#rating4 + .toggle { background-color: rgba(0,255,0,0.4); }
+#rating4:focus + .toggle, #rating4 + .toggle:hover { background-color: rgba(0,255,0,0.45); }
+#rating4:checked + .toggle { background-color: rgba(0,255,0,0.5); }
+#rating5 + .toggle { background-color: rgba(0,255,0,0.6); }
+#rating5:focus + .toggle, #rating5 + .toggle:hover { background-color: rgba(0,255,0,0.65); }
+#rating5:checked + .toggle { background-color: rgba(0,255,0,0.7); }
 
 /* Pixel = 393 x 714 */
 @media(min-width: 393px) {
