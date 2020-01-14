@@ -308,6 +308,8 @@ img {
   color: var(--hard-color);
   font-size: 13px;
   margin-bottom: -15px;
+  position: relative;
+  top: 7px;
 }
 
 /* Pixel = 393 x 714 */
@@ -315,6 +317,7 @@ img {
   #display {
     width: 393px;
     height: 714px;
+    border: 1px solid red;
   }
   #board {
     margin: 40px 0;
@@ -341,6 +344,10 @@ img {
   }
   #content {
     margin: 10px 0px;
+  }
+  #settings {
+    position: relative;
+    top: -10px;
   }
   #wrapper.train {
     position: relative;
