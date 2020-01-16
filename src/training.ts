@@ -2,6 +2,7 @@ import { Dictionary } from './dict';
 import { Game } from './game';
 import { Random } from './random';
 import { Settings } from './settings';
+import { Stats } from './stats';
 
 class TrainingPool {
   private readonly random: Random;
@@ -12,20 +13,7 @@ class TrainingPool {
     solo: { less: Pool; equal: Pool };
   };
 
-  constructor(dict: Dictionary, random: Random, settings: Settings) {
-    const anagrams: { [anagram: string]: string[] } = {};
-    for (const word in dict) {
-      if (word.length > 7) continue;
-      if (settings.dict === 'TWL' && !dict[word].twl) continue;
-
-      const anagram = word
-        .split('')
-        .sort()
-        .join('');
-      anagrams[anagram] = anagrams[anagram] || [];
-      anagrams[anagram].push(word);
-    }
-
+  constructor(stats: Stats, dict: Dictionary, random: Random, settings: Settings) {
     const s: {
       less: { [anagram: string]: string[] };
       equal: { [anagram: string]: string[] };
@@ -39,9 +27,13 @@ class TrainingPool {
     };
 
     const gr = (w: string) =>
-      w.length >= settings.min ? Game.grade(w, dict, settings.dice, settings.dict) : ' ';
+      w.length >= settings.min ? stats.stats(w, settings.dice, settings.dict).grade : ' ';
 
-    for (const [k, group] of Object.entries(anagrams)) {
+    for (let [k, group] of Object.entries(stats.anagrams)) {
+      if (k.length > 7) continue;
+      if (settings.dict === 'TWL') group = group.filter(w => !dict[w].csw);
+      if (!group.length) continue;
+
       // Determine the lowest grade of the group
       let grade = ' ';
       for (const w of group) {
@@ -57,7 +49,7 @@ class TrainingPool {
       // Only members of the group that are of the correct grade count
       const fn =
         type === 'equal' ? (g: string) => g === settings.grade : (g: string) => g > settings.grade;
-      const gs = group.filter(w => fn(Game.grade(w, dict, settings.dice, settings.dict)));
+      const gs = group.filter(w => fn(stats.stats(w, settings.dice, settings.dict).grade));
       if (gs.length > 1) {
         for (const g of gs) {
           s.group[type].push(k);

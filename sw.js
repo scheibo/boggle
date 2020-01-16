@@ -16,6 +16,8 @@ self.addEventListener('install', e => {
                 '/js/timer.js',
                 '/js/training.js',
                 '/js/trie.js',
+                '/js/dict.js',
+                '/js/stats.js',
                 '/js/ui/view.js',
                 '/js/ui/score.js',
                 '/js/ui/settings.js',
@@ -40,7 +42,8 @@ self.addEventListener('activate', e =>
             })))));
 
 self.addEventListener('fetch', e => {
-    if (e.request.url.includes('/data/dict.json')) {
+    if (e.request.url.includes('/data/dict.json') ||
+        e.request.url.includes('/data/stats.json')) {
         e.respondWith(
             caches.open(DATA).then(async cache => {
                 const cached = await cache.match(e.request);

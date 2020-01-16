@@ -47,7 +47,7 @@
         const button = makeCollapsible(state.seed, details, 'block', () => {
           if (div.classList.contains('lazy')) {
             div.classList.remove('lazy');
-            const game = Game.fromJSON(state, TRIE, DICT);
+            const game = Game.fromJSON(state, TRIE, DICT, STATS);
             const s = game.state();
             displayPlayed(s, div);
             displayPossible(s, div);

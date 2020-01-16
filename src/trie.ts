@@ -1,9 +1,9 @@
-import { Dictionary } from './dict';
+import { Dictionary, Type } from './dict';
 
 export class Trie {
   parent: Trie | null;
   children: Trie[];
-  isWord: 'TWL' | 'CSW' | false;
+  isWord: Type | false;
 
   private constructor(parent: Trie | null, value: string) {
     this.parent = parent;
@@ -23,7 +23,7 @@ export class Trie {
         if (next === undefined) next = new Trie(current, letter);
         current = next;
       }
-      current.isWord = dict[word].twl ? 'TWL' : 'CSW';
+      current.isWord = dict[word].csw ? 'CSW' : 'TWL';
     }
     return root;
   }

@@ -3,6 +3,7 @@ package-lock.json
 .tsbuildinfo
 
 data/dict.json
+data/stats.json
 data/clean_1w.txt
 
 js/

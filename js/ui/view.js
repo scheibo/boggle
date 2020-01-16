@@ -8,6 +8,7 @@ var RANDOM = null;
 var TRAINING = null;
 var DICT = null;
 var TRIE = null;
+var STATS = null;
 var HASH_REFRESH = true;
 var SEED = 0;
 var ORIGINAL = {settings: Object.assign({}, SETTINGS), seed: SEED};
@@ -25,21 +26,21 @@ let kept = false;
     setTheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'Dark' : 'Light');
   }
 
-  const response = await fetch('data/dict.json', {mode: 'no-cors'});
-  DICT = await response.json();
+  const dict = await fetch('data/dict.json', {mode: 'no-cors'});
+  const stats = await fetch('data/stats.json', {mode: 'no-cors'});
+  DICT = await dict.json();
+  STATS = new Stats(await stats.json(), DICT);
   TRIE = Trie.create(DICT);
 
   const initial = setup();
   SEED = initial.seed;
-  RANDOM = new Random(SEED);
   Object.assign(SETTINGS, initial.settings);
   localStorage.setItem('settings', JSON.stringify(SETTINGS));
-  TRAINING = new TrainingPool(DICT, RANDOM, SETTINGS);
+
+  STATE = refresh();
 
   document.getElementById('display').removeChild(document.getElementById('loader'));
   document.getElementById('game').classList.remove('hidden');
-
-  STATE = refresh();
 
   const TOUCH = ('ontouchstart' in window) ||
     (navigator.maxTouchPoints > 0) || 
@@ -286,9 +287,8 @@ function train() {
     table.classList.add('collapsible-content');
     table.classList.add('results');
     for (const w of group) {
-      const word = DICT[w];
       const tr = document.createElement('tr');
-      const grade = Game.grade(w, DICT, SETTINGS.dice, SETTINGS.dict);
+      const grade = STATS.stats(w, SETTINGS.dice, SETTINGS.dict).grade;
       if (grade < SETTINGS.grade) tr.classList.add('hard');
 
       let td = document.createElement('td');
@@ -297,7 +297,7 @@ function train() {
       td.appendChild(b);
       tr.appendChild(td);
       td = document.createElement('td');
-      td.textContent = word.defn;
+      td.textContent = define(w, DICT);
       tr.appendChild(td);
 
       table.appendChild(tr);
@@ -321,7 +321,7 @@ function refresh() {
   const timer = new Timer(180 * 1000, () => {
     if (!STATE.game.expired) STATE.game.expired = +new Date();
   });
-  const game = new Game(TRIE, DICT, new Random(SEED), SETTINGS);
+  const game = new Game(TRIE, DICT, STATS, new Random(SEED), SETTINGS);
   const content = document.getElementById('content');
   if (content.firstChild) content.removeChild(content.firstChild);
 
@@ -458,7 +458,7 @@ function play(word) {
     }
     const formatted = s.overtime ? `${s.regular} / ${s.overtime}` : `${s.regular}`;
     document.getElementById('score').textContent = formatted;
-    document.getElementById('defn').textContent = DICT[w].defn;
+    document.getElementById('defn').textContent = define(w, DICT);
   } else {
     const o = word.textContent;
     if (!hide && STATE.game.played[w] < 0) word.classList.add('error');

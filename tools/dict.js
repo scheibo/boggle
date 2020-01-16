@@ -33,8 +33,8 @@ async function anagrams(file, TWL) {
     crlfDelay: Infinity
   });
 
-  const csw = {words: {}, anagrams: {}, total: 0};
   const twl = {words: {}, anagrams: {}, total: 0};
+  const csw = {words: {}, anagrams: {}, total: 0};
   for await (const line of lines) {
     const [word, s] = splitFirst(line, ' ');
     const score = Number(s);
@@ -51,12 +51,13 @@ async function anagrams(file, TWL) {
     csw.total += score;
   }
 
-  percentilize(twl.words, twl.total);
-  percentilize(twl.anagrams, twl.total);
-  percentilize(csw.words, csw.total);
-  percentilize(csw.anagrams, csw.total);
-  
-  return {twl, csw};
+  const stats = {TWL: {}, CSW: {}};
+  stats.TWL.words = percentiles(Object.values(twl.words), twl.total);
+  stats.TWL.anagrams = percentiles(Object.values(twl.anagrams), twl.total);
+  stats.CSW.words = percentiles(Object.values(csw.words), csw.total);
+  stats.CSW.anagrams = percentiles(Object.values(csw.anagrams), csw.total);
+
+  return {words: csw.words, stats};
 }
 
 async function buildDictionary() { 
@@ -73,7 +74,6 @@ async function buildDictionary() {
     total += f;
     freqs[word.toUpperCase()] = f;
   }
-  percentilize(freqs, total);
 
   lines = readline.createInterface({
     input: fs.createReadStream(path.join(DATA, 'twl.txt')),
@@ -96,80 +96,28 @@ async function buildDictionary() {
     crlfDelay: Infinity
   });
 
-  const fd = p => {
-    if (p === undefined || p >= 99) return ' ';
-    if (p >= 96) return 'A';
-    if (p >= 93) return 'B';
-    if (p >= 86) return 'C';
-    return 'D';
-  }
-
   const dict = {};
   for await (const line of lines) {
     const [word, defn] = splitFirst(line, ' ');
     const val = {defn};
-    const f = fd(freqs[word]);
-    if (twl.has(word)) val.twl = encode(n.twl, o.twl, b.twl,  word, f);
-    const v = encode(n.csw, o.csw, b.csw, word, f);
-    if (v !== ' ' && v !== val.twl) val.csw = v;
+
+    if (freqs[word]) val.freq = freqs[word];
+    if (!twl.has(word)) val.csw = true;
+
+    if (n.words[word]) val.n = n.words[word];
+    if (o.words[word]) val.o = o.words[word];
+    if (b.words[word]) val.b = b.words[word];
 
     dict[word] = val;
   }
 
-  // improve the definitions by following references and cleaning
-  const re = /[{<](.*?)?=.*?[>}]/g;
-  for (const word in dict) {
-    let def = dict[word].defn;
-    const match = re.exec(def);
-    if (match) {
-      const m = dict[match[1].toUpperCase()];
-      if (!m || !m.defn) {
-        def = match[1];
-      } else {
-        def = `${match[1]} (${m.defn})`;
-      }
-    }
-    dict[word].defn = def.replace(/\{(.*?)=.*?\}/g, '$1')
-      .replace(/<(.*?)=.*?>/g, '$1')
-      .replace(/\s*?\[.*?\]\s*?/g, '');
-  }
-
-  // We left around the 2 letter words to be able to follow references
-  // above, but at this point they just confuse things.
-  for (const word in dict) {
-    if (word.length < 3) delete dict[word];
-  }
-
-  return dict;
-}
-
-function encode(n, o, b, w, f) {
-  const a = toAnagram(w);
-  const rank = p => {
-    if (p === undefined || p >= 75) return 0;
-    if (p >= 50) return 1;
-    if (p >= 25) return 2;
-    if (p >= 10) return 3;
-    return 4;
-  }
-  const combine = (p1, p2) => {
-    const r1 = rank(p1);
-    const r2 = rank(p2);
-    const g = [' ', 'A', 'B', 'C', 'D'][Math.ceil((r1 + r2) / 2)];
-    return g < f ? f : g;
-  }
-  const encoded =
-    `${combine(n.words[w], n.anagrams[a])}` +
-    `${combine(o.words[w], o.anagrams[a])}` +
-    `${combine(b.words[w], b.anagrams[a])}`;
-  return encoded.split('').every(c => c === encoded[0]) ? encoded[0] : encoded;
-}
-
-function percentilize(obj, n) {
-  const ptiles = percentiles(Object.values(obj), n);
-  for (const k in obj) {
-    obj[k] = ptiles.findIndex(v => v <= obj[k]);
-  }
+  const stats = {
+    New: n.stats,
+    Old: o.stats,
+    Big: b.stats,
+    freqs: percentiles(Object.values(freqs), total)
+  };
+  return {dict, stats};
 }
 
 function percentiles(arr, n) {
@@ -191,6 +139,7 @@ function percentiles(arr, n) {
 }
 
 (async () => {
-  const dict = await buildDictionary();
+  const {dict, stats} = await buildDictionary();
   fs.writeFileSync(path.join(DATA, 'dict.json'), JSON.stringify(dict));
+  fs.writeFileSync(path.join(DATA, 'stats.json'), JSON.stringify(stats));
 })();

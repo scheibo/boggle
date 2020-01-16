@@ -1,7 +1,8 @@
-import { Dictionary, Grade, Type } from './dict';
+import { Dictionary, Type, define } from './dict';
 import { Random } from './random';
 import { Settings, Dice, MinLength } from './settings';
 import { Trie } from './trie';
+import { Stats, Grade } from './stats';
 
 // prettier-ignore
 const NEW_DICE = [
@@ -39,6 +40,8 @@ interface GameSettings {
 export class Game {
   private readonly trie: Trie;
   private readonly dict: Dictionary;
+  private readonly stats: Stats;
+
   private readonly dice: string[];
   private readonly seed: number;
   private readonly board: string[];
@@ -68,11 +71,13 @@ export class Game {
   constructor(
     trie: Trie,
     dict: Dictionary,
+    stats: Stats,
     random: Random,
     settings: GameSettings = { dice: 'New', dict: 'TWL' }
   ) {
     this.trie = trie;
     this.dict = dict;
+    this.stats = stats;
 
     this.dice = settings.dice === 'Big' ? BIG_DICE : settings.dice === 'Old' ? OLD_DICE : NEW_DICE;
     this.size = Math.sqrt(this.dice.length);
@@ -157,10 +162,10 @@ export class Game {
     }
   }
 
-  static fromJSON(json: any, trie: Trie, dict: Dictionary) {
+  static fromJSON(json: any, trie: Trie, dict: Dictionary, stats: Stats) {
     const [settings, seed] = Game.decodeID(json.seed);
     const random = new Random(seed);
-    const game = new Game(trie, dict, random, settings);
+    const game = new Game(trie, dict, stats, random, settings);
 
     // @ts-ignore readonly
     game.start = json.start;
@@ -172,29 +177,17 @@ export class Game {
     return game;
   }
 
-  static grade(word: string, dict: Dictionary, dice: Dice = 'New', type: Type = 'TWL') {
-    const val = dict[word];
-    if (!val) return ' ';
-    // val.csw gets dropped if its the same as val.twl or empty
-    const encoded = type === 'CSW' ? val.csw || val.twl || ' ' : val.twl;
-    // duplicate grades get encoded as as a single value
-    if (!encoded || encoded.length === 1) return (encoded as Grade) || ' ';
-    const d = dice.charAt(0).toLowerCase();
-    const i = d === 'n' ? 0 : d === 'o' ? 1 : 2;
-    return encoded.charAt(i) as Grade;
-  }
-
   get totals() {
     if (this.totals_) return this.totals_;
 
     const anagrams: { [anagram: string]: string[] } = {};
     const grades: { [grade: string]: number } = {};
     for (const word in this.possible) {
-      const anagram = toAnagram(word);
+      const anagram = Stats.toAnagram(word);
       anagrams[anagram] = anagrams[anagram] || [];
       anagrams[anagram].push(word);
 
-      const g = Game.grade(word, this.dict, this.settings.dice, this.settings.dict);
+      const g = this.stats.stats(word, this.settings.dice, this.settings.dict).grade;
       grades[g] = (grades[g] || 0) + Game.score(word);
     }
 
@@ -235,7 +228,7 @@ export class Game {
         if (this.possible[suffixed] && !this.played[suffixed]) suffixes[suffixed] = word;
       }
 
-      const anagram = toAnagram(word);
+      const anagram = Stats.toAnagram(word);
       anagrams[anagram] = anagrams[anagram] || [];
       anagrams[anagram].push(word);
 
@@ -256,6 +249,7 @@ export class Game {
       this.score.regular +
       this.score.overtime +
       Array.from(words).reduce((sum, w) => Game.score(w) + sum, 0);
+
     return {
       invalid,
       valid,
@@ -270,8 +264,8 @@ export class Game {
 
   state() {
     const progress = this.progress();
-    const gr = (w: string) => Game.grade(w, this.dict, this.settings.dice, this.settings.dict);
-    // missing, grade, length, anagrams, alphabetical
+    const gr = (w: string) => this.stats.stats(w, this.settings.dice, this.settings.dict).grade;
+    // missing > grade > length > anagrams > alphabetical
     const fn = (a: string, b: string) => {
       const ma = progress.missing.has(a);
       const mb = progress.missing.has(b);
@@ -286,18 +280,14 @@ export class Game {
       if (a.length > b.length) return 1;
       if (b.length > a.length) return -1;
 
-      return toAnagram(a).localeCompare(toAnagram(b));
+      return Stats.toAnagram(a).localeCompare(Stats.toAnagram(b));
     };
 
-    const self = this;
-    const augment = (w: string) => {
-      const val = self.dict[w];
-      return {
-        word: w,
-        grade: gr(w),
-        defn: val ? val.defn : '',
-      };
-    };
+    const augment = (w: string) => ({
+      word: w,
+      grade: gr(w),
+      defn: define(w, this.dict),
+    });
 
     return {
       played: Array.from(Object.entries(this.played))
@@ -401,11 +391,4 @@ function subs(word: string, min: number) {
   }
 
   return words;
-}
-
-function toAnagram(word: string) {
-  return word
-    .split('')
-    .sort()
-    .join('');
 }
