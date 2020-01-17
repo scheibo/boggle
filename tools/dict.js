@@ -27,23 +27,23 @@ function toAnagram(word) {
   return word.split('').sort().join('');
 }
 
-async function anagrams(file, TWL) {
+async function anagrams(file, NWL) {
   const lines = readline.createInterface({
     input: fs.createReadStream(path.join(DATA, file)),
     crlfDelay: Infinity
   });
 
-  const twl = {words: {}, anagrams: {}, total: 0};
+  const nwl = {words: {}, anagrams: {}, total: 0};
   const csw = {words: {}, anagrams: {}, total: 0};
   for await (const line of lines) {
     const [word, s] = splitFirst(line, ' ');
     const score = Number(s);
     const anagram = toAnagram(word);
 
-    if (TWL.has(word)) {
-      twl.words[word] = score;
-      twl.anagrams[anagram] = (twl.anagrams[anagram] || 0) + score;
-      twl.total += score;
+    if (NWL.has(word)) {
+      nwl.words[word] = score;
+      nwl.anagrams[anagram] = (nwl.anagrams[anagram] || 0) + score;
+      nwl.total += score;
     }
 
     csw.words[word] = score;
@@ -51,9 +51,9 @@ async function anagrams(file, TWL) {
     csw.total += score;
   }
 
-  const stats = {TWL: {}, CSW: {}};
-  stats.TWL.words = percentiles(Object.values(twl.words), twl.total);
-  stats.TWL.anagrams = percentiles(Object.values(twl.anagrams), twl.total);
+  const stats = {NWL: {}, CSW: {}};
+  stats.NWL.words = percentiles(Object.values(nwl.words), nwl.total);
+  stats.NWL.anagrams = percentiles(Object.values(nwl.anagrams), nwl.total);
   stats.CSW.words = percentiles(Object.values(csw.words), csw.total);
   stats.CSW.anagrams = percentiles(Object.values(csw.anagrams), csw.total);
 
@@ -76,19 +76,19 @@ async function buildDictionary() {
   }
 
   lines = readline.createInterface({
-    input: fs.createReadStream(path.join(DATA, 'twl.txt')),
+    input: fs.createReadStream(path.join(DATA, 'nwl.2018.txt')),
     crlfDelay: Infinity
   });
 
-  const twl = new Set();
+  const nwl = new Set();
   for await (const word of lines) {
-    twl.add(word.toUpperCase());
+    nwl.add(word.toUpperCase());
   }
 
   const [n, o, b] = await Promise.all([
-    anagrams('new4x4.txt', twl),
-    anagrams('old4x4.txt', twl),
-    anagrams('5x5.txt', twl)
+    anagrams('new4x4.txt', nwl),
+    anagrams('old4x4.txt', nwl),
+    anagrams('5x5.txt', nwl)
   ]);
 
   lines = readline.createInterface({
@@ -102,7 +102,7 @@ async function buildDictionary() {
     const val = {defn};
 
     if (freqs[word]) val.freq = freqs[word];
-    if (!twl.has(word)) val.csw = true;
+    if (!nwl.has(word)) val.csw = true;
 
     if (n.words[word]) val.n = n.words[word];
     if (o.words[word]) val.o = o.words[word];

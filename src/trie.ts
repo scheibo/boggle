@@ -23,7 +23,7 @@ export class Trie {
         if (next === undefined) next = new Trie(current, letter);
         current = next;
       }
-      current.isWord = dict[word].csw ? 'CSW' : 'TWL';
+      current.isWord = dict[word].csw ? 'CSW' : 'NWL';
     }
     return root;
   }

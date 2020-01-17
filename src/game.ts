@@ -73,7 +73,7 @@ export class Game {
     dict: Dictionary,
     stats: Stats,
     random: Random,
-    settings: GameSettings = { dice: 'New', dict: 'TWL' }
+    settings: GameSettings = { dice: 'New', dict: 'NWL' }
   ) {
     this.trie = trie;
     this.dict = dict;
@@ -144,15 +144,15 @@ export class Game {
   }
 
   static decodeID(id: string): [GameSettings, number] {
-    if (id.charAt(0) !== 'T' && id.charAt(0) !== 'C') {
+    if (id.charAt(0) !== 'N' && id.charAt(0) !== 'C') {
       // Legacy
       const dice = id.charAt(0) === 'B' ? 'Big' : id.charAt(2) === 'O' ? 'Old' : 'New';
 
       const seed = Number(id.slice(1));
 
-      return [{ dice, dict: 'TWL' }, seed];
+      return [{ dice, dict: 'NWL' }, seed];
     } else {
-      const dict = id.charAt(0) === 'T' ? 'TWL' : 'CSW';
+      const dict = id.charAt(0) === 'N' ? 'NWL' : 'CSW';
       const min = Number(id.charAt(1)) as MinLength;
       const dice = id.charAt(2) === 'B' ? 'Big' : id.charAt(2) === 'O' ? 'Old' : 'New';
 
@@ -360,7 +360,7 @@ export class Game {
           }
           if (node2 !== undefined) {
             const s2 = s + c;
-            const isWord = this.settings.dict === 'TWL' ? node2.isWord === 'TWL' : node2.isWord;
+            const isWord = this.settings.dict === 'NWL' ? node2.isWord === 'NWL' : node2.isWord;
             if (isWord && s2.length >= this.settings.min) words[s2] = hist;
             queue.push([x2, y2, s2, node2, hist]);
           }

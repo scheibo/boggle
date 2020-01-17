@@ -1,7 +1,7 @@
 'use strict';
 
 const HISTORY = JSON.parse(localStorage.getItem('history')) || [];
-const SETTINGS = JSON.parse(localStorage.getItem('settings')) || {dice: 'New', dict: 'TWL', grade: 'C', display: 'Show'};
+const SETTINGS = JSON.parse(localStorage.getItem('settings')) || {dice: 'New', dict: 'NWL', grade: 'C', display: 'Show'};
 
 var STATE = null;
 var RANDOM = null;

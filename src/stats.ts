@@ -9,7 +9,7 @@ interface Data {
 }
 
 interface DiceEntry {
-  TWL: TypeEntry;
+  NWL: TypeEntry;
   CSW: TypeEntry;
 }
 
@@ -42,7 +42,7 @@ export class Stats {
   stats(
     word: string,
     dice: Dice = 'New',
-    type: Type = 'TWL'
+    type: Type = 'NWL'
   ): { grade: Grade; freq: number; word: number; anagram: number } {
     const val = this.dict[word];
     const a = this.anagrams[Stats.toAnagram(word)];

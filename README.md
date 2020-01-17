@@ -28,9 +28,9 @@ allowed.
 
 Boggle has no official **dictionary**, so instead this implementation relies on
 the two canonical Scrabble dictionaries -
-[TWL](https://en.wikipedia.org/wiki/NASPA_Word_List)
+[NWL](https://en.wikipedia.org/wiki/NASPA_Word_List)
 and [CSW](https://en.wikipedia.org/wiki/Collins_Scrabble_Words). By default, the
-more restrictive American and Canadian TWL is used.
+more restrictive American and Canadian NWL is used.
 
 
 ## WIP

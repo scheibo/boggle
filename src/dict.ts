@@ -13,7 +13,7 @@ export interface Entry {
   b?: number;
 }
 
-export type Type = 'TWL' | 'CSW';
+export type Type = 'NWL' | 'CSW';
 
 // TODO: linkify? recurse?
 export function define(word: string, dict: Dictionary) {
