@@ -25,7 +25,7 @@ function splitFirst(str, delimiter, limit = 1) {
 
 (async () => {
   let lines = readline.createInterface({
-    input: fs.createReadStream(path.join(DATA, 'csw.txt')),
+    input: fs.createReadStream(path.join(DATA, 'csw.2019.txt')),
     crlfDelay: Infinity
   });
 
