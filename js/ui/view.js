@@ -109,11 +109,11 @@ let kept = false;
   document.getElementById('practice').addEventListener('click', train);
 
   document.getElementById('play').addEventListener('click', () => {
-    const display = document.getElementById('display');
+    const game = document.getElementById('game');
     const board = document.getElementById('board');
     const wrapper = document.getElementById('wrapper');
 
-    if (wrapper) display.removeChild(wrapper);
+    if (wrapper) game.removeChild(wrapper);
 
     board.classList.remove('hidden');
     word.classList.remove('hidden');
@@ -128,17 +128,58 @@ let kept = false;
 
   // TODO: shouldnt work when in score mode or settings!
   document.addEventListener('keydown', e => {
-    if (kept) clearWord();
-    word.focus(); // TODO: fix cursor locaton
+    const board = document.getElementById('board');
+    const settings = document.getElementById('settings');
+    const define = document.getElementById('define');
+
+    const isBoard = board && !board.classList.contains('hidden');
+    const isSettings = settings && !settings.classList.contains('hidden');
+    const isDefine = !!define;
+
+    if (board) {
+      if (kept) clearWord();
+      word.focus(); // TODO: fix cursor locaton
+    }
+
+    // TODO support 3/4/5 in settings mode
     const key = e.keyCode;
-    if (key === 13 || key === 32) {
-      play(word);
+    if (key === 191 && e.shiftKey) {
       e.preventDefault(); 
-      word.focus();
+      toggleDefine();
+    } else if (key === 13 || key === 32) {
+      e.preventDefault();
+      if (board) {
+        play(word);
+        word.focus();
+      }
     } else if ((key < 65 || key > 90) && key !== 8) {
       e.preventDefault();
     }
   });
+
+  document.addEventListener('swiped-left', toggleDefine);
+  document.addEventListener('swiped-right', toggleDefine);
+
+  function toggleDefine(e) {
+    const display = document.getElementById('display');
+    const game = document.getElementById('game');
+    if (!game.classList.contains('hidden')) {
+      const define = document.createElement('div');
+      define.setAttribute('id', 'define');
+
+      // TODO: save last search?
+      const search = document.createElement('div');
+      search.setAttribute('id', 'search');
+      search.contentEditable = true;
+
+      define.appendChild(search);
+      display.appendChild(define);
+      search.focus();
+    } else {
+      display.removeChild(document.getElementById('define'));
+    }
+    document.getElementById('game').classList.toggle('hidden');
+  }
 
   function setup() {
     if (document.location.hash && document.location.hash.length > 1) {
@@ -233,12 +274,12 @@ function makeCollapsible(title, details, display, fn) {
 function backToGame() {
   maybePerformUpdate();
 
-  const display = document.getElementById('display');
+  const game = document.getElementById('game');
   const board = document.getElementById('board');
   const wrapper = document.getElementById('wrapper');
 
   // TODO FIXME: hide instead of remove to avoid recompute...
-  if (wrapper) display.removeChild(wrapper);
+  if (wrapper) game.removeChild(wrapper);
 
   board.classList.remove('hidden');
   word.classList.remove('hidden');
@@ -263,10 +304,10 @@ function train() {
   maybePerformUpdate();
 
   let wrapper = document.getElementById('wrapper');
-  const display = document.getElementById('display');
+  const game = document.getElementById('game');
   const board = document.getElementById('board');
   if (wrapper) {
-    display.removeChild(wrapper);
+    game.removeChild(wrapper);
   } else {
     document.getElementById('timer').style.visibility = 'hidden';
 
@@ -306,7 +347,7 @@ function train() {
     wrapper.appendChild(table);
   }
 
-  display.appendChild(wrapper);
+  game.appendChild(wrapper);
 }
 
 function refresh() {
@@ -414,7 +455,7 @@ function refresh() {
   });
 
   const wrapper = document.getElementById('wrapper');
-  if (wrapper) document.getElementById('display').removeChild(wrapper);
+  if (wrapper) document.getElementById('game').removeChild(wrapper);
 
   const word = document.getElementById('word');
   word.textContent = '';

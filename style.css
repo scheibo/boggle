@@ -71,7 +71,7 @@ body {
 #timer.expired {
   color: red;
 }
-#word {
+#word, #search {
   width: 100%;
   height: 68px;
   line-height: 68px;
@@ -91,7 +91,7 @@ body {
   font-weight: bold;
   text-transform: uppercase;
 }
-#word:focus, #seed:focus {
+#word:focus, #seed:focus, #search:focus {
   outline: none;
 }
 #defn {

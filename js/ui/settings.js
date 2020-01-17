@@ -60,7 +60,7 @@ function updateDOMSettings() {
     HASH_REFRESH = false;
 
     const wrapper = document.getElementById('wrapper');
-    if (wrapper) display.removeChild(wrapper);
+    if (wrapper) document.getElementById('game').removeChild(wrapper);
 
     const board = document.getElementById('board');
     board.classList.add('hidden');

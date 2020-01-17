@@ -12,6 +12,7 @@ self.addEventListener('install', e => {
                 '/index.html',
                 '/js/game.js',
                 '/js/longpress.js',
+                '/js/swipe.js',
                 '/js/random.js',
                 '/js/timer.js',
                 '/js/training.js',

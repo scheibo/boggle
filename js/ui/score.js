@@ -4,7 +4,7 @@
   document.getElementById('score').addEventListener('mouseup', () => {
     const wrapper = document.getElementById('wrapper');
     if (!wrapper) {
-      const display = document.getElementById('display');
+      const game = document.getElementById('game');
       const board = document.getElementById('board');
       board.classList.add('hidden');
       word.classList.add('hidden');
@@ -57,7 +57,7 @@
         wrapper.appendChild(div);
       }
 
-      display.appendChild(wrapper);
+      game.appendChild(wrapper);
     } else {
       backToGame();
     }
