@@ -13,8 +13,13 @@ var HASH_REFRESH = true;
 var SEED = 0;
 var ORIGINAL = {settings: Object.assign({}, SETTINGS), seed: SEED};
 var LAST = '';
+var LAST_DEFINITION = '';
 
 let kept = false;
+
+const TOUCH = ('ontouchstart' in window) ||
+    (navigator.maxTouchPoints > 0) ||
+    (navigator.msMaxTouchPoints > 0);
 
 (async () => {
   setTimeout(() => window.scrollTo(0, 1), 0);
@@ -42,16 +47,12 @@ let kept = false;
   document.getElementById('display').removeChild(document.getElementById('loader'));
   document.getElementById('game').classList.remove('hidden');
 
-  const TOUCH = ('ontouchstart' in window) ||
-    (navigator.maxTouchPoints > 0) || 
-    (navigator.msMaxTouchPoints > 0);
-
   const menu = document.getElementById('menu');
   const word = document.getElementById('word');
   const defn = document.getElementById('defn');
   if (!TOUCH) {
     word.contentEditable = true;
-    word.focus();
+    permaFocus(word);
   }
 
   window.addEventListener('hashchange', e => {
@@ -117,6 +118,7 @@ let kept = false;
 
     board.classList.remove('hidden');
     word.classList.remove('hidden');
+    if (!TOUCH) focusContentEditable(word);
     defn.classList.remove('hidden');
 
     updateVisibility({show: ['refresh', 'score', 'timer'], hide: ['back', 'play']});
@@ -138,7 +140,9 @@ let kept = false;
 
     if (board) {
       if (kept) clearWord();
-      word.focus(); // TODO: fix cursor locaton
+      focusContentEditable(word);
+    } else if (isDefine) {
+      focusContentEditable(document.getElementById('search'));
     }
 
     // TODO support 3/4/5 in settings mode
@@ -150,7 +154,7 @@ let kept = false;
       e.preventDefault();
       if (board) {
         play(word);
-        word.focus();
+        focusContentEditable(word);
       }
     } else if ((key < 65 || key > 90) && key !== 8) {
       e.preventDefault();
@@ -163,22 +167,74 @@ let kept = false;
   function toggleDefine(e) {
     const display = document.getElementById('display');
     const game = document.getElementById('game');
+
     if (!game.classList.contains('hidden')) {
-      const define = document.createElement('div');
-      define.setAttribute('id', 'define');
+      const def = document.createElement('div');
+      def.setAttribute('id', 'define');
 
       // TODO: save last search?
       const search = document.createElement('div');
       search.setAttribute('id', 'search');
       search.contentEditable = true;
+      search.textContent = LAST_DEFINITION;
 
-      define.appendChild(search);
-      display.appendChild(define);
-      search.focus();
+      def.appendChild(search);
+      display.appendChild(def);
+
+      const updateDetails = (word) => {
+       if (DICT[word]) {
+          const defn = getOrCreateElementById('defineDefinition', 'div');
+          defn.textContent = define(word, DICT);
+          if (DICT[word].csw && SETTINGS.type !== 'CSW') {
+            def.classList.add('hard');
+          } else {
+            def.classList.remove('hard');
+          }
+          def.appendChild(defn);
+        } else {
+          removeChildById(def, 'defineDefinition');
+        }
+      };
+
+      def.addEventListener('input', e => {
+        const word = search.textContent.toUpperCase();
+        LAST_DEFINITION = word;
+        console.log(word, DICT[word]);
+        updateDetails(word);
+      });
+      updateDetails(LAST_DEFINITION);
+      permaFocus(search);
     } else {
       display.removeChild(document.getElementById('define'));
     }
     document.getElementById('game').classList.toggle('hidden');
+    correctFocus();
+  }
+
+  function getOrCreateElementById(id, type) {
+    let element = document.getElementById(id);
+    if (element) return element;
+    element = document.createElement(type);
+    element.setAttribute('id', id);
+    return element;
+  }
+
+  function removeChildById(element, id) {
+    const child = document.getElementById(id)
+    if (!child) return;
+    return element.removeChild(child);
+  }
+
+  function correctFocus() {
+    if (TOUCH) return;
+    const board = document.getElementById('board');
+    const settings = document.getElementById('settings');
+
+    if (board && !board.classList.contains('hidden')) {
+      focusContentEditable(document.getElementById('word'))
+    } else if (settings && !settings.classList.contains('hidden')) {
+      focusContentEditable(document.getElementById('seed'))
+    }
   }
 
   function setup() {
@@ -283,6 +339,7 @@ function backToGame() {
 
   board.classList.remove('hidden');
   word.classList.remove('hidden');
+  if (!TOUCH) focusContentEditable(word);
   defn.classList.remove('hidden');
 
   updateVisibility({show: ['refresh', 'score', 'timer'], hide: ['back', 'practice', 'settings']});
@@ -313,6 +370,7 @@ function train() {
 
     board.classList.add('hidden');
     word.classList.add('hidden');
+    if (!TOUCH) focusContentEditable(word);
     defn.classList.add('hidden');
 
     updateVisibility({show: ['refresh', 'play'], hide: ['settings', 'back', 'practice']});
@@ -460,6 +518,7 @@ function refresh() {
   const word = document.getElementById('word');
   word.textContent = '';
   word.classList.remove('hidden');
+  if (!TOUCH) focusContentEditable(word);
   word.classList.remove('error');
   word.classList.remove('fade');
 
@@ -519,4 +578,17 @@ function clearWord(w) {
   word.classList.remove('fade');
   defn.textContent = '';
   kept = false;
+}
+
+function focusContentEditable(element) {
+  element.focus();
+  document.execCommand('selectAll', false, null);
+  const sel = document.getSelection();
+  if (sel && !sel.isCollapsed) sel.collapseToEnd();
+}
+
+// TODO: add to #seed in settings
+function permaFocus(e) {
+  e.addEventListener('blur', () => setTimeout(() => focusContentEditable(e), 20));
+  focusContentEditable(e);
 }

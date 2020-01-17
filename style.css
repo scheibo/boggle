@@ -81,6 +81,9 @@ body {
   font-weight: bold;
   text-transform: uppercase;
 }
+#search {
+  margin: 20px 0;
+}
 #seed {
   width: 100%;
   height: 40px;
@@ -94,7 +97,7 @@ body {
 #word:focus, #seed:focus, #search:focus {
   outline: none;
 }
-#defn {
+#defn, #defineDefinition {
   text-align: center;
   margin: 0px auto;
   width: 90%;
