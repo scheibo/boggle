@@ -5,6 +5,8 @@ package-lock.json
 data/dict.json
 data/stats.json
 data/clean_1w.txt
+# fuckers want your money
+data/nwl.2018.txt
 
 sw.js
 js/
