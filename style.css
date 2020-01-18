@@ -40,6 +40,9 @@ body {
   position: relative;
   overflow: hidden;
 }
+#game {
+  height: 92%; /* TODO: fix this overscroll hack :( */
+}
 #loader, #content {
   display: flex;
   justify-content: center;
