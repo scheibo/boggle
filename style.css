@@ -116,12 +116,39 @@ body {
   border-radius: 8px;
 }
 #defineStats {
-  border-collapse: collapse;
-  border-radius: 8px;
+  min-width: 90%;
+  margin: 34px auto 0;
+  text-align: left;
+  line-height: 1.15em;
+  border-collapse: separate;
+  border-left: 0;
+  border-spacing: 0px;
 }
 #defineStats td {
-  text-align: center;
-  border: 3px solid var(--fg-color);
+  border-top: 3px solid var(--fg-color);
+  border-left: 3px solid var(--fg-color);
+  padding: 4px 10px;
+}
+#defineStats td.value {
+  text-align: right;
+}
+#defineStats tr:last-of-type td {
+  border-bottom: 3px solid var(--fg-color);
+}
+#defineStats tr td:last-of-type {
+  border-right: 3px solid var(--fg-color);
+}
+#defineStats tr:first-of-type td:first-of-type {
+  border-top-left-radius: 8px;
+}
+#defineStats tr:first-of-type td:last-of-type {
+  border-top-right-radius: 8px;
+}
+#defineStats tr:last-of-type td:first-of-type {
+  border-bottom-left-radius: 8px;
+}
+#defineStats tr:last-of-type td:last-of-type {
+  border-bottom-right-radius: 8px;
 }
 .target {
   height: 70px;

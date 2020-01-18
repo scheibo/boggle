@@ -213,6 +213,7 @@ const TOUCH = ('ontouchstart' in window) ||
           td.appendChild(b);
           tr.appendChild(td);
           td = document.createElement('td');
+          td.classList.add('value');
           td.textContent = s.grade === ' ' ? 'S' : s.grade;
           tr.appendChild(td);
 
@@ -222,7 +223,8 @@ const TOUCH = ('ontouchstart' in window) ||
           td.appendChild(b);
           tr.appendChild(td);
           td = document.createElement('td');
-          td.textContent = s.word ? `${s.word.p} (${s.word.v}%)` : '-';
+          td.classList.add('value');
+          td.textContent = s.word ? s.word.p : '-';
           tr.appendChild(td);
 
           stats.appendChild(tr);
@@ -234,6 +236,7 @@ const TOUCH = ('ontouchstart' in window) ||
           td.appendChild(b);
           tr.appendChild(td);
           td = document.createElement('td');
+          td.classList.add('value');
           td.textContent = s.freq ? s.freq : '-';
           tr.appendChild(td);
 
@@ -243,7 +246,8 @@ const TOUCH = ('ontouchstart' in window) ||
           td.appendChild(b);
           tr.appendChild(td);
           td = document.createElement('td');
-          td.textContent = s.anagram ? `${s.anagram.p} (${s.anagram.v}%)` : '-';
+          td.classList.add('value');
+          td.textContent = s.anagram ? s.anagram.p : '-';
           tr.appendChild(td);
 
           stats.appendChild(tr);
