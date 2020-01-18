@@ -140,17 +140,17 @@ export class Game {
   }
 
   static encodeID(s: Omit<Settings, 'grade'>, seed: number) {
-    return `${s.dict.charAt(0)}${s.min}${s.dice.charAt(0)}${seed}`;
+    return `${s.dice.charAt(0)}${s.min}${s.dict.charAt(0)}${seed}`;
   }
 
   static decodeID(id: string): [GameSettings, number] {
-    const dict = id.charAt(0) === 'N' ? 'NWL' : id.charAt(0) === 'E' ? 'ENABLE' : 'CSW';
+    const dice = id.charAt(0) === 'B' ? 'Big' : id.charAt(0) === 'O' ? 'Old' : 'New';
     const min = Number(id.charAt(1)) as MinLength;
-    const dice = id.charAt(2) === 'B' ? 'Big' : id.charAt(2) === 'O' ? 'Old' : 'New';
+    const dict = id.charAt(2) === 'N' ? 'NWL' : id.charAt(2) === 'E' ? 'ENABLE' : 'CSW';
 
     const seed = Number(id.slice(3));
 
-    return [{ dict, min, dice }, seed];
+    return [{ dice, min, dict }, seed];
   }
 
   static fromJSON(json: any, trie: Trie, dict: Dictionary, stats: Stats) {
