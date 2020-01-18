@@ -252,13 +252,13 @@ const TOUCH = ('ontouchstart' in window) ||
 
           stats.appendChild(tr);
 
-          // TODO: more...
-
           def.appendChild(defn);
           def.appendChild(stats);
+          def.appendChild(displayAnagrams(word));
         } else {
           removeChildById(def, 'defineDefinition');
           removeChildById(def, 'defineStats');
+          removeChildById(def, 'defineAnagrams');
         }
       };
 
@@ -276,9 +276,55 @@ const TOUCH = ('ontouchstart' in window) ||
     correctFocus();
   }
 
-  function getOrCreateElementById(id, type) {
+  function displayAnagrams(word) {
+    const a = Stats.toAnagram(word);
+    const words = STATS.anagrams[a].filter(w => !DICT[w].dict || DICT[w].dict.includes(SETTINGS.dict.charAt(0)));
+
+    const div = getOrCreateElementById('defineAnagrams', 'div', true);
+    while (div.firstChild) div.removeChild(stats.firstChild);
+    if (words.length <= 1) return div;
+
+    const solo = [];
+    const anadromes = new Set();
+
+    for (const w of words) {
+      const r = w.split('').reverse().join('');
+      if (r !== w && words.includes(r)) {
+        anadromes.add(`${[w, r].sort().join(' ')}`);
+      } else {
+        solo.push(w);
+      }
+    }
+
+    const format = w => {
+      const e = document.createElement(w === word ? 'b' : 'span');
+      e.textContent = w;
+      return e;
+    };
+
+    console.log(word, anadromes, solo);
+    for (const pair of anadromes) {
+      const [a, b] = pair.split(' ');
+      div.appendChild(document.createTextNode(' ('));
+      div.appendChild(format(a));
+      div.appendChild(document.createTextNode(' '));
+      div.appendChild(format(b));
+      div.appendChild(document.createTextNode(') '));
+    }
+    for (const w of solo) {
+      div.appendChild(format(w));
+      div.appendChild(document.createTextNode(' '));
+    }
+
+    return div;
+  }
+
+  function getOrCreateElementById(id, type, clear) {
     let element = document.getElementById(id);
-    if (element) return element;
+    if (element) {
+      if (!clear) return element;
+      element.parentNode.removeChild(element);
+    }
     element = document.createElement(type);
     element.setAttribute('id', id);
     return element;
@@ -539,7 +585,7 @@ function refresh() {
           deselect();
           play(word);
         } */
-      const td = cell.parentNode;
+      const td = cell.spantNode;
       td.classList.add('selected');
       if (!touched.has(td)) {
         touched.add(td);

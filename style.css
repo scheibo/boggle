@@ -150,6 +150,12 @@ body {
 #defineStats tr:last-of-type td:last-of-type {
   border-bottom-right-radius: 8px;
 }
+#defineAnagrams {
+  font-style: italic;
+  text-align: center;
+  margin: 20px auto 0;
+  min-width: 90%;
+}
 .target {
   height: 70px;
   width: 70px;
