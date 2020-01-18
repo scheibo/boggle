@@ -9,7 +9,7 @@ function settingsEqual(a, b) {
 }
 
 function updateRequired() {
-  return SEED !== ORIGINAL.seed || !settingsEqual(SETTINGS, ORIGINAL.settings);
+  return !TRAINING || SEED !== ORIGINAL.seed || !settingsEqual(SETTINGS, ORIGINAL.settings);
 }
 
 function maybePerformUpdate() {

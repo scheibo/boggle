@@ -68,7 +68,7 @@ export class Stats {
 
     const g = [' ', 'A', 'B', 'C', 'D'][Math.ceil((rw + ra) / 2)] as Grade;
 
-    const pct = (v: number) => Math.round(100 * v / s.total * 1000) / 1000;
+    const pct = (v: number) => Math.round(((100 * v) / s.total) * 1000) / 1000;
     const result: {
       grade: Grade;
       freq?: number;
