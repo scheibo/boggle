@@ -23,17 +23,27 @@ function splitFirst(str, delimiter, limit = 1) {
   return splitStr;
 }
 
+async function addWordList(dict, f, fn) {
+  const lines = readline.createInterface({
+    input: fs.createReadStream(path.join(DATA, f)),
+    crlfDelay: Infinity
+  });
+
+  for await (const line of lines) {
+    dict.add(fn(line));
+  }
+}
+
 (async () => {
   let lines = readline.createInterface({
     input: fs.createReadStream(path.join(DATA, 'csw.2019.txt')),
     crlfDelay: Infinity
   });
 
-  const dict = {};
-  for await (const line of lines) {
-    const [word, def] = splitFirst(line, ' ');
-    dict[word] = def;
-  }
+  const dict = new Set();
+  addWordList(dict, 'nwl.2018.txt', line => line.toUpperCase());
+  addWordList(dict, 'enable.txt', line => line.toUpperCase());
+  addWordList(dict, 'csw.2019.txt', line => splitFirst(line, '\t')[0]);
 
   lines = readline.createInterface({
     input: fs.createReadStream(path.join(DATA, 'count_1w.txt')),
@@ -43,7 +53,7 @@ function splitFirst(str, delimiter, limit = 1) {
   const out = fs.createWriteStream(path.join(DATA, 'clean_1w.txt'));
   for await (const line of lines) {
     const [word, freq] = splitFirst(line, '\t');
-    if (dict[word.toUpperCase()]) out.write(line + '\n');
+    if (dict.has(word.toUpperCase())) out.write(line + '\n');
   }
   out.end();
 })();

@@ -6,14 +6,14 @@ export interface Entry {
   defn: string;
 
   freq?: number;
-  csw?: boolean;
+  dict?: string;
 
   n?: number;
   o?: number;
   b?: number;
 }
 
-export type Type = 'NWL' | 'CSW';
+export type Type = 'NWL' | 'CSW' | 'ENABLE';
 
 // TODO: linkify? recurse?
 export function define(word: string, dict: Dictionary) {
