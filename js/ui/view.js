@@ -585,7 +585,7 @@ function refresh() {
           deselect();
           play(word);
         } */
-      const td = cell.spantNode;
+      const td = cell.parentNode;
       td.classList.add('selected');
       if (!touched.has(td)) {
         touched.add(td);
