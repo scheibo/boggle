@@ -144,22 +144,13 @@ export class Game {
   }
 
   static decodeID(id: string): [GameSettings, number] {
-    if (id.charAt(0) !== 'N' && id.charAt(0) !== 'C') {
-      // Legacy
-      const dice = id.charAt(0) === 'B' ? 'Big' : id.charAt(2) === 'O' ? 'Old' : 'New';
+    const dict = id.charAt(0) === 'N' ? 'NWL' : id.charAt(0) === 'E' ? 'ENABLE' : 'CSW';
+    const min = Number(id.charAt(1)) as MinLength;
+    const dice = id.charAt(2) === 'B' ? 'Big' : id.charAt(2) === 'O' ? 'Old' : 'New';
 
-      const seed = Number(id.slice(1));
+    const seed = Number(id.slice(3));
 
-      return [{ dice, dict: 'NWL' }, seed];
-    } else {
-      const dict = id.charAt(0) === 'N' ? 'NWL' : 'CSW';
-      const min = Number(id.charAt(1)) as MinLength;
-      const dice = id.charAt(2) === 'B' ? 'Big' : id.charAt(2) === 'O' ? 'Old' : 'New';
-
-      const seed = Number(id.slice(3));
-
-      return [{ dict, min, dice }, seed];
-    }
+    return [{ dict, min, dice }, seed];
   }
 
   static fromJSON(json: any, trie: Trie, dict: Dictionary, stats: Stats) {
@@ -360,7 +351,8 @@ export class Game {
           }
           if (node2 !== undefined) {
             const s2 = s + c;
-            const isWord = this.settings.dict === 'NWL' ? node2.isWord === 'NWL' : node2.isWord;
+            const isWord = typeof node2.isWord === 'boolean' ?
+              node.isWord : node2.isWord.includes(this.settings.dict.charAt(0));
             if (isWord && s2.length >= this.settings.min) words[s2] = hist;
             queue.push([x2, y2, s2, node2, hist]);
           }

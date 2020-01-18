@@ -3,7 +3,7 @@ import { Dictionary, Type } from './dict';
 export class Trie {
   parent: Trie | null;
   children: Trie[];
-  isWord: Type | false;
+  isWord: string | boolean;
 
   private constructor(parent: Trie | null, value: string) {
     this.parent = parent;
@@ -23,7 +23,7 @@ export class Trie {
         if (next === undefined) next = new Trie(current, letter);
         current = next;
       }
-      current.isWord = dict[word].csw ? 'CSW' : 'NWL';
+      current.isWord = dict[word].dict || true;
     }
     return root;
   }

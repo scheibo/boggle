@@ -185,7 +185,7 @@ const TOUCH = ('ontouchstart' in window) ||
        if (DICT[word]) {
           const defn = getOrCreateElementById('defineDefinition', 'div');
           defn.textContent = define(word, DICT);
-          if (DICT[word].csw && SETTINGS.type !== 'CSW') {
+          if (DICT[word].dict && !DICT[word].dict.includes(SETTINGS.type)) {
             def.classList.add('hard');
           } else {
             def.classList.remove('hard');
@@ -199,7 +199,6 @@ const TOUCH = ('ontouchstart' in window) ||
       def.addEventListener('input', e => {
         const word = search.textContent.toUpperCase();
         LAST_DEFINITION = word;
-        console.log(word, DICT[word]);
         updateDetails(word);
       });
       updateDetails(LAST_DEFINITION);

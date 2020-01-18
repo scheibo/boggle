@@ -6,10 +6,12 @@ interface Data {
   Old: DiceEntry;
   Big: DiceEntry;
   freqs: number[];
+  total: number;
 }
 
 interface DiceEntry {
   NWL: TypeEntry;
+  ENABLE: TypeEntry;
   CSW: TypeEntry;
 }
 
@@ -24,7 +26,7 @@ export type Grade = 'A' | 'B' | 'C' | 'D' | ' ';
 export class Stats {
   private readonly dict: Dictionary;
   private readonly percentiles: Data;
-  // NOTE: contains CSW words!
+  // NOTE: contains ALL words!
   readonly anagrams: { [anagram: string]: string[] };
 
   constructor(percentiles: Data, dict: Dictionary) {
@@ -46,7 +48,7 @@ export class Stats {
   ): { grade: Grade; freq: number; word: number; anagram: number } {
     const val = this.dict[word];
     const a = this.anagrams[Stats.toAnagram(word)];
-    if (!val || !a || (val.csw && type !== 'CSW')) {
+    if (!val || !a || (val.dict && !val.dict.includes(type.charAt(0)))) {
       return { grade: ' ' as Grade, freq: -1, word: -1, anagram: -1 };
     }
 
@@ -62,7 +64,7 @@ export class Stats {
 
     const va = a.reduce((acc, w) => {
       const v = this.dict[w];
-      if (v.csw && type !== 'CSW') return acc;
+      if (v.dict && !v.dict.includes(type.charAt(0))) return acc;
       return acc + (v[d] || 0);
     }, 0);
     const pa = s.anagrams.findIndex((v: number) => v <= va);

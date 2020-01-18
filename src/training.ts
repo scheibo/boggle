@@ -31,7 +31,7 @@ class TrainingPool {
 
     for (let [k, group] of Object.entries(stats.anagrams)) {
       if (k.length > 7) continue;
-      if (settings.dict === 'NWL') group = group.filter(w => !dict[w].csw);
+      group = group.filter(w => !dict[w].dict || dict[w].dict!.includes(settings.dict));
       if (!group.length) continue;
 
       // Determine the lowest grade of the group
