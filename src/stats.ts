@@ -41,15 +41,11 @@ export class Stats {
     }
   }
 
-  stats(
-    word: string,
-    dice: Dice = 'New',
-    type: Type = 'NWL'
-  ): { grade: Grade; freq: number; word: number; anagram: number } {
+  stats(word: string, dice: Dice = 'New', type: Type = 'NWL') {
     const val = this.dict[word];
     const a = this.anagrams[Stats.toAnagram(word)];
     if (!val || !a || (val.dict && !val.dict.includes(type.charAt(0)))) {
-      return { grade: ' ' as Grade, freq: -1, word: -1, anagram: -1 };
+      return { grade: ' ' as Grade };
     }
 
     const pf = val.freq === undefined ? -1 : this.percentiles.freqs.findIndex(v => v <= val.freq!);
@@ -71,7 +67,18 @@ export class Stats {
     const ra = rank(pa);
 
     const g = [' ', 'A', 'B', 'C', 'D'][Math.ceil((rw + ra) / 2)] as Grade;
-    return { grade: g < f ? f : g, freq: pf, word: pw, anagram: pa };
+
+    const pct = (v: number) => Math.round(100 * v / s.total * 1000) / 1000;
+    const result: {
+      grade: Grade;
+      freq?: number;
+      word?: { p: number; v: number };
+      anagram?: { p: number; v: number };
+    } = { grade: g < f ? f : g };
+    if (pf > -1) result.freq = pf;
+    if (pw > -1) result.word = { p: pw, v: pct(val.freq!) };
+    if (pa > -1) result.anagram = { p: pa, v: pct(va) };
+    return result;
   }
 
   static toAnagram(word: string) {

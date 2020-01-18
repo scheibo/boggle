@@ -41,9 +41,9 @@ async function addWordList(dict, f, fn) {
   });
 
   const dict = new Set();
-  addWordList(dict, 'nwl.2018.txt', line => line.toUpperCase());
-  addWordList(dict, 'enable.txt', line => line.toUpperCase());
-  addWordList(dict, 'csw.2019.txt', line => splitFirst(line, '\t')[0]);
+  await addWordList(dict, 'nwl.2018.txt', line => line.toUpperCase());
+  await addWordList(dict, 'enable.txt', line => line.toUpperCase());
+  await addWordList(dict, 'csw.2019.txt', line => splitFirst(line, '\t')[0]);
 
   lines = readline.createInterface({
     input: fs.createReadStream(path.join(DATA, 'count_1w.txt')),

@@ -182,17 +182,79 @@ const TOUCH = ('ontouchstart' in window) ||
       display.appendChild(def);
 
       const updateDetails = (word) => {
-       if (DICT[word]) {
+        if (DICT[word]) {
           const defn = getOrCreateElementById('defineDefinition', 'div');
           defn.textContent = define(word, DICT);
-          if (DICT[word].dict && !DICT[word].dict.includes(SETTINGS.dict.charAt(0))) {
+          const val = DICT[word];
+          if ((val.dict && !val.dict.includes(SETTINGS.dict.charAt(0))) || word.length < SETTINGS.min) {
             def.classList.add('hard');
           } else {
             def.classList.remove('hard');
           }
+
+          const stats = getOrCreateElementById('defineStats', 'table');
+          while (stats.firstChild) stats.removeChild(stats.firstChild);
+          const createRow = (label, data) => {
+            td.textContent = label;
+            tr.appendChild(td);
+            td = document.createElement('td');
+            td.textContent = data;
+            tr.appendChild(td);
+            return tr;
+          };
+
+          // TODO: do ORDINAL (PERCENTILE) instead of PERCENTILE (PERCENT)
+          const s = STATS.stats(word, SETTINGS.dice, SETTINGS.type);
+
+          let tr = document.createElement('tr');
+          let td = document.createElement('td');
+          let b = document.createElement('b');
+          b.textContent = 'Grade';
+          td.appendChild(b);
+          tr.appendChild(td);
+          td = document.createElement('td');
+          td.textContent = s.grade === ' ' ? 'S' : s.grade;
+          tr.appendChild(td);
+
+          td = document.createElement('td');
+          b = document.createElement('b');
+          b.textContent = 'Score';
+          td.appendChild(b);
+          tr.appendChild(td);
+          td = document.createElement('td');
+          td.textContent = s.word ? `${s.word.p} (${s.word.v}%)` : '-';
+          tr.appendChild(td);
+
+          stats.appendChild(tr);
+
+          tr = document.createElement('tr');
+          td = document.createElement('td');
+          b = document.createElement('b');
+          b.textContent = 'Frequency';
+          td.appendChild(b);
+          tr.appendChild(td);
+          td = document.createElement('td');
+          td.textContent = s.freq ? s.freq : '-';
+          tr.appendChild(td);
+
+          td = document.createElement('td');
+          b = document.createElement('b');
+          b.textContent = 'Anagram';
+          td.appendChild(b);
+          tr.appendChild(td);
+          td = document.createElement('td');
+          td.textContent = s.anagram ? `${s.anagram.p} (${s.anagram.v}%)` : '-';
+          tr.appendChild(td);
+
+          stats.appendChild(tr);
+
+          // TODO: more...
+
           def.appendChild(defn);
+          def.appendChild(stats);
         } else {
           removeChildById(def, 'defineDefinition');
+          removeChildById(def, 'defineStats');
         }
       };
 
