@@ -352,7 +352,7 @@ export class Game {
           if (node2 !== undefined) {
             const s2 = s + c;
             const isWord = typeof node2.isWord === 'boolean' ?
-              node.isWord : node2.isWord.includes(this.settings.dict.charAt(0));
+              node2.isWord : node2.isWord.includes(this.settings.dict.charAt(0));
             if (isWord && s2.length >= this.settings.min) words[s2] = hist;
             queue.push([x2, y2, s2, node2, hist]);
           }
