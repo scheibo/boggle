@@ -185,7 +185,7 @@ const TOUCH = ('ontouchstart' in window) ||
        if (DICT[word]) {
           const defn = getOrCreateElementById('defineDefinition', 'div');
           defn.textContent = define(word, DICT);
-          if (DICT[word].dict && !DICT[word].dict.includes(SETTINGS.type)) {
+          if (DICT[word].dict && !DICT[word].dict.includes(SETTINGS.dict.charAt(0))) {
             def.classList.add('hard');
           } else {
             def.classList.remove('hard');
