@@ -357,7 +357,8 @@ const TOUCH = ('ontouchstart' in window) ||
     if (HISTORY.length) {
       const id = HISTORY[HISTORY.length - 1].seed;
       const [settings, seed] = Game.decodeID(id);
-      const rand = new Random(seed);
+      const rand = new Random();
+      random.seed = SEED;
       rand.next();
 
       return {settings, seed: rand.seed};
@@ -531,7 +532,9 @@ function refresh() {
   const timer = new Timer(180 * 1000, () => {
     if (!STATE.game.expired) STATE.game.expired = +new Date();
   });
-  const game = new Game(TRIE, DICT, STATS, new Random(SEED), SETTINGS);
+  const random = new Random();
+  random.seed = SEED;
+  const game = new Game(TRIE, DICT, STATS, random, SETTINGS);
   const content = document.getElementById('content');
   if (content.firstChild) content.removeChild(content.firstChild);
 

@@ -155,7 +155,8 @@ export class Game {
 
   static fromJSON(json: any, trie: Trie, dict: Dictionary, stats: Stats) {
     const [settings, seed] = Game.decodeID(json.seed);
-    const random = new Random(seed);
+    const random = new Random();
+    random.seed = seed;
     const game = new Game(trie, dict, stats, random, settings);
 
     // @ts-ignore readonly
