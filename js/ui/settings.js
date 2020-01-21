@@ -14,6 +14,7 @@ function updateRequired() {
 
 function maybePerformUpdate() {
   if (updateRequired()) {
+    RANDOM = RANDOM || new Random();
     RANDOM.seed = SEED;
     TRAINING = new TrainingPool(STATS, DICT, RANDOM, SETTINGS);
     ORIGINAL.settings = SETTINGS;

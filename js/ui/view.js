@@ -172,7 +172,6 @@ const TOUCH = ('ontouchstart' in window) ||
       const def = document.createElement('div');
       def.setAttribute('id', 'define');
 
-      // TODO: save last search?
       const search = document.createElement('div');
       search.setAttribute('id', 'search');
       search.contentEditable = true;
@@ -181,7 +180,7 @@ const TOUCH = ('ontouchstart' in window) ||
       def.appendChild(search);
       display.appendChild(def);
 
-      const updateDetails = (word) => {
+      const updateDetails = word => {
         if (DICT[word]) {
           const defn = getOrCreateElementById('defineDefinition', 'div');
           defn.textContent = define(word, DICT);
@@ -203,7 +202,6 @@ const TOUCH = ('ontouchstart' in window) ||
             return tr;
           };
 
-          // TODO: do ORDINAL (PERCENTILE) instead of PERCENTILE (PERCENT)
           const s = STATS.stats(word, SETTINGS.dice, SETTINGS.type);
 
           let tr = document.createElement('tr');
@@ -254,12 +252,11 @@ const TOUCH = ('ontouchstart' in window) ||
 
           def.appendChild(defn);
           def.appendChild(stats);
-          def.appendChild(displayAnagrams(word));
         } else {
           removeChildById(def, 'defineDefinition');
           removeChildById(def, 'defineStats');
-          removeChildById(def, 'defineAnagrams');
         }
+        def.appendChild(displayAnagrams(word));
       };
 
       def.addEventListener('input', e => {
@@ -277,12 +274,16 @@ const TOUCH = ('ontouchstart' in window) ||
   }
 
   function displayAnagrams(word) {
-    const a = Stats.toAnagram(word);
-    const words = STATS.anagrams[a].filter(w => !DICT[w].dict || DICT[w].dict.includes(SETTINGS.dict.charAt(0)));
 
     const div = getOrCreateElementById('defineAnagrams', 'div', true);
     while (div.firstChild) div.removeChild(stats.firstChild);
-    if (words.length <= 1) return div;
+
+    const a = Stats.toAnagram(word);
+    const words = a &&
+      STATS.anagrams[a] &&
+      STATS.anagrams[a].filter(w =>
+        !DICT[w].dict || DICT[w].dict.includes(SETTINGS.dict.charAt(0)));
+    if (!words || words.length <= 1) return div;
 
     const solo = [];
     const anadromes = new Set();
@@ -302,7 +303,6 @@ const TOUCH = ('ontouchstart' in window) ||
       return e;
     };
 
-    console.log(word, anadromes, solo);
     for (const pair of anadromes) {
       const [a, b] = pair.split(' ');
       div.appendChild(document.createTextNode(' ('));
