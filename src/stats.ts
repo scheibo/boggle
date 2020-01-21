@@ -91,9 +91,9 @@ export class Stats {
 
 function gradeFreq(p: number) {
   if (p >= 99) return ' ';
-  if (p >= 96) return 'A';
-  if (p >= 93) return 'B';
-  if (p >= 86) return 'C';
+  if (p >= 20) return 'A';
+  if (p >= 10) return 'B';
+  if (p >= 5) return 'C';
   return 'D';
 }
 

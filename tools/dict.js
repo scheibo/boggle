@@ -143,7 +143,7 @@ async function buildDictionary() {
     New: n.stats,
     Old: o.stats,
     Big: b.stats,
-    freqs: percentiles(Object.values(freqs), total),
+    freqs: percentiles(Object.values(freqs)),
     total,
   };
   return {dict, stats};
@@ -157,8 +157,16 @@ function percentiles(arr, n) {
   let tot = 0;
   for (const v of arr) {
     if (i > 100) break;
-    tot += v;
-    if (tot >= i / 100 * n) {
+
+    let cond;
+    if (n) {
+      tot += v;
+      cond = tot >= i / 100 * n;
+    } else {
+      tot++;
+      cond = tot >= i / 100 * arr.length;
+    }
+    if (cond) {
       i++;
       ptiles.push(v);
     }
