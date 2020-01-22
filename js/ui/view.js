@@ -642,7 +642,7 @@ function refresh() {
 
   timer.start();
   if (document.location.hash !== `#${game.id}`) {
-    window.history.pushState(null, null, `#${game.id}`);
+    window.history.replaceState(null, null, `#${game.id}`);
   }
 
   return {timer, game};

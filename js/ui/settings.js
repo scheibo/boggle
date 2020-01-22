@@ -30,7 +30,7 @@ function updateSettings(settings) {
 
   const id = Game.encodeID(SETTINGS, SEED);
   document.getElementById('seed').textContent = id;
-  window.history.pushState(null, null, `#${id}`);
+  window.history.replaceState(null, null, `#${id}`);
 
   if (updateRequired()) {
     document.getElementById('back').classList.add('hidden');
