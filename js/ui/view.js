@@ -358,7 +358,7 @@ const TOUCH = ('ontouchstart' in window) ||
       const id = HISTORY[HISTORY.length - 1].seed;
       const [settings, seed] = Game.decodeID(id);
       const rand = new Random();
-      random.seed = SEED;
+      rand.seed = SEED;
       rand.next();
 
       return {settings, seed: rand.seed};

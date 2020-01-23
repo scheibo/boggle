@@ -122,9 +122,9 @@ async function buildDictionary() {
   }
 
   const [n, o, b] = await Promise.all([
-    anagrams('new4x4.txt', dict),
-    anagrams('old4x4.txt', dict),
-    anagrams('5x5.txt', dict)
+    anagrams('new.txt', dict),
+    anagrams('old.txt', dict),
+    anagrams('big.txt', dict)
   ]);
 
   for (const word in dict) {
