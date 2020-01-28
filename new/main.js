@@ -36,25 +36,25 @@ const UI = new class({
     document.addEventListener('swiped-right', e => this.toggleView(this.DefineView));
   }
 
-  createView(view) {
-    this.root.appendChild(view.create());
+  attachView(view) {
+    this.root.appendChild(view.attach());
   }
 
-  destroyView(view) {
-    this.root.removeChild(view.destroy());
+  detachView(view) {
+    this.root.removeChild(view.detach());
   }
 
   toggleView(view) {
     if (this.current === view) {
-      this.destroyView(view);
+      this.detachView(view);
       this.current = this.previous;
       this.previous = view;
-      this.createView(this.current);
+      this.attachiew(this.current);
     } else {
-      this.destroyView(this.current);
+      this.detachView(this.current);
       this.current = view;
       this.previous = this.current;
-      this.createView(view);
+      this.attachView(view);
     }
   }
 
@@ -74,10 +74,13 @@ class TopBarElement {
 }
 
 class LoadingSpinnerElement {
-  create() {
+  attach() {
     this.loader = createElementWithId('div', 'loader');
     this.spinner = createElementWithId('div', 'spinner');
     this.loader.appendChild(this.spinner);
+    return this.loader;
+  }
+  detach() {
     return this.loader;
   }
 }
@@ -95,7 +98,7 @@ class DefineView {
     this.word = '';
   }
 
-  create() {
+  attach() {
     this.define = createElementWithId('div', 'define');
     this.search = createElementWithId('div', 'search');
     this.search.contentEditable = true;
@@ -112,7 +115,7 @@ class DefineView {
     return this.define;
   }
 
-  destroy() {
+  detach() {
     return this.define;
   }
 
@@ -266,4 +269,93 @@ function focusContentEditable(element) {
 function permaFocus(e) {
   e.addEventListener('blur', () => setTimeout(() => focusContentEditable(e), 20));
   focusContentEditable(e);
+}
+
+
+
+function createRadios(id, values, listener) {
+  const radios = createElementWithId('span', id);
+  radios.classList.add('toggle-group');
+  radios.classList.add('horizontal');
+  radios.setAttribute('role', 'radiogroup');
+  for (const val of values) {
+    let checked = false;
+    if (Array.isArray(val)) {
+      checked = true;
+      val = val[0];
+    }
+
+    const radio = createElementWithId('input', `${id}${val}`);
+    radio.classList.add('hide');
+    radio.setAttribute('type', 'radio');
+    radio.setAttribute('name', id);
+    radio.setAttribute('value', val);
+    if (checked) radio.setAttribute('checked', 'checked');
+
+    const label = document.createElement('label');
+    label.classList.add('toggle');
+    label.setAttribute('for', `${id}${val}`);
+    label.textContent = val.toUpperCase();
+
+    radio.addEventListener('click', listener.bind(radio));
+
+    radios.appendChild(radio);
+    radios.appendChild(label);
+  }
+  return radios;
+}
+
+class SettingsView {
+  attach() {
+    this.settings = createElementWithId('div', 'settings');
+
+    const createRow = (e) => { 
+      const row = document.createElement('div');
+      row.classlist.add('row');
+      row.appendChild(e);
+      return e;
+    }
+
+    const seed = createElementWithId('div', 'seed');
+    seed.setAttribute('contenteditable', true);
+
+    this.settings.appendChild(createRow(seed));
+    this.settings.appendChild(createRow(createRadios('dice', [['New'], 'Old', 'Big'], e => {
+      const min = this.value === 'Big' ? 4 : 3;
+      document.getElementById(`min${min}`).checked = true;
+      updateSettings({dice: this.value, min});
+    })));
+    this.settings.appendChild(createRow(createRadios('min', [['3'], '4', '5'], e => {
+      updateSettings({min: Number(this.value)});
+    })));
+    this.settings.appendChild(createRow(createRadios('dict', [['NWL'], 'ENABLE', 'CSW'], e => {
+      updateSettings({dict: this.value});
+    })));
+    this.settings.appendChild(createRow(createRadios('grade', ['A', 'B', ['C'], 'D'], e => {
+      updateSettings({grade: this.value});
+    })));
+    this.settings.appendChild(createRow(createRadios('scoreDisplay', ['Hide', ['Show'], 'Full'], e => {
+      updateSettings({display: this.value});
+    })));
+    this.settings.appendChild(createRow(createRadios('theme', [['Light'], 'Dark'], e => {
+      updateSettings({theme: this.value});
+      setTheme(this.value);
+    })));
+
+    return this.settings;
+  }
+
+  update(settings) {
+    document.getElementById('seed').textContent = Game.encodeID(settings, SEED);
+    document.getElementById(`dice${settings.dice}`).checked = true;
+    document.getElementById(`min${settings.min}`).checked = true;
+    document.getElementById(`dict${settings.dict}`).checked = true;
+    document.getElementById(`grade${settings.grade}`).checked = true;
+    document.getElementById(`scoreDisplay${settings.display}`).checked = true;
+    document.getElementById(`theme${settings.theme || 'Light'}`).checked = true;
+  }
+
+  detach() {
+    return this.settings;
+  }
 }
