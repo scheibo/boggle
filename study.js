@@ -146,7 +146,7 @@ out = fs.createWriteStream('anadromes');
     const a = w.split('').reverse().join('');
     if (a === w) continue;
 
-    if (DICT[a]) {
+    if (DICT[a] && (!DICT[a].dict || DICT[a].dict.includes('N'))) {
       anadromes.set(`${[w, a].sort().join(' ')}`, (DICT[w].n || 0) + (DICT[a].n || 0));
     }
   }
