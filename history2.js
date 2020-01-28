@@ -20,7 +20,11 @@ const stats = new Stats(STATS, DICT);
 // SCORE: = track how many words on board + how many words found - not punished as much if lots of words and miss some due to timing?
 
 
-const games = new Map();
+const possible = {};
+const found = {};
+const anadromes = {};
+const anagrams = {};
+
 for (const json of HISTORY) {
   const game = Game.fromJSON(json, TRIE, DICT, STATS);
   const valid = new Set();
@@ -36,21 +40,11 @@ for (const json of HISTORY) {
     }
   }
 
-  if (score < 10 ||
-    (score / json.goal.D < 0.25) ||
-    (last - game.start < 90 * 1000)) {
+  // TODO better termination?
+  if ((score / json.goal.D < 0.25) || (last - game.start < 90 * 1000)) {
     continue;
   }
 
-  games.set(game, valid);
-}
-
-const anadromes = {};
-const anagrams = {};
-
-const possible = {};
-const found = {};
-for (const [game, valid] of games.entries()) {
   const as = {};
   for (const w in game.possible) {
     possible[w] = (possible[w] || 0) + 1;
@@ -80,7 +74,6 @@ for (const [game, valid] of games.entries()) {
     }
   }
 }
-
 
 for (const [w] of Object.entries(possible).sort((a, b) => b[1] - a[1])) {
   console.log(`${w} ${found[w] || 0}/${possible[w]} ${anadromes[w] || 0} ${anagrams[w] || 0}`);
