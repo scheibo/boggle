@@ -21,6 +21,7 @@ export function define(word: string, dict: Dictionary) {
   if (!val) return '';
   const re = /[{<](.*?)?=.*?[>}]/g;
   let def = dict[word].defn;
+  if (!def) return '';
   const match = re.exec(def);
   if (match) {
     const m = dict[match[1].toUpperCase()];
