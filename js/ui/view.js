@@ -126,7 +126,7 @@ const TOUCH = ('ontouchstart' in window) ||
     STATE = refresh();
   });
 
-  document.getElementById('back').addEventListener('click', backToGame);
+  document.getElementById('back').addEventListener('click', backClick);
 
   // TODO: shouldnt work when in score mode or settings!
   document.addEventListener('keydown', e => {
@@ -459,12 +459,15 @@ function backToGame() {
 
 function refreshClick() {
   HASH_REFRESH = true;
+  document.getElementById('timer').style.visibility = 'inherit';
+  STATE = refresh();
+}
 
+function backClick() {
   if (document.getElementById('wrapper')) {
-    train();
+    displaySettings();
   } else {
-    document.getElementById('timer').style.visibility = 'inherit';
-    STATE = refresh();
+    backToGame();
   }
 }
 
@@ -485,7 +488,7 @@ function train() {
     if (!TOUCH) focusContentEditable(word);
     defn.classList.add('hidden');
 
-    updateVisibility({show: ['refresh', 'play'], hide: ['settings', 'back', 'practice', 'score']});
+    updateVisibility({show: ['back', 'play'], hide: ['settings', 'practice', 'score']});
   }
 
   wrapper = document.createElement('div');

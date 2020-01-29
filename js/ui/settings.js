@@ -51,6 +51,26 @@ function updateDOMSettings() {
   document.getElementById(`theme${SETTINGS.theme || 'Light'}`).checked = true;
 }
 
+function displaySettings() {
+  HASH_REFRESH = false;
+
+  const wrapper = document.getElementById('wrapper');
+  if (wrapper) document.getElementById('game').removeChild(wrapper);
+
+  const board = document.getElementById('board');
+  board.classList.add('hidden');
+  word.classList.add('hidden');
+  defn.classList.add('hidden');
+
+  updateVisibility({
+    show: ['back', 'timer', 'practice', 'settings'],
+    hide: ['refresh', 'play', 'score']
+  });
+
+  ORIGINAL = {settings: Object.assign({}, SETTINGS), seed: SEED};
+  updateDOMSettings();
+}
+
 (() => {
   document.getElementById('refresh').addEventListener('long-press', e => {
     if (!document.getElementById('settings').classList.contains('hidden')) {
@@ -58,23 +78,7 @@ function updateDOMSettings() {
       return;
     }
 
-    HASH_REFRESH = false;
-
-    const wrapper = document.getElementById('wrapper');
-    if (wrapper) document.getElementById('game').removeChild(wrapper);
-
-    const board = document.getElementById('board');
-    board.classList.add('hidden');
-    word.classList.add('hidden');
-    defn.classList.add('hidden');
-
-    updateVisibility({
-      show: ['back', 'timer', 'practice', 'settings'],
-      hide: ['refresh', 'play', 'score']
-    });
-
-    ORIGINAL = {settings: Object.assign({}, SETTINGS), seed: SEED};
-    updateDOMSettings();
+    displaySettings();
   });
 
   for (const radio of document.querySelectorAll('input[name=dice]')) {
