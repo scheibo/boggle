@@ -163,13 +163,19 @@ class Pool {
     // Standard update from SM2: https://www.supermemo.com/en/archives1990-2015/english/ol/sm2
     let mod = -0.8 + 0.28 * q - 0.02 * q * q;
     // During the initial learning phase (n < 6), only apply a fraction of the modifier if negative
+
+    // FIXME: v.n is correct in a row, not total count!
     if (mod < 0) mod *= Math.max(Math.pow(2, v.n) * 2.5, 100);
+
+    // TODO: augment with modifier for length and group size
+
     // SM2 uses a minimum of 1.3
     v.e = Math.max(1.3, v.e - mod);
 
     if (q < 3) {
       v.n = 0;
-      v.i = 1;
+      // Interval depends on (new) difficulty instead of always being set to 1 after a miss
+      v.i = v.e;
     } else {
       v.n++;
       v.i = 6 * Math.pow(v.e, v.n - 1);
