@@ -3,11 +3,11 @@ export class Random {
 
   constructor(n = 4 /* https://xkcd.com/221/ */) {
     // Hash: https://burtleburtle.net/bob/hash/integer.html
-     n = n ^ 61 ^ (n >>> 16);
-     n = n + (n << 3);
-     n = n ^ (n >>> 4);
-     n = Math.imul(n, 0x27d4eb2d);
-     n = n ^ (n >>> 15);
+    n = n ^ 61 ^ (n >>> 16);
+    n = n + (n << 3);
+    n = n ^ (n >>> 4);
+    n = Math.imul(n, 0x27d4eb2d);
+    n = n ^ (n >>> 15);
     this.seed = n >>> 0;
   }
 
