@@ -485,39 +485,84 @@ function train() {
     if (!TOUCH) focusContentEditable(word);
     defn.classList.add('hidden');
 
-    updateVisibility({show: ['refresh', 'play'], hide: ['settings', 'back', 'practice']});
+    updateVisibility({show: ['refresh', 'play'], hide: ['settings', 'back', 'practice', 'score']});
   }
 
   wrapper = document.createElement('div');
   wrapper.setAttribute('id', 'wrapper');
   wrapper.classList.add('train');
 
-  for (const {label, group} of TRAINING.next()) {
-    const button = makeCollapsible(label, '', 'table');
-    const table = document.createElement('table');
-    table.classList.add('collapsible-content');
-    table.classList.add('results');
-    for (const w of group) {
-      const tr = document.createElement('tr');
-      const grade = STATS.stats(w, SETTINGS.dice, SETTINGS.dict).grade;
-      if (grade < SETTINGS.grade) tr.classList.add('hard');
+  const {label, group} = TRAINING.next();
+  const trainWord = document.createElement('div');
+  trainWord.classList.add('label');
+  trainWord.textContent = label;
 
-      let td = document.createElement('td');
-      const b = document.createElement('b');
-      b.textContent = w;
-      td.appendChild(b);
-      tr.appendChild(td);
-      td = document.createElement('td');
-      td.textContent = define(w, DICT);
-      tr.appendChild(td);
+  const listener = () => {
+    wrapper.removeEventListener('click', listener);
+    trainWord.classList.add('hidden');
+    trainWord.nextElementSibling.classList.remove('hidden');
+  };
+  wrapper.addEventListener('click', listener);
 
-      table.appendChild(tr);
-    }
-    wrapper.appendChild(button);
-    wrapper.appendChild(table);
+  const hidden = document.createElement('div');
+  hidden.classList.add('hidden');
+  const table = document.createElement('table');
+  table.classList.add('results');
+  for (const w of group) {
+    const tr = document.createElement('tr');
+    const grade = STATS.stats(w, SETTINGS.dice, SETTINGS.dict).grade;
+    if (grade < SETTINGS.grade) tr.classList.add('hard');
+
+    let td = document.createElement('td');
+    const b = document.createElement('b');
+    b.textContent = w;
+    td.appendChild(b);
+    tr.appendChild(td);
+    td = document.createElement('td');
+    td.textContent = define(w, DICT);
+    tr.appendChild(td);
+
+    table.appendChild(tr);
   }
+  hidden.appendChild(table);
+  hidden.appendChild(createRatingRadios(label));
+
+  wrapper.appendChild(trainWord);
+  wrapper.appendChild(hidden);
 
   game.appendChild(wrapper);
+}
+
+function createRatingRadios(key) {
+  const radios = document.createElement('div');
+  radios.setAttribute('id', 'rating');
+  radios.setAttribute('role', 'radiogroup');
+  radios.classList.add('toggle-group');
+  radios.classList.add('horizontal');
+
+  for (let i = 0; i < 6; i++) {
+    const radio = document.createElement('input');
+    radio.setAttribute('type', 'radio');
+    radio.setAttribute('name', 'rating');
+    radio.setAttribute('value', i);
+    radio.setAttribute('id', `rating${i}`);
+    radio.classList.add('hide');
+
+    const label = document.createElement('label');
+    label.setAttribute('for', `rating${i}`);
+    label.classList.add('toggle');
+    label.textContent = i;
+
+    radios.appendChild(radio);
+    radios.appendChild(label);
+
+    radio.addEventListener('click', () => {
+      console.log(key, Number(radio.value)); // TODO wire up...
+      train();
+    });
+  }
+
+  return radios;
 }
 
 function refresh() {

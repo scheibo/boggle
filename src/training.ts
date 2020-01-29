@@ -75,24 +75,19 @@ class TrainingPool {
   }
 
   next() {
-    const groups = [];
-    for (let i = 0; i < 25; i++) {
-      const type = this.random.next(0, 100) < 90 ? 'group' : 'solo';
-      const level = !this.data.less.length || this.random.next(0, 100) < 80 ? 'equal' : 'less';
+    const type = this.random.next(0, 100) < 90 ? 'group' : 'solo';
+    const level = !this.data.less.length || this.random.next(0, 100) < 80 ? 'equal' : 'less';
 
-      let key = this.data[type][level].choose();
-      const group = this.data[level][key];
+    let key = this.data[type][level].choose();
+    const group = this.data[level][key];
 
-      // try to find a permutation which isn't in the group
-      for (let i = 0; i < 10; i++) {
-        key = this.random.shuffle(key.split('')).join('');
-        if (!group.includes(key)) break;
-      }
-
-      groups.push({ label: key, group: this.random.shuffle(group) });
+    // try to find a permutation which isn't in the group
+    for (let i = 0; i < 10; i++) {
+      key = this.random.shuffle(key.split('')).join('');
+      if (!group.includes(key)) break;
     }
 
-    return groups;
+    return { label: key, group: this.random.shuffle(group) }; // TODO pair anadromes in shuffled!
   }
 }
 
