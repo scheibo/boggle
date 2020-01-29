@@ -57,8 +57,7 @@ for (const json of HISTORY) {
 
       const r = w.split('').reverse().join('');
       if (r !== w && game.possible[r] && !valid.has(r)) {
-        const k = [w, r].sort()[0];
-        anadromes[k] = (anadromes[w] || 0) + 1;
+        anadromes[w] = (anadromes[w] || 0) + 1;
       }
     }
   }
