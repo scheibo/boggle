@@ -1,7 +1,7 @@
-class Store<T> {
+class Store {
   private readonly db: Promise<IDBDatabase>;
 
-  constructor(dbName: string, readonly storeName: string) {
+  constructor(dbName: = 'keyval', readonly storeName = 'keyval') {
     this.db = new Promise((resolve, reject) => {
       const openreq = indexedDB.open(dbName, 1);
       openreq.onerror = () => reject(openreq.error);
@@ -14,14 +14,14 @@ class Store<T> {
     });
   }
 
-  get(key: string): Promise<T> {
+  get<T>(key: string): Promise<T> {
     let req: IDBRequest;
     return this.withIDBStore('readonly', store => {
       req = store.get(key);
     }).then(() => req.result);
   }
 
-  set(key: string, value: T): Promise<void> {
+  set<T>(key: string, value: T): Promise<void> {
     return this.withIDBStore('readwrite', store => {
       store.put(value, key);
     });

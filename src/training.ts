@@ -129,3 +129,146 @@ class Pool {
     return next.value;
   }
 }
+
+/*
+type TrainingData = {[anagram: string]: TrainingStats};
+
+interface TrainingStats {
+  k: number; //key
+  e: number; // easiness
+  m: number; // consecutive
+  n: number; // total
+  i: number; // interval
+  h: boolean; // hold
+}
+
+class TrainingPool {
+  private readonly data: Queue<TrainingStats>;
+  private readonly store: Store;
+  private readonly random: Random;
+
+  private epoch: number;
+
+  private constructor(epoch: number, data: TrainingData, store: Store, random: Random) {
+    this.epoch = epoch;
+
+    this.data = data;
+    this.store = store;
+    this.random = random;
+  }
+
+  static async create(stats: Stats, dict: Dictionary, random: Random, settings: Settings, store: Store) {
+    let epoch = await store.get('epoch');
+    if (!epoch) {
+      epoch = 1;
+      await storage.put('epoch', epoch);
+    }
+    let data = await store.get('data');
+    if (!data) {
+      data = {}; // TODO
+      await storage.put('data', data);
+    }
+
+    return new TrainingPool(epoch, data, store);
+  }
+
+  async next() {
+    const next = this.data.pop()!;
+
+    // TODO await
+
+    const group = Stats.anagrams[Stats.toAnagram(next.k)];
+
+    // try to find a permutation which isn't in the group
+    for (let i = 0; i < 10; i++) {
+      key = this.random.shuffle(key.split('')).join('');
+      if (!group.includes(key)) break;
+    }
+
+    return { label: key, group: this.random.shuffle(group), update }; // TODO pair anadromes in shuffled!
+  }
+} */
+
+type Comparator<T> = (a: T, b: T) => number;
+
+class Queue<T> {
+  length: number;
+
+  private data: T[];
+  private compare: Comparator<T>;
+
+  constructor(data: T[] = [], compare: Comparator<T> = defaultCompare) {
+    this.data = data;
+    this.length = this.data.length;
+    this.compare = compare;
+
+    if (this.length > 0) {
+      for (let i = (this.length >> 1) - 1; i >= 0; i--) this.down(i);
+    }
+  }
+
+  push(item: T) {
+    this.data.push(item);
+    this.length++;
+    this.up(this.length - 1);
+  }
+
+  pop(): T | undefined {
+    if (this.length === 0) return undefined;
+
+    const top = this.data[0]!;
+    const bottom = this.data.pop()!;
+    this.length--;
+
+    if (this.length > 0) {
+      this.data[0] = bottom;
+      this.down(0);
+    }
+
+    return top;
+  }
+
+  peek(): T | undefined {
+    return this.data[0];
+  }
+
+  private up(pos: number) {
+    const item = this.data[pos];
+
+    while (pos > 0) {
+      const parent = (pos - 1) >> 1;
+      const current = this.data[parent];
+      if (this.compare(item, current) >= 0) break;
+      this.data[pos] = current;
+      pos = parent;
+    }
+
+    this.data[pos] = item;
+  }
+
+  private down(pos: number) {
+    const half = this.length >> 1;
+    const item = this.data[pos];
+
+    while (pos < half) {
+      let left = (pos << 1) + 1;
+      let best = this.data[left];
+      const right = left + 1;
+
+      if (right < this.length && this.compare(this.data[right], best) < 0) {
+        left = right;
+        best = this.data[right];
+      }
+      if (this.compare(best, item) >= 0) break;
+
+      this.data[pos] = best;
+      pos = left;
+    }
+
+    this.data[pos] = item;
+  }
+}
+
+function defaultCompare<T>(a: T, b: T) {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
