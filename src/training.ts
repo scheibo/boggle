@@ -3,14 +3,6 @@ import { Game } from './game';
 import { Random } from './random';
 import { Settings } from './settings';
 import { Stats } from './stats';
-import { Storage } from './store';
-
-interface TrainingStats {
-  e: number; // easiness
-  n: number; // consecutive
-  i: number; // interval
-  h: boolean; // hold
-}
 
 class TrainingPool {
   private readonly random: Random;
@@ -21,18 +13,12 @@ class TrainingPool {
     solo: { less: Pool; equal: Pool };
   };
 
-  constructor(
-    stats: Stats,
-    dict: Dictionary,
-    random: Random,
-    settings: Settings,
-    storage: Storage<TrainingStats>
-  ) {
+  constructor(stats: Stats, dict: Dictionary, random: Random, settings: Settings) {
     const s: {
       less: { [anagram: string]: string[] };
       equal: { [anagram: string]: string[] };
-      group: { less: PoolValue[]; equal: PoolValue[] };
-      solo: { less: PoolValue[]; equal: PoolValue[] };
+      group: { less: string[]; equal: string[] };
+      solo: { less: string[]; equal: string[] };
     } = {
       less: {},
       equal: {},
@@ -60,21 +46,16 @@ class TrainingPool {
       const type = grade > settings.grade ? 'less' : 'equal';
       s[type][k] = group;
 
+      // Only members of the group that are of the correct grade count
       const fn =
         type === 'equal' ? (g: string) => g === settings.grade : (g: string) => g > settings.grade;
       const gs = group.filter(w => fn(stats.stats(w, settings.dice, settings.dict).grade));
-
-      const stored = storage.get(k);
-      const val = stored
-        ? { k, e: stored.e, n: stored.n, i: stored.i, h: stored.h }
-        : { k, e: 2.5, n: 0, i: 0, h: false };
-
       if (gs.length > 1) {
         for (const g of gs) {
-          s.group[type].push(val);
+          s.group[type].push(k);
         }
       } else {
-        s.solo[type].push(val);
+        s.solo[type].push(k);
       }
     }
 
@@ -83,188 +64,73 @@ class TrainingPool {
       less: s.less,
       equal: s.equal,
       group: {
-        less: new Pool(random.shuffle(s.group.less), storage),
-        equal: new Pool(random.shuffle(s.group.equal), storage),
+        less: new Pool(s.group.less, random),
+        equal: new Pool(s.group.equal, random),
       },
       solo: {
-        less: new Pool(random.shuffle(s.solo.less), storage),
-        equal: new Pool(random.shuffle(s.solo.equal), storage),
+        less: new Pool(s.solo.less, random),
+        equal: new Pool(s.solo.equal, random),
       },
     };
   }
 
-  async next() {
+  next() {
     const groups = [];
-    const type = this.random.next(0, 100) < 90 ? 'group' : 'solo';
-    const level = !this.data.less.length || this.random.next(0, 100) < 80 ? 'equal' : 'less';
+    for (let i = 0; i < 25; i++) {
+      const type = this.random.next(0, 100) < 90 ? 'group' : 'solo';
+      const level = !this.data.less.length || this.random.next(0, 100) < 80 ? 'equal' : 'less';
 
-    let [key, update] = await this.data[type][level].next();
-    const group = this.data[level][key];
+      let key = this.data[type][level].choose();
+      const group = this.data[level][key];
 
-    // try to find a permutation which isn't in the group
-    for (let i = 0; i < 10; i++) {
-      key = this.random.shuffle(key.split('')).join('');
-      if (!group.includes(key)) break;
+      // try to find a permutation which isn't in the group
+      for (let i = 0; i < 10; i++) {
+        key = this.random.shuffle(key.split('')).join('');
+        if (!group.includes(key)) break;
+      }
+
+      groups.push({ label: key, group: this.random.shuffle(group) });
     }
 
-    return { label: key, group: this.random.shuffle(group), update };
+    return groups;
   }
-}
-
-interface PoolValue extends TrainingStats {
-  k: string; // key
 }
 
 class Pool {
-  private readonly possible: PoolValue[];
-  private readonly storage: Storage<TrainingStats>;
-  private readonly n: number;
+  private readonly possible: string[];
+  private readonly random: Random;
+  private unused: Set<string>;
+  private iter: Iterator<string> | null;
 
-  private active: Queue<PoolValue>;
-  private hold: PoolValue[];
-
-  constructor(possible: PoolValue[], storage: Storage<TrainingStats>, n = 100) {
+  constructor(possible: string[], random: Random) {
     this.possible = possible;
-    this.storage = storage;
-    this.n = n;
+    this.random = random;
 
-    this.active = new Queue<PoolValue>([], (a, b) => a.i - b.i);
-    this.hold = [];
+    this.unused = new Set();
+    this.iter = null;
+  }
 
-    for (const v of possible) {
-      if (v.h) {
-        this.hold.push(v);
-      } else {
-        this.active.push(v);
-      }
+  reset() {
+    this.unused = new Set(this.random.shuffle(this.possible));
+    this.iter = this.unused.values();
+  }
+
+  next(num?: number) {
+    if (!num) return this.choose();
+    const chosen = [];
+    for (let i = 0; i < num; i++) {
+      chosen.push(this.choose());
     }
+    return chosen;
   }
 
-  async reset() {
-    const ps = [];
-    for (const v of this.hold) {
-      v.h = false;
-      ps.push(this.storage.set(v.k, v));
-      this.active.push(v);
-    }
-    this.hold = [];
-    await Promise.all(ps);
+  choose() {
+    if (!this.unused.size) this.reset();
+
+    // NOTE: this.unused.size <-> !this.iter.done
+    const next = this.iter!.next();
+    this.unused.delete(next.value);
+
+    return next.value;
   }
-
-  async next(): Promise<[string, (q: number) => Promise<void>]> {
-    if (!this.active.length || this.hold.length >= this.n) await this.reset();
-    const next = this.active.pop()!;
-    next.h = true;
-    this.hold.push(next);
-    return [next.k, (q: number) => this.update(next, q)];
-  }
-
-  private update(v: PoolValue, q: number) {
-    // Standard update from SM2: https://www.supermemo.com/en/archives1990-2015/english/ol/sm2
-    let mod = -0.8 + 0.28 * q - 0.02 * q * q;
-    // During the initial learning phase (n < 6), only apply a fraction of the modifier if negative
-
-    // FIXME: v.n is correct in a row, not total count!
-    if (mod < 0) mod *= Math.max(Math.pow(2, v.n) * 2.5, 100);
-
-    // TODO: augment with modifier for length and group size
-
-    // SM2 uses a minimum of 1.3
-    v.e = Math.max(1.3, v.e - mod);
-
-    if (q < 3) {
-      v.n = 0;
-      // Interval depends on (new) difficulty instead of always being set to 1 after a miss
-      v.i = v.e;
-    } else {
-      v.n++;
-      v.i = 6 * Math.pow(v.e, v.n - 1);
-    }
-
-    return this.storage.set(v.k, v);
-  }
-}
-
-type Comparator<T> = (a: T, b: T) => number;
-
-class Queue<T> {
-  length: number;
-
-  private data: T[];
-  private compare: Comparator<T>;
-
-  constructor(data: T[] = [], compare: Comparator<T> = defaultCompare) {
-    this.data = data;
-    this.length = this.data.length;
-    this.compare = compare;
-
-    if (this.length > 0) {
-      for (let i = (this.length >> 1) - 1; i >= 0; i--) this.down(i);
-    }
-  }
-
-  push(item: T) {
-    this.data.push(item);
-    this.length++;
-    this.up(this.length - 1);
-  }
-
-  pop(): T | undefined {
-    if (this.length === 0) return undefined;
-
-    const top = this.data[0]!;
-    const bottom = this.data.pop()!;
-    this.length--;
-
-    if (this.length > 0) {
-      this.data[0] = bottom;
-      this.down(0);
-    }
-
-    return top;
-  }
-
-  peek(): T | undefined {
-    return this.data[0];
-  }
-
-  private up(pos: number) {
-    const item = this.data[pos];
-
-    while (pos > 0) {
-      const parent = (pos - 1) >> 1;
-      const current = this.data[parent];
-      if (this.compare(item, current) >= 0) break;
-      this.data[pos] = current;
-      pos = parent;
-    }
-
-    this.data[pos] = item;
-  }
-
-  private down(pos: number) {
-    const half = this.length >> 1;
-    const item = this.data[pos];
-
-    while (pos < half) {
-      let left = (pos << 1) + 1;
-      let best = this.data[left];
-      const right = left + 1;
-
-      if (right < this.length && this.compare(this.data[right], best) < 0) {
-        left = right;
-        best = this.data[right];
-      }
-      if (this.compare(best, item) >= 0) break;
-
-      this.data[pos] = best;
-      pos = left;
-    }
-
-    this.data[pos] = item;
-  }
-}
-
-function defaultCompare<T>(a: T, b: T) {
-  return a < b ? -1 : a > b ? 1 : 0;
 }
