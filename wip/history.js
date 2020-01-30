@@ -3,14 +3,14 @@
 
 const fs = require('fs');
 
-const Game = require('./js/game').Game;
-const Stats = require('./js/stats').Stats;
-const Trie = require('./js/trie').Trie
+const Game = require('../js/game').Game;
+const Stats = require('../js/stats').Stats;
+const Trie = require('../js/trie').Trie
 
-const DICT = require('./data/dict.json');
+const DICT = require('../data/dict.json');
 const TRIE = Trie.create(DICT);
 const HISTORY = require('./history.json');
-const STATS = require('./data/stats.json');
+const STATS = require('../data/stats.json');
 const stats = new Stats(STATS, DICT);
 
 const games = new Map();

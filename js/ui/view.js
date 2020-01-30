@@ -4,7 +4,6 @@ const HISTORY = JSON.parse(localStorage.getItem('history')) || [];
 const SETTINGS = JSON.parse(localStorage.getItem('settings')) || {dice: 'New', dict: 'NWL', grade: 'C', display: 'Show'};
 
 var STATE = null;
-var TRAINING = null;
 var DICT = null;
 var TRIE = null;
 var STATS = null;
@@ -470,9 +469,9 @@ function backClick() {
   }
 }
 
-async function train() {
-  if (!TRAINING || TRAINING.type !== SETTINGS.dict) {
-    TRAINING = await TrainingPool.create(
+async function train(pool) {
+  if (!pool || pool.type !== SETTINGS.dict) {
+    pool = await TrainingPool.create(
       STATS, DICT, SETTINGS.dict, new Store('training', SETTINGS.dict), new Random());
   }
   HASH_REFRESH = true;
@@ -498,7 +497,7 @@ async function train() {
   wrapper.classList.add('train');
 
   // TODO need to make sure call update, even when navigate away! - need try {} finally or something similar!
-  const {label, group, update} = TRAINING.next();
+  const {label, group, update} = pool.next();
   const trainWord = document.createElement('div');
   trainWord.classList.add('label');
   trainWord.textContent = label;
@@ -531,7 +530,7 @@ async function train() {
     table.appendChild(tr);
   }
   hidden.appendChild(table);
-  hidden.appendChild(createRatingRadios(label, update));
+  hidden.appendChild(createRatingRadios(update, pool));
 
   wrapper.appendChild(trainWord);
   wrapper.appendChild(hidden);
@@ -539,7 +538,7 @@ async function train() {
   game.appendChild(wrapper);
 }
 
-function createRatingRadios(key, update) {
+function createRatingRadios(update, pool) {
   const radios = document.createElement('div');
   radios.setAttribute('id', 'rating');
   radios.setAttribute('role', 'radiogroup');
@@ -564,7 +563,7 @@ function createRatingRadios(key, update) {
 
     radio.addEventListener('click', async () => {
       await update(Number(radio.value));
-      train();
+      train(pool);
     });
   }
 

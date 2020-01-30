@@ -1,7 +1,5 @@
 import { Dictionary, Type } from './dict';
-import { Game } from './game';
 import { Random } from './random';
-import { Settings } from './settings';
 import { Stats } from './stats';
 import { Store } from './store';
 
@@ -102,7 +100,7 @@ interface TrainingStats {
   e?: number; // epoch
 }
 
-class TrainingPool {
+export class TrainingPool {
   readonly type: Type;
 
   private readonly max: number;
@@ -116,8 +114,8 @@ class TrainingPool {
 
   static async create(stats: Stats, dict: Dictionary, type: Type, store: Store, random: Random) {
     let epoch: number | undefined = await store.get('epoch');
-    if (!epoch) {
-      epoch = 1;
+    if (epoch === undefined) {
+      epoch = 0;
       await store.set('epoch', epoch);
     }
 
@@ -152,7 +150,7 @@ class TrainingPool {
     store: Store,
     dict: Dictionary,
     stats: Stats,
-    random: Random,
+    random: Random
   ) {
     this.epoch = epoch;
     this.max = max;
@@ -176,7 +174,7 @@ class TrainingPool {
       nexts.push(next);
     } while (next.e && this.epoch - next.e < EPOCH);
 
-    const e = this.epoch++;
+    const e = ++this.epoch;
     const update = async (q: number) => {
       next.w = this.clamp(next.w * adjust(q));
       next.e = e;
@@ -190,7 +188,8 @@ class TrainingPool {
     let key = next.k;
     const t = this.type.charAt(0);
     const group = this.stats.anagrams[key].filter(
-      w => !this.dict[w].dict || this.dict[w].dict!.includes(t));
+      w => !this.dict[w].dict || this.dict[w].dict!.includes(t)
+    );
 
     // @ts-ignore FIXME
     const random = new this.random.constructor(e);

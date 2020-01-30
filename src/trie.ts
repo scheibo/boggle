@@ -1,4 +1,4 @@
-import { Dictionary, Type } from './dict';
+import { Dictionary } from './dict';
 
 export class Trie {
   parent: Trie | null;

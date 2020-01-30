@@ -397,6 +397,7 @@ img {
 /* WTF??? */
 #rating .hide {
   position: relative;
+  visibility: hidden;
   margin: -5px;
 }
 .train .label, .train .results {
