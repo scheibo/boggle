@@ -114,7 +114,14 @@ export class TrainingPool {
 
   private epoch: number;
 
-  static async create(stats: Stats, dict: Dictionary, dice: Dice, type: Type, store: Store, random: Random) {
+  static async create(
+    stats: Stats,
+    dict: Dictionary,
+    dice: Dice,
+    type: Type,
+    store: Store,
+    random: Random
+  ) {
     let epoch: number | undefined = await store.get('epoch');
     if (epoch === undefined) {
       epoch = 0;
@@ -132,8 +139,7 @@ export class TrainingPool {
       const t = type.charAt(0);
       for (const k in stats.anagrams) {
         if (k.length > 7) continue;
-        const anagrams = stats.anagrams[k].filter(
-          w => !dict[w].dict || dict[w].dict!.includes(t));
+        const anagrams = stats.anagrams[k].filter(w => !dict[w].dict || dict[w].dict!.includes(t));
         const w = anagrams.reduce((acc, w) => acc + (dict[w][d] || 0), 0);
         if (!w) continue;
         queue.push({ k, w });
@@ -216,7 +222,10 @@ function order(words: string[]) {
 
   const anadromes = new Set();
   for (const w of words) {
-    const r = w.split('').reverse().join('');
+    const r = w
+      .split('')
+      .reverse()
+      .join('');
     if (r !== w && words.includes(r)) {
       const key = `${[w, r].sort().join(' ')}`;
       if (!anadromes.has(key)) {
@@ -227,5 +236,5 @@ function order(words: string[]) {
       ordered.push(w);
     }
   }
-  return ordered
+  return ordered;
 }

@@ -35,6 +35,14 @@ const TOUCH = ('ontouchstart' in window) ||
   STATS = new Stats(await stats.json(), DICT);
   TRIE = Trie.create(DICT);
 
+  const stores = [];
+  for (const dice of ['New', 'Old', 'Big']) {
+    for (const type of ['NWL', 'ENABLE', 'CSW']) {
+      stores.push(`${dice}-${type}`);
+    }
+  }
+  await Store.setup('training', stores);
+
   const initial = setup();
   SEED = initial.seed;
   Object.assign(SETTINGS, initial.settings);
@@ -473,7 +481,7 @@ async function train(pool) {
     if (!TOUCH) focusContentEditable(word);
     defn.classList.add('hidden');
 
-    updateVisibility({show: ['back', 'epoch'], hide: ['settings', 'practice', 'score']});
+    updateVisibility({show: ['back', 'epoch'], hide: ['refresh', 'settings', 'practice', 'score']});
   }
 
   wrapper = document.createElement('div');

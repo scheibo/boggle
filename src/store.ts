@@ -1,6 +1,19 @@
 export class Store {
   private readonly db: Promise<IDBDatabase>;
 
+  static async setup(dbName = 'keyval', storeNames = ['keyval']) {
+    return new Promise((resolve, reject) => {
+      const openreq = indexedDB.open(dbName, 1);
+      openreq.onerror = () => reject(openreq.error);
+      openreq.onsuccess = () => resolve(openreq.result);
+      openreq.onupgradeneeded = () => {
+        for (const storeName of storeNames) {
+          openreq.result.createObjectStore(storeName);
+        }
+      };
+    });
+  }
+
   constructor(dbName = 'keyval', readonly storeName = 'keyval') {
     this.db = new Promise((resolve, reject) => {
       const openreq = indexedDB.open(dbName, 1);
