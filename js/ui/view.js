@@ -435,7 +435,6 @@ function backToGame() {
   const board = document.getElementById('board');
   const wrapper = document.getElementById('wrapper');
 
-  // TODO FIXME: hide instead of remove to avoid recompute...
   if (wrapper) game.removeChild(wrapper);
 
   board.classList.remove('hidden');
@@ -469,10 +468,12 @@ async function train(pool) {
   HASH_REFRESH = true;
 
   let wrapper = document.getElementById('wrapper');
+  let rating = document.getElementById('rating');
   const game = document.getElementById('game');
   const board = document.getElementById('board');
   if (wrapper) {
     game.removeChild(wrapper);
+    game.removeChild(rating);
   } else {
     document.getElementById('timer').style.visibility = 'hidden';
 
@@ -496,10 +497,12 @@ async function train(pool) {
   trainWord.classList.add('label');
   trainWord.textContent = label;
 
+  rating = createRatingToggles(update, pool);
   const listener = () => {
     wrapper.removeEventListener('click', listener);
     trainWord.classList.add('hidden');
     trainWord.nextElementSibling.classList.remove('hidden');
+    rating.classList.remove('hidden');
   };
   wrapper.addEventListener('click', listener);
 
@@ -525,12 +528,12 @@ async function train(pool) {
     table.appendChild(tr);
   }
   hidden.appendChild(table);
-  hidden.appendChild(createRatingToggles(update, pool));
 
   wrapper.appendChild(trainWord);
   wrapper.appendChild(hidden);
 
   game.appendChild(wrapper);
+  game.appendChild(rating);
 }
 
 function createRatingToggles(update, pool) {
@@ -538,6 +541,7 @@ function createRatingToggles(update, pool) {
   toggles.setAttribute('id', 'rating');
   toggles.classList.add('toggle-group');
   toggles.classList.add('horizontal');
+  toggles.classList.add('hidden');
 
   for (let i = 0; i < 6; i++) {
     const toggle = document.createElement('button');

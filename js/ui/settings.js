@@ -51,8 +51,11 @@ function updateDOMSettings() {
 function displaySettings() {
   HASH_REFRESH = false;
 
+  const game = document.getElementById('game');
   const wrapper = document.getElementById('wrapper');
-  if (wrapper) document.getElementById('game').removeChild(wrapper);
+  if (wrapper) game.removeChild(wrapper);
+  const rating = document.getElementById('rating');
+  if (rating) game.removeChild(rating);
 
   const board = document.getElementById('board');
   board.classList.add('hidden');

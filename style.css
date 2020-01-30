@@ -53,8 +53,6 @@ body {
   flex-direction: column;
   position: relative;
   overflow: hidden;
-
-  border: 1px solid red;
 }
 #loader, #content {
   display: flex;
@@ -407,22 +405,15 @@ img {
   justify-content: center;
   align-items: center;
   overflow: hidden;
+  height: calc(100vh - 204px);
 }
 #rating {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
   width: 336px;
   height: 68px;
-  margin: auto;
+  margin: 21px auto 0 auto;
 }
 #rating .toggle:last-of-type {
   border-right: 3px solid var(--fg-color);
-}
-.train .label, .train .results {
-  position: relative;
-  top: -68px;
 }
 .train .results {
   padding: 5px 18px;
