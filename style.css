@@ -58,7 +58,7 @@ body {
   text-align: center;
   font-weight: bold;
 }
-#refresh, #score, #back, #practice, #play {
+#refresh, #score, #epoch, #back, #practice, #play {
   width: 20%;
 }
 #refresh, #back, #practice, #play {

@@ -107,23 +107,6 @@ const TOUCH = ('ontouchstart' in window) ||
 
   document.getElementById('practice').addEventListener('click', train);
 
-  document.getElementById('play').addEventListener('click', () => {
-    const game = document.getElementById('game');
-    const board = document.getElementById('board');
-    const wrapper = document.getElementById('wrapper');
-
-    if (wrapper) game.removeChild(wrapper);
-
-    board.classList.remove('hidden');
-    word.classList.remove('hidden');
-    if (!TOUCH) focusContentEditable(word);
-    defn.classList.remove('hidden');
-
-    updateVisibility({show: ['refresh', 'score', 'timer'], hide: ['back', 'play']});
-
-    STATE = refresh();
-  });
-
   document.getElementById('back').addEventListener('click', backClick);
 
   // TODO: shouldnt work when in score mode or settings!
@@ -470,9 +453,10 @@ function backClick() {
 }
 
 async function train(pool) {
-  if (!pool || pool.type !== SETTINGS.dict) {
+  if (!pool || pool.dice !== SETTINGS.dice || pool.type !== SETTINGS.dict) {
+    const store = new Store('training', `${SETTINGS.dice}-${SETTINGS.dict}`);
     pool = await TrainingPool.create(
-      STATS, DICT, SETTINGS.dict, new Store('training', SETTINGS.dict), new Random());
+      STATS, DICT, SETTINGS.dice, SETTINGS.dict, store, new Random());
   }
   HASH_REFRESH = true;
 
@@ -489,12 +473,14 @@ async function train(pool) {
     if (!TOUCH) focusContentEditable(word);
     defn.classList.add('hidden');
 
-    updateVisibility({show: ['back', 'play'], hide: ['settings', 'practice', 'score']});
+    updateVisibility({show: ['back', 'epoch'], hide: ['settings', 'practice', 'score']});
   }
 
   wrapper = document.createElement('div');
   wrapper.setAttribute('id', 'wrapper');
   wrapper.classList.add('train');
+
+  document.getElementById('epoch').textContent = pool.getEpoch();
 
   // TODO need to make sure call update, even when navigate away! - need try {} finally or something similar!
   const {label, group, update} = pool.next();
@@ -513,14 +499,15 @@ async function train(pool) {
   hidden.classList.add('hidden');
   const table = document.createElement('table');
   table.classList.add('results');
-  for (const w of group) {
+  for (const r of group) {
+    const w = r.replace(/[^A-Z]/, '');
     const tr = document.createElement('tr');
     const grade = STATS.stats(w, SETTINGS.dice, SETTINGS.dict).grade;
     if (grade < SETTINGS.grade) tr.classList.add('hard');
 
     let td = document.createElement('td');
     const b = document.createElement('b');
-    b.textContent = w;
+    b.textContent = r.endsWith(')') ? `\xa0${r}` : r;
     td.appendChild(b);
     tr.appendChild(td);
     td = document.createElement('td');

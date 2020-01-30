@@ -61,7 +61,7 @@ function displaySettings() {
 
   updateVisibility({
     show: ['back', 'timer', 'practice', 'settings'],
-    hide: ['refresh', 'play', 'score']
+    hide: ['refresh', 'play', 'score', 'epoch'],
   });
 
   ORIGINAL = {settings: Object.assign({}, SETTINGS), seed: SEED};

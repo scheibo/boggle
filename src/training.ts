@@ -2,6 +2,7 @@ import { Dictionary, Type } from './dict';
 import { Random } from './random';
 import { Stats } from './stats';
 import { Store } from './store';
+import { Dice } from './settings';
 
 const EPOCH = 50;
 
@@ -113,7 +114,7 @@ export class TrainingPool {
 
   private epoch: number;
 
-  static async create(stats: Stats, dict: Dictionary, type: Type, store: Store, random: Random) {
+  static async create(stats: Stats, dict: Dictionary, dice: Dice, type: Type, store: Store, random: Random) {
     let epoch: number | undefined = await store.get('epoch');
     if (epoch === undefined) {
       epoch = 0;
@@ -127,11 +128,13 @@ export class TrainingPool {
       queue.data = data;
       queue.length = data.length;
     } else {
-      const t = type.toLowerCase()[0] as 'n' | 'o' | 'b';
+      const d = dice.toLowerCase()[0] as 'n' | 'o' | 'b';
+      const t = type.charAt(0);
       for (const k in stats.anagrams) {
         if (k.length > 7) continue;
-        const anagrams = stats.anagrams[k];
-        const w = anagrams.reduce((acc, w) => acc + (dict[w][t] || 0), 0);
+        const anagrams = stats.anagrams[k].filter(
+          w => !dict[w].dict || dict[w].dict!.includes(t));
+        const w = anagrams.reduce((acc, w) => acc + (dict[w][d] || 0), 0);
         if (!w) continue;
         queue.push({ k, w });
       }
@@ -218,10 +221,11 @@ function order(words: string[]) {
       const key = `${[w, r].sort().join(' ')}`;
       if (!anadromes.has(key)) {
         anadromes.add(key);
-        ordered.push(w, r);
+        ordered.push(`(${w}`, `${r})`);
       }
     } else {
       ordered.push(w);
     }
   }
+  return ordered
 }
