@@ -525,7 +525,7 @@ async function train(pool) {
     table.appendChild(tr);
   }
   hidden.appendChild(table);
-  hidden.appendChild(createRatingRadios(update, pool));
+  hidden.appendChild(createRatingToggles(update, pool));
 
   wrapper.appendChild(trainWord);
   wrapper.appendChild(hidden);
@@ -533,36 +533,28 @@ async function train(pool) {
   game.appendChild(wrapper);
 }
 
-function createRatingRadios(update, pool) {
-  const radios = document.createElement('div');
-  radios.setAttribute('id', 'rating');
-  radios.setAttribute('role', 'radiogroup');
-  radios.classList.add('toggle-group');
-  radios.classList.add('horizontal');
+function createRatingToggles(update, pool) {
+  const toggles = document.createElement('div');
+  toggles.setAttribute('id', 'rating');
+  toggles.classList.add('toggle-group');
+  toggles.classList.add('horizontal');
 
   for (let i = 0; i < 6; i++) {
-    const radio = document.createElement('input');
-    radio.setAttribute('type', 'radio');
-    radio.setAttribute('name', 'rating');
-    radio.setAttribute('value', i);
-    radio.setAttribute('id', `rating${i}`);
-    radio.classList.add('hide');
+    const toggle = document.createElement('button');
+    toggle.setAttribute('id', `rating${i}`);
+    toggle.setAttribute('type', 'button');
+    toggle.classList.add('toggle');
+    toggle.textContent = i;
 
-    const label = document.createElement('label');
-    label.setAttribute('for', `rating${i}`);
-    label.classList.add('toggle');
-    label.textContent = i;
+    toggles.appendChild(toggle);
 
-    radios.appendChild(radio);
-    radios.appendChild(label);
-
-    radio.addEventListener('click', async () => {
-      await update(Number(radio.value));
+    toggle.addEventListener('click', async () => {
+      await update(Number(toggle.textContent));
       train(pool);
     });
   }
 
-  return radios;
+  return toggles;
 }
 
 function refresh() {

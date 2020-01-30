@@ -17,6 +17,16 @@
   --filter: invert(87.5%);
 }
 
+button {
+	background: none;
+	color: inherit;
+	border: none;
+	padding: 0;
+	font: inherit;
+	cursor: pointer;
+	outline: inherit;
+}
+
 /* LG-H873 = 360 x 588  */
 body {
   font-family: "Roboto", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
@@ -39,6 +49,8 @@ body {
   flex-direction: column;
   position: relative;
   overflow: hidden;
+
+  border: 1px solid red;
 }
 #loader, #content {
   display: flex;
@@ -302,14 +314,16 @@ img {
   border-radius: 8px;
   width: 4em;
 }
-.toggle-group label {
+.toggle-group label, .toggle-group button {
   border-radius: 0;
 }
-.toggle-group.horizontal label:first-of-type {
+.toggle-group.horizontal label:first-of-type,
+.toggle-group.horizontal button:first-of-type {
   border-top-left-radius: 8px;
   border-bottom-left-radius: 8px;
 }
-.toggle-group.horizontal label:last-of-type {
+.toggle-group.horizontal label:last-of-type,
+.toggle-group.horizontal button:last-of-type {
   border-top-right-radius: 8px;
   border-bottom-right-radius: 8px;
 }
@@ -355,50 +369,52 @@ img {
   top: 3px;
 }
 #rating .toggle {
-  border: 3px solid var(--fg-color);
+  border: solid var(--fg-color);
+  border-width: 3px 0 3px 3px;
   padding: 7px 4px;
-  margin: -1px -3px 0;
+  margin: auto;
   display: inline-block;
-  width: 3em;
+  width: 56px;
 }
-#rating0 + .toggle { background-color: rgba(255,0,0,0.6); }
-#rating0:focus + .toggle, #rating0 + .toggle:hover { background-color: rgba(255,0,0,0.65); }
-#rating0:checked + .toggle { background-color: rgba(255,0,0,0.7); }
-#rating1 + .toggle { background-color: rgba(255,0,0,0.4); }
-#rating1:focus + .toggle, #rating1 + .toggle:hover { background-color: rgba(255,0,0,0.45); }
-#rating1:checked + .toggle { background-color: rgba(255,0,0,0.5); }
-#rating2 + .toggle { background-color: rgba(255,0,0,0.2); }
-#rating2:focus + .toggle, #rating2 + .toggle:hover { background-color: rgba(255,0,0,0.25); }
-#rating2:checked + .toggle { background-color: rgba(255,0,0,0.3); }
-#rating3 + .toggle { background-color: rgba(0,255,0,0.2); }
-#rating3:focus + .toggle, #rating3 + .toggle:hover { background-color: rgba(0,255,0,0.25); }
-#rating3:checked + .toggle { background-color: rgba(0,255,0,0.3); }
-#rating4 + .toggle { background-color: rgba(0,255,0,0.4); }
-#rating4:focus + .toggle, #rating4 + .toggle:hover { background-color: rgba(0,255,0,0.45); }
-#rating4:checked + .toggle { background-color: rgba(0,255,0,0.5); }
-#rating5 + .toggle { background-color: rgba(0,255,0,0.6); }
-#rating5:focus + .toggle, #rating5 + .toggle:hover { background-color: rgba(0,255,0,0.65); }
-#rating5:checked + .toggle { background-color: rgba(0,255,0,0.7); }
+#rating .toggle:active {
+  font-weight: bold;
+}
+#rating0 { background-color: rgba(255,0,0,0.6); }
+#rating0:focus, #rating0:hover { background-color: rgba(255,0,0,0.65); }
+#rating0:active { background-color: rgba(255,0,0,0.7); }
+#rating1 { background-color: rgba(255,0,0,0.4); }
+#rating1:focus, #rating1:hover { background-color: rgba(255,0,0,0.45); }
+#rating1:active { background-color: rgba(255,0,0,0.5); }
+#rating2 { background-color: rgba(255,0,0,0.2); }
+#rating1:focus, #rating1:hover { background-color: rgba(255,0,0,0.25); }
+#rating2:active { background-color: rgba(255,0,0,0.3); }
+#rating3 { background-color: rgba(0,255,0,0.2); }
+#rating3:focus, #rating3:hover { background-color: rgba(0,255,0,0.25); }
+#rating3:active { background-color: rgba(0,255,0,0.3); }
+#rating4 { background-color: rgba(0,255,0,0.4); }
+#rating4:focus, #rating4:hover { background-color: rgba(0,255,0,0.45); }
+#rating4:active { background-color: rgba(0,255,0,0.5); }
+#rating5 { background-color: rgba(0,255,0,0.6); }
+#rating5:focus, #rating5:hover { background-color: rgba(0,255,0,0.65); }
+#rating5:active { background-color: rgba(0,255,0,0.7); }
 #wrapper.train {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  overflow: hidden;
 }
 #rating {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  width: 356px;
+  width: 336px;
   height: 68px;
   margin: auto;
 }
-/* WTF??? */
-#rating .hide {
-  position: relative;
-  visibility: hidden;
-  margin: -5px;
+#rating .toggle:last-of-type {
+  border-right: 3px solid var(--fg-color);
 }
 .train .label, .train .results {
   position: relative;

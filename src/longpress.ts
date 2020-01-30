@@ -91,11 +91,12 @@
   }
 
   function mouseDownHandler(e: MouseEvent | TouchEvent) {
-    if (!document.getElementById('board')!.contains(e.target! as Node)) {
-      startX = isTouch(e) ? e.touches[0].clientX : e.clientX;
-      startY = isTouch(e) ? e.touches[0].clientY : e.clientY;
-      startLongPressTimer(e);
-    }
+    const board = document.getElementById('board');
+    if (!board || board.contains(e.target! as Node)) return;
+
+    startX = isTouch(e) ? e.touches[0].clientX : e.clientX;
+    startY = isTouch(e) ? e.touches[0].clientY : e.clientY;
+    startLongPressTimer(e);
   }
 
   function mouseMoveHandler(e: MouseEvent | TouchEvent) {
