@@ -498,13 +498,15 @@ async function train(pool) {
   trainWord.textContent = label;
 
   rating = createRatingToggles(update, pool);
-  const listener = () => {
-    wrapper.removeEventListener('click', listener);
-    trainWord.classList.add('hidden');
-    trainWord.nextElementSibling.classList.remove('hidden');
-    rating.classList.remove('hidden');
+  const listener = e => {
+    if (e.target === game || e.target === wrapper) {
+      game.removeEventListener('click', listener);
+      trainWord.classList.add('hidden');
+      trainWord.nextElementSibling.classList.remove('hidden');
+      rating.classList.remove('hidden');
+    }
   };
-  wrapper.addEventListener('click', listener);
+  game.addEventListener('click', listener);
 
   const hidden = document.createElement('div');
   hidden.classList.add('hidden');
