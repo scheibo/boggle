@@ -37,7 +37,7 @@ async function anagrams(file, dict) {
 
   const data = {};
   for (const d of DICTS) {
-    data[d] = {words: {}, anagrams: {}, total: 0};
+    data[d] = {words: {}, anagrams: {}, total: 0, max: -Infinity};
   }
 
   const words = {};
@@ -53,7 +53,8 @@ async function anagrams(file, dict) {
     for (const d of DICTS) {
       if (val.dict.includes(d.charAt(0))) {
         data[d].words[word] = score;
-        data[d].anagrams[anagram] = (data[d].anagrams[anagram] || 0) + score;
+        let s = data[d].anagrams[anagram] = (data[d].anagrams[anagram] || 0) + score;
+        if (s > data[d].max) data[d].max = s;
         data[d].total += score;
       }
     }
@@ -65,6 +66,7 @@ async function anagrams(file, dict) {
       words: percentiles(Object.values(data[d].words), data[d].total),
       anagrams: percentiles(Object.values(data[d].anagrams), data[d].total),
       total: data[d].total,
+      max: data[d].max,
     };
   }
 
@@ -146,6 +148,7 @@ async function buildDictionary() {
     freqs: percentiles(Object.values(freqs)),
     total,
   };
+
   return {dict, stats};
 }
 
