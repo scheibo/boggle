@@ -19,6 +19,7 @@ interface TypeEntry {
   words: number[];
   anagrams: number[];
   total: number;
+  max: number;
 }
 
 export type Grade = 'A' | 'B' | 'C' | 'D' | ' ';
@@ -39,6 +40,11 @@ export class Stats {
       this.anagrams[anagram] = this.anagrams[anagram] || [];
       this.anagrams[anagram].push(word);
     }
+  }
+
+  max(type: Type) {
+    // All dice configurations will have the same anagrams max...
+    return this.percentiles.New[type].max;
   }
 
   stats(word: string, dice: Dice = 'New', type: Type = 'NWL') {

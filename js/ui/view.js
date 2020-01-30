@@ -4,7 +4,6 @@ const HISTORY = JSON.parse(localStorage.getItem('history')) || [];
 const SETTINGS = JSON.parse(localStorage.getItem('settings')) || {dice: 'New', dict: 'NWL', grade: 'C', display: 'Show'};
 
 var STATE = null;
-var RANDOM = null;
 var TRAINING = null;
 var DICT = null;
 var TRIE = null;
@@ -471,9 +470,12 @@ function backClick() {
   }
 }
 
-function train() {
+async function train() {
+  if (!TRAINING || TRAINING.type !== SETTINGS.type) {
+    TRAINING = await TrainingPool.create(
+      STATS, DICT, SETTINGS.type, new Store('training', type));
+  }
   HASH_REFRESH = true;
-  maybePerformUpdate();
 
   let wrapper = document.getElementById('wrapper');
   const game = document.getElementById('game');
@@ -495,7 +497,7 @@ function train() {
   wrapper.setAttribute('id', 'wrapper');
   wrapper.classList.add('train');
 
-  const {label, group} = TRAINING.next();
+  const {label, group, update} = TRAINING.next();
   const trainWord = document.createElement('div');
   trainWord.classList.add('label');
   trainWord.textContent = label;
@@ -536,7 +538,7 @@ function train() {
   game.appendChild(wrapper);
 }
 
-function createRatingRadios(key) {
+function createRatingRadios(key, update) {
   const radios = document.createElement('div');
   radios.setAttribute('id', 'rating');
   radios.setAttribute('role', 'radiogroup');
@@ -559,8 +561,8 @@ function createRatingRadios(key) {
     radios.appendChild(radio);
     radios.appendChild(label);
 
-    radio.addEventListener('click', () => {
-      console.log(key, Number(radio.value)); // TODO wire up...
+    radio.addEventListener('click', async () => {
+      await update(Number(radio.value));
       train();
     });
   }

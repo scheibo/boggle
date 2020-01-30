@@ -1,201 +1,18 @@
-import { Dictionary } from './dict';
+import { Dictionary, Type } from './dict';
 import { Game } from './game';
 import { Random } from './random';
 import { Settings } from './settings';
 import { Stats } from './stats';
+import { Store } from './store';
 
-class TrainingPool {
-  private readonly random: Random;
-  private readonly data: {
-    less: { [anagram: string]: string[] };
-    equal: { [anagram: string]: string[] };
-    group: { less: Pool; equal: Pool };
-    solo: { less: Pool; equal: Pool };
-  };
-
-  constructor(stats: Stats, dict: Dictionary, random: Random, settings: Settings) {
-    const s: {
-      less: { [anagram: string]: string[] };
-      equal: { [anagram: string]: string[] };
-      group: { less: string[]; equal: string[] };
-      solo: { less: string[]; equal: string[] };
-    } = {
-      less: {},
-      equal: {},
-      group: { less: [], equal: [] },
-      solo: { less: [], equal: [] },
-    };
-
-    const gr = (w: string) =>
-      w.length >= settings.min ? stats.stats(w, settings.dice, settings.dict).grade : ' ';
-
-    for (let [k, group] of Object.entries(stats.anagrams)) {
-      if (k.length > 7) continue;
-      group = group.filter(w => !dict[w].dict || dict[w].dict!.includes(settings.dict.charAt(0)));
-      if (!group.length) continue;
-
-      // Determine the lowest grade of the group
-      let grade = ' ';
-      for (const w of group) {
-        const g = gr(w);
-        if (g > grade) grade = g;
-      }
-
-      // If the grade is too high = move on; otherwise figure out where to sort
-      if (grade < settings.grade) continue;
-      const type = grade > settings.grade ? 'less' : 'equal';
-      s[type][k] = group;
-
-      // Only members of the group that are of the correct grade count
-      const fn =
-        type === 'equal' ? (g: string) => g === settings.grade : (g: string) => g > settings.grade;
-      const gs = group.filter(w => fn(stats.stats(w, settings.dice, settings.dict).grade));
-      if (gs.length > 1) {
-        for (const g of gs) {
-          s.group[type].push(k);
-        }
-      } else {
-        s.solo[type].push(k);
-      }
-    }
-
-    this.random = random;
-    this.data = {
-      less: s.less,
-      equal: s.equal,
-      group: {
-        less: new Pool(s.group.less, random),
-        equal: new Pool(s.group.equal, random),
-      },
-      solo: {
-        less: new Pool(s.solo.less, random),
-        equal: new Pool(s.solo.equal, random),
-      },
-    };
-  }
-
-  next() {
-    const type = this.random.next(0, 100) < 90 ? 'group' : 'solo';
-    const level = !this.data.less.length || this.random.next(0, 100) < 80 ? 'equal' : 'less';
-
-    let key = this.data[type][level].choose();
-    const group = this.data[level][key];
-
-    // try to find a permutation which isn't in the group
-    for (let i = 0; i < 10; i++) {
-      key = this.random.shuffle(key.split('')).join('');
-      if (!group.includes(key)) break;
-    }
-
-    return { label: key, group: this.random.shuffle(group) }; // TODO pair anadromes in shuffled!
-  }
-}
-
-class Pool {
-  private readonly possible: string[];
-  private readonly random: Random;
-  private unused: Set<string>;
-  private iter: Iterator<string> | null;
-
-  constructor(possible: string[], random: Random) {
-    this.possible = possible;
-    this.random = random;
-
-    this.unused = new Set();
-    this.iter = null;
-  }
-
-  reset() {
-    this.unused = new Set(this.random.shuffle(this.possible));
-    this.iter = this.unused.values();
-  }
-
-  next(num?: number) {
-    if (!num) return this.choose();
-    const chosen = [];
-    for (let i = 0; i < num; i++) {
-      chosen.push(this.choose());
-    }
-    return chosen;
-  }
-
-  choose() {
-    if (!this.unused.size) this.reset();
-
-    // NOTE: this.unused.size <-> !this.iter.done
-    const next = this.iter!.next();
-    this.unused.delete(next.value);
-
-    return next.value;
-  }
-}
-
-/*
-type TrainingData = {[anagram: string]: TrainingStats};
-
-interface TrainingStats {
-  k: number; //key
-  e: number; // easiness
-  m: number; // consecutive
-  n: number; // total
-  i: number; // interval
-  h: boolean; // hold
-}
-
-class TrainingPool {
-  private readonly data: Queue<TrainingStats>;
-  private readonly store: Store;
-  private readonly random: Random;
-
-  private epoch: number;
-
-  private constructor(epoch: number, data: TrainingData, store: Store, random: Random) {
-    this.epoch = epoch;
-
-    this.data = data;
-    this.store = store;
-    this.random = random;
-  }
-
-  static async create(stats: Stats, dict: Dictionary, random: Random, settings: Settings, store: Store) {
-    let epoch = await store.get('epoch');
-    if (!epoch) {
-      epoch = 1;
-      await storage.put('epoch', epoch);
-    }
-    let data = await store.get('data');
-    if (!data) {
-      data = {}; // TODO
-      await storage.put('data', data);
-    }
-
-    return new TrainingPool(epoch, data, store);
-  }
-
-  async next() {
-    const next = this.data.pop()!;
-
-    // TODO await
-
-    const group = Stats.anagrams[Stats.toAnagram(next.k)];
-
-    // try to find a permutation which isn't in the group
-    for (let i = 0; i < 10; i++) {
-      key = this.random.shuffle(key.split('')).join('');
-      if (!group.includes(key)) break;
-    }
-
-    return { label: key, group: this.random.shuffle(group), update }; // TODO pair anadromes in shuffled!
-  }
-} */
+const EPOCH = 50;
 
 type Comparator<T> = (a: T, b: T) => number;
 
 class Queue<T> {
   length: number;
-
-  private data: T[];
-  private compare: Comparator<T>;
+  data: T[];
+  compare: Comparator<T>;
 
   constructor(data: T[] = [], compare: Comparator<T> = defaultCompare) {
     this.data = data;
@@ -271,4 +88,109 @@ class Queue<T> {
 
 function defaultCompare<T>(a: T, b: T) {
   return a < b ? -1 : a > b ? 1 : 0;
+}
+
+function adjust(q: number) {
+  q = 5 - q; // invert
+  const sm2 = -0.8 + 0.28 * q - 0.02 * q * q;
+  return 1 - sm2;
+}
+
+interface TrainingStats {
+  k: string; // key
+  w: number; // weight
+  e?: number; // epoch
+}
+
+class TrainingPool {
+  readonly type: Type;
+
+  private readonly max: number;
+  private readonly queue: Queue<TrainingStats>;
+  private readonly store: Store;
+  private readonly stats: Stats;
+
+  private epoch: number;
+
+  static async create(stats: Stats, dict: Dictionary, type: Type, store: Store) {
+    let epoch: number | undefined = await store.get('epoch');
+    if (!epoch) {
+      epoch = 1;
+      await store.set('epoch', epoch);
+    }
+
+    const queue = new Queue<TrainingStats>([] /* filled in */, (a, b) => b.w - a.w);
+
+    const data: TrainingStats[] | undefined = await store.get('data');
+    if (data) {
+      queue.data = data;
+      queue.length = data.length;
+    } else {
+      const t = type.toLowerCase()[0] as 'n' | 'o' | 'b';
+      for (const k in stats.anagrams) {
+        if (k.length > 7) continue;
+        const anagrams = stats.anagrams[k];
+        const w = anagrams.reduce((acc, w) => acc + (dict[w][t] || 0), 0);
+        if (!w) continue;
+        queue.push({ k, w });
+      }
+
+      await store.set('data', queue.data);
+    }
+
+    const max = stats.max(type);
+    return new TrainingPool(epoch, max, queue, type, store, stats);
+  }
+
+  private constructor(
+    epoch: number,
+    max: number,
+    queue: Queue<TrainingStats>,
+    type: Type,
+    store: Store,
+    stats: Stats
+  ) {
+    this.epoch = epoch;
+    this.max = max;
+    this.queue = queue;
+    this.type = type;
+    this.store = store;
+    this.stats = stats;
+  }
+
+  clamp(n: number) {
+    return Math.min(this.max, Math.max(1, n));
+  }
+
+  next() {
+    let next: TrainingStats;
+    const nexts: TrainingStats[] = [];
+    do {
+      next = this.queue.pop()!;
+      nexts.push(next);
+    } while (next.e && this.epoch - next.e < EPOCH);
+
+    const e = this.epoch++;
+    const update = async (q: number) => {
+      next.w = this.clamp(next.w * adjust(q));
+      next.e = e;
+      for (const n of nexts) {
+        this.queue.push(n);
+      }
+      await this.store.set('epoch', e);
+      await this.store.set('data', this.queue.data);
+    };
+
+    let key = next.k;
+    const group = this.stats.anagrams[key];
+
+    const random = new Random(e);
+    // try to find a permutation which isn't in the group
+    for (let i = 0; i < 10; i++) {
+      key = random.shuffle(key.split('')).join('');
+      if (!group.includes(key)) break;
+    }
+
+    return { label: key, group: random.shuffle(group), update }; // TODO pair anadromes in shuffled!
+  }
 }

@@ -1,7 +1,7 @@
-class Store {
+export class Store {
   private readonly db: Promise<IDBDatabase>;
 
-  constructor(dbName: = 'keyval', readonly storeName = 'keyval') {
+  constructor(dbName = 'keyval', readonly storeName = 'keyval') {
     this.db = new Promise((resolve, reject) => {
       const openreq = indexedDB.open(dbName, 1);
       openreq.onerror = () => reject(openreq.error);

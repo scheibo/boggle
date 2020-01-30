@@ -9,14 +9,11 @@ function settingsEqual(a, b) {
 }
 
 function updateRequired() {
-  return !TRAINING || SEED !== ORIGINAL.seed || !settingsEqual(SETTINGS, ORIGINAL.settings);
+  return SEED !== ORIGINAL.seed || !settingsEqual(SETTINGS, ORIGINAL.settings);
 }
 
-function maybePerformUpdate() {
+async function maybePerformUpdate() {
   if (updateRequired()) {
-    RANDOM = RANDOM || new Random();
-    RANDOM.seed = SEED;
-    TRAINING = new TrainingPool(STATS, DICT, RANDOM, SETTINGS);
     ORIGINAL.settings = SETTINGS;
     ORIGINAL.seed = SEED;
   }
