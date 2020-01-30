@@ -471,9 +471,9 @@ function backClick() {
 }
 
 async function train() {
-  if (!TRAINING || TRAINING.type !== SETTINGS.type) {
+  if (!TRAINING || TRAINING.type !== SETTINGS.dict) {
     TRAINING = await TrainingPool.create(
-      STATS, DICT, SETTINGS.type, new Store('training', type));
+      STATS, DICT, SETTINGS.dict, new Store('training', SETTINGS.dict), new Random());
   }
   HASH_REFRESH = true;
 
@@ -497,6 +497,7 @@ async function train() {
   wrapper.setAttribute('id', 'wrapper');
   wrapper.classList.add('train');
 
+  // TODO need to make sure call update, even when navigate away! - need try {} finally or something similar!
   const {label, group, update} = TRAINING.next();
   const trainWord = document.createElement('div');
   trainWord.classList.add('label');
@@ -530,7 +531,7 @@ async function train() {
     table.appendChild(tr);
   }
   hidden.appendChild(table);
-  hidden.appendChild(createRatingRadios(label));
+  hidden.appendChild(createRatingRadios(label, update));
 
   wrapper.appendChild(trainWord);
   wrapper.appendChild(hidden);

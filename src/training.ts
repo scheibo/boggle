@@ -108,11 +108,13 @@ class TrainingPool {
   private readonly max: number;
   private readonly queue: Queue<TrainingStats>;
   private readonly store: Store;
+  private readonly dict: Dictionary;
   private readonly stats: Stats;
+  private readonly random: Random;
 
   private epoch: number;
 
-  static async create(stats: Stats, dict: Dictionary, type: Type, store: Store) {
+  static async create(stats: Stats, dict: Dictionary, type: Type, store: Store, random: Random) {
     let epoch: number | undefined = await store.get('epoch');
     if (!epoch) {
       epoch = 1;
@@ -139,7 +141,7 @@ class TrainingPool {
     }
 
     const max = stats.max(type);
-    return new TrainingPool(epoch, max, queue, type, store, stats);
+    return new TrainingPool(epoch, max, queue, type, store, dict, stats, random);
   }
 
   private constructor(
@@ -148,14 +150,18 @@ class TrainingPool {
     queue: Queue<TrainingStats>,
     type: Type,
     store: Store,
-    stats: Stats
+    dict: Dictionary,
+    stats: Stats,
+    random: Random,
   ) {
     this.epoch = epoch;
     this.max = max;
     this.queue = queue;
     this.type = type;
     this.store = store;
+    this.dict = dict;
     this.stats = stats;
+    this.random = random;
   }
 
   clamp(n: number) {
@@ -182,9 +188,12 @@ class TrainingPool {
     };
 
     let key = next.k;
-    const group = this.stats.anagrams[key];
+    const t = this.type.charAt(0);
+    const group = this.stats.anagrams[key].filter(
+      w => !this.dict[w].dict || this.dict[w].dict!.includes(t));
 
-    const random = new Random(e);
+    // @ts-ignore FIXME
+    const random = new this.random.constructor(e);
     // try to find a permutation which isn't in the group
     for (let i = 0; i < 10; i++) {
       key = random.shuffle(key.split('')).join('');
