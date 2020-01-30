@@ -27,6 +27,10 @@ button {
 	outline: inherit;
 }
 
+body, html {
+  height: 100%; /* https://bugs.chromium.org/p/chromium/issues/detail?id=844848#c4 */
+}
+
 /* LG-H873 = 360 x 588  */
 body {
   font-family: "Roboto", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
