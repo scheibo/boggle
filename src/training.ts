@@ -90,6 +90,7 @@ function defaultCompare<T>(a: T, b: T) {
 
 function adjust(q: number) {
   q = 5 - q; // invert
+  // Standard update from SM2: https://www.supermemo.com/en/archives1990-2015/english/ol/sm2
   const sm2 = -0.8 + 0.28 * q - 0.02 * q * q;
   return 1 - sm2;
 }
@@ -162,8 +163,8 @@ export class TrainingPool {
     this.random = random;
   }
 
-  clamp(n: number) {
-    return Math.min(this.max, Math.max(1, n));
+  getEpoch() {
+    return this.epoch;
   }
 
   next() {
@@ -199,6 +200,28 @@ export class TrainingPool {
       if (!group.includes(key)) break;
     }
 
-    return { label: key, group: random.shuffle(group), update }; // TODO pair anadromes in shuffled!
+    return { label: key, group: order(random.shuffle(group)), update };
+  }
+
+  private clamp(n: number) {
+    return Math.min(this.max, Math.max(1, n));
+  }
+}
+
+function order(words: string[]) {
+  const ordered = [];
+
+  const anadromes = new Set();
+  for (const w of words) {
+    const r = w.split('').reverse().join('');
+    if (r !== w && words.includes(r)) {
+      const key = `${[w, r].sort().join(' ')}`;
+      if (!anadromes.has(key)) {
+        anadromes.add(key);
+        ordered.push(w, r);
+      }
+    } else {
+      ordered.push(w);
+    }
   }
 }

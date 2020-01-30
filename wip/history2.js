@@ -11,14 +11,6 @@ const DICT = require('./data/dict.json');
 const TRIE = Trie.create(DICT);
 const HISTORY = require('./history.json');
 const STATS = require('./data/stats.json');
-const stats = new Stats(STATS, DICT);
-
-
-
-// all possible, all found, found anadrome but not this, found anagram but not, score
-//
-// SCORE: = track how many words on board + how many words found - not punished as much if lots of words and miss some due to timing?
-
 
 const possible = {};
 const found = {};
