@@ -33,7 +33,7 @@ body {
 }
 #display, #game {
   width: 360px;
-  height.row;
+  height: 588px;
   margin: 0px auto;
   display: flex;
   flex-direction: column;
