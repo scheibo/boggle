@@ -452,7 +452,8 @@ function refreshClick() {
 }
 
 function backClick() {
-  if (document.getElementById('wrapper')) {
+  const wrapper = document.getElementById('wrapper');
+  if (wrapper && wrapper.classList.contains('train')) {
     displaySettings();
   } else {
     backToGame();
