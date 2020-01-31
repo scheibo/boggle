@@ -405,12 +405,12 @@ img {
   justify-content: center;
   align-items: center;
   overflow: hidden;
-  height: calc(100vh - 204px);
+  height: calc(100vh - 264px);
 }
 #rating {
   width: 336px;
   height: 68px;
-  margin: 21px auto 0 auto;
+  margin: 61px auto 0 auto;
 }
 #rating .toggle:last-of-type {
   border-right: 3px solid var(--fg-color);
