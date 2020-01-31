@@ -1,5 +1,5 @@
 import { Dice } from './settings';
-import { Dictionary, Type } from './dict';
+import { Dictionary, Type, isValid } from './dict';
 
 interface Data {
   New: DiceEntry;
@@ -49,8 +49,8 @@ export class Stats {
 
   stats(word: string, dice: Dice = 'New', type: Type = 'NWL') {
     const val = this.dict[word];
-    const a = this.anagrams[Stats.toAnagram(word)];
-    if (!val || !a || (val.dict && !val.dict.includes(type.charAt(0)))) {
+    const a = this.anagrams[Stats.toAnagram(word)]; //
+    if (!isValid(word, this.dict, type) || !a) {
       return { grade: ' ' as Grade };
     }
 
@@ -64,11 +64,7 @@ export class Stats {
     const pw = s.words.findIndex((v: number) => v <= vw);
     const rw = rank(pw);
 
-    const va = a.reduce((acc, w) => {
-      const v = this.dict[w];
-      if (v.dict && !v.dict.includes(type.charAt(0))) return acc;
-      return acc + (v[d] || 0);
-    }, 0);
+    const va = a.reduce((acc, w) => !isValid(w, this.dict, type) ? acc :  acc + (this.dict[w][d] || 0), 0);
     const pa = s.anagrams.findIndex((v: number) => v <= va);
     const ra = rank(pa);
 

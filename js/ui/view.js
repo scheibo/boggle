@@ -182,8 +182,7 @@ const TOUCH = ('ontouchstart' in window) ||
         if (DICT[word]) {
           const defn = getOrCreateElementById('defineDefinition', 'div');
           defn.textContent = define(word, DICT);
-          const val = DICT[word];
-          if ((val.dict && !val.dict.includes(SETTINGS.dict.charAt(0))) || word.length < SETTINGS.min) {
+          if (!isValid(word, DICT, SETTINGS.dict) || word.length < SETTINGS.min) {
             def.classList.add('hard');
           } else {
             def.classList.remove('hard');
@@ -279,8 +278,7 @@ const TOUCH = ('ontouchstart' in window) ||
     const a = Stats.toAnagram(word);
     const words = a &&
       STATS.anagrams[a] &&
-      STATS.anagrams[a].filter(w =>
-        !DICT[w].dict || DICT[w].dict.includes(SETTINGS.dict.charAt(0)));
+      STATS.anagrams[a].filter(w => isValid(w, DICT, SETTINGS.dict));
     if (!words || words.length <= 1) return div;
 
     const solo = [];

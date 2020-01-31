@@ -36,3 +36,8 @@ export function define(word: string, dict: Dictionary) {
     .replace(/<(.*?)=.*?>/g, '$1')
     .replace(/\s*?\[.*?\]\s*?/g, '');
 }
+
+export function isValid(word: string, dict: Dictionary, type: Type) {
+  const val = dict[word];
+  return word && (!val.dict || val.dict.includes(type.charAt(0)));
+}
