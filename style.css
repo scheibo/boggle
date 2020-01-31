@@ -412,6 +412,12 @@ img {
   height: 68px;
   margin: 61px auto 0 auto;
 }
+#sizeHint {
+  font-size: 20px;
+  font-weight: bold;
+  color: red;
+  margin: 61px auto 0 auto;
+}
 #rating .toggle:last-of-type {
   border-right: 3px solid var(--fg-color);
 }

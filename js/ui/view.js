@@ -113,6 +113,15 @@ const TOUCH = ('ontouchstart' in window) ||
     }
   });
 
+  document.getElementById('epoch').addEventListener('long-press', e => {
+    document.getElementById('sizeHint').classList.remove('hidden');
+  });
+
+  document.getElementById('epoch').addEventListener('long-press-up', e => {
+    document.getElementById('sizeHint').classList.add('hidden');
+
+  });
+
   document.getElementById('practice').addEventListener('click', train);
 
   document.getElementById('back').addEventListener('click', backClick);
@@ -470,11 +479,13 @@ async function train(pool) {
 
   let wrapper = document.getElementById('wrapper');
   let rating = document.getElementById('rating');
+  let sizeHint = document.getElementById('sizeHint');
   const game = document.getElementById('game');
   const board = document.getElementById('board');
   if (wrapper) {
     game.removeChild(wrapper);
     game.removeChild(rating);
+    game.removeChild(sizeHint);
   } else {
     document.getElementById('timer').style.visibility = 'hidden';
 
@@ -498,9 +509,14 @@ async function train(pool) {
   trainWord.classList.add('label');
   trainWord.textContent = label;
 
+  sizeHint = document.createElement('div');
+  sizeHint.setAttribute('id', 'sizeHint');
+  sizeHint.classList.add('hidden');
+  sizeHint.textContent = group.length;
+
   rating = createRatingToggles(update, pool);
   const listener = e => {
-    if (e.target === game || e.target === wrapper) {
+    if ([game, wrapper, trainWord, sizeHint].includes(e.target)) {
       game.removeEventListener('click', listener);
       trainWord.classList.add('hidden');
       trainWord.nextElementSibling.classList.remove('hidden');
@@ -536,6 +552,7 @@ async function train(pool) {
   wrapper.appendChild(hidden);
 
   game.appendChild(wrapper);
+  game.appendChild(sizeHint);
   game.appendChild(rating);
 }
 
