@@ -1,4 +1,4 @@
-import { Dictionary, Type, define } from './dict';
+import { Dictionary, Type } from './dict';
 import { Random } from './random';
 import { Settings, Dice, MinLength } from './settings';
 import { Trie } from './trie';
@@ -278,6 +278,7 @@ export class Game {
     const augment = (w: string) => ({
       word: w,
       grade: gr(w),
+      // @ts-ignore FIXME
       defn: define(w, this.dict),
     });
 

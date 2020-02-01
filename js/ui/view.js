@@ -126,8 +126,8 @@ const TOUCH = ('ontouchstart' in window) ||
     const settings = document.getElementById('settings');
     const define = document.getElementById('define');
 
-    const isBoard = board && !board.classList.contains('hidden');
-    const isSettings = settings && !settings.classList.contains('hidden');
+    const isBoard = board && board.offsetParent !== null;;
+    const isSettings = settings && settings.offsetParent !== null;
     const isDefine = !!define;
 
     if (board) {
@@ -144,11 +144,17 @@ const TOUCH = ('ontouchstart' in window) ||
       toggleDefine();
     } else if (key === 13 || key === 32) {
       e.preventDefault();
-      if (board) {
+      if (isBoard) {
         play(word);
         focusContentEditable(word);
+      } else if (isDefine) {
+        toggleDefine();
       }
-    } else if ((key < 65 || key > 90) && key !== 8) {
+    } else if (key === 8) {
+      if (isDefine && define.textContent === '') {
+        toggleDefine();
+      }
+    } else if ((key < 65 || key > 90)) {
       e.preventDefault();
     }
   });
@@ -184,60 +190,30 @@ const TOUCH = ('ontouchstart' in window) ||
 
           const stats = getOrCreateElementById('defineStats', 'table');
           while (stats.firstChild) stats.removeChild(stats.firstChild);
-          const createRow = (label, data) => {
-            td.textContent = label;
+          const addCells = (tr, label, data) => {
+            let td = document.createElement('td');
+            let b = document.createElement('b');
+            b.textContent = label;
+            td.appendChild(b);
             tr.appendChild(td);
+
             td = document.createElement('td');
+            td.classList.add('value');
             td.textContent = data;
             tr.appendChild(td);
-            return tr;
           };
 
           const s = STATS.stats(word, SETTINGS.dice, SETTINGS.type);
 
           let tr = document.createElement('tr');
-          let td = document.createElement('td');
-          let b = document.createElement('b');
-          b.textContent = 'Grade';
-          td.appendChild(b);
-          tr.appendChild(td);
-          td = document.createElement('td');
-          td.classList.add('value');
-          td.textContent = s.grade === ' ' ? 'S' : s.grade;
-          tr.appendChild(td);
-
-          td = document.createElement('td');
-          b = document.createElement('b');
-          b.textContent = 'Score';
-          td.appendChild(b);
-          tr.appendChild(td);
-          td = document.createElement('td');
-          td.classList.add('value');
-          td.textContent = s.word ? s.word.p : '-';
-          tr.appendChild(td);
-
+          addCells(tr, 'Grade', s.grade === ' ' ? 'S' : s.grade);
+          addCells(tr, 'Score', s.word ? s.word.p : '-');
           stats.appendChild(tr);
 
           tr = document.createElement('tr');
-          td = document.createElement('td');
-          b = document.createElement('b');
-          b.textContent = 'Frequency';
-          td.appendChild(b);
-          tr.appendChild(td);
-          td = document.createElement('td');
-          td.classList.add('value');
-          td.textContent = s.freq ? s.freq : '-';
-          tr.appendChild(td);
-
-          td = document.createElement('td');
-          b = document.createElement('b');
-          b.textContent = 'Anagram';
-          td.appendChild(b);
-          tr.appendChild(td);
-          td = document.createElement('td');
-          td.classList.add('value');
-          td.textContent = s.anagram ? s.anagram.p : '-';
-          tr.appendChild(td);
+          addCells(tr, 'Frequency', s.freq ? s.freq : '-');
+          addCells(tr, 'Anagram',  s.anagram ? s.anagram.p : '-');
+          stats.appendChild(tr);
 
           stats.appendChild(tr);
 
@@ -260,7 +236,7 @@ const TOUCH = ('ontouchstart' in window) ||
     } else {
       display.removeChild(document.getElementById('define'));
     }
-    document.getElementById('game').classList.toggle('hidden');
+    game.classList.toggle('hidden');
     correctFocus();
   }
 

@@ -1,5 +1,4 @@
 import { Type } from './dict';
-import { Random } from './random';
 import { Stats } from './stats';
 import { Store } from './store';
 import { Dice } from './settings';
@@ -105,15 +104,13 @@ interface TrainingStats {
 export class TrainingPool {
   readonly type: Type;
 
-  private readonly max: number;
   private readonly queue: Queue<TrainingStats>;
   private readonly store: Store;
   private readonly stats: Stats;
-  private readonly random: Random;
 
   private epoch: number;
 
-  static async create(stats: Stats, dice: Dice, type: Type, store: Store, random: Random) {
+  static async create(stats: Stats, dice: Dice, type: Type, store: Store) {
     let epoch: number | undefined = await store.get('epoch');
     if (epoch === undefined) {
       epoch = 0;
@@ -152,25 +149,21 @@ export class TrainingPool {
       await store.set('data', { data: queue.data, type });
     }
 
-    return new TrainingPool(epoch, queue, type, store, stats, random);
+    return new TrainingPool(epoch, queue, type, store, stats);
   }
 
   private constructor(
     epoch: number,
-    max: number,
     queue: Queue<TrainingStats>,
     type: Type,
     store: Store,
     stats: Stats,
-    random: Random
   ) {
     this.epoch = epoch;
-    this.max = max;
     this.queue = queue;
     this.type = type;
     this.store = store;
     this.stats = stats;
-    this.random = random;
   }
 
   getEpoch() {
@@ -200,7 +193,7 @@ export class TrainingPool {
     const group = this.stats.anagrams(key, this.type).words;
 
     // @ts-ignore FIXME
-    const random = new this.random.constructor(e);
+    const random = new Random(e);
     // try to find a permutation which isn't in the group
     for (let i = 0; i < 10; i++) {
       key = random.shuffle(key.split('')).join('');
