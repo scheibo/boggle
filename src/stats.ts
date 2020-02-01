@@ -28,18 +28,38 @@ export class Stats {
   private readonly dict: Dictionary;
   private readonly percentiles: Data;
   // NOTE: contains ALL words!
-  readonly anagrams: { [anagram: string]: string[] };
+  readonly mixed: { [anagram: string]: string[] };
 
   constructor(percentiles: Data, dict: Dictionary) {
     this.dict = dict;
     this.percentiles = percentiles;
 
-    this.anagrams = {};
+    this.mixed = {};
     for (const word in dict) {
       const anagram = Stats.toAnagram(word);
-      this.anagrams[anagram] = this.anagrams[anagram] || [];
-      this.anagrams[anagram].push(word);
+      this.mixed[anagram] = this.mixed[anagram] || [];
+      this.mixed[anagram].push(word);
     }
+  }
+
+  anagrams(word: string, type: Type) {
+    const a = Stats.toAnagram(word);
+    const group = this.mixed[a];
+
+    const result: { words: string[]; n?: number; o?: number; b?: number } = { words: [] };
+    if (!group) return result;
+
+    for (const w of group) {
+      if (isValid(w, this.dict, type)) {
+        result.words.push(w);
+        const v = this.dict[w];
+        for (const d of ['n', 'o', 'b'] as Array<'n' | 'o' | 'b'>) {
+          if (v[d]) result[d] = (result[d] || 0) + v[d]!;
+        }
+      }
+    }
+
+    return result;
   }
 
   max(type: Type) {
@@ -49,8 +69,8 @@ export class Stats {
 
   stats(word: string, dice: Dice = 'New', type: Type = 'NWL') {
     const val = this.dict[word];
-    const a = this.anagrams[Stats.toAnagram(word)]; //
-    if (!isValid(word, this.dict, type) || !a) {
+    const a = this.anagrams(word, type);
+    if (!isValid(word, this.dict, type) || !a.words.length) {
       return { grade: ' ' as Grade };
     }
 
@@ -64,7 +84,7 @@ export class Stats {
     const pw = s.words.findIndex((v: number) => v <= vw);
     const rw = rank(pw);
 
-    const va = a.reduce((acc, w) => !isValid(w, this.dict, type) ? acc :  acc + (this.dict[w][d] || 0), 0);
+    const va = a[d] || 0;
     const pa = s.anagrams.findIndex((v: number) => v <= va);
     const ra = rank(pa);
 

@@ -35,13 +35,7 @@ const TOUCH = ('ontouchstart' in window) ||
   STATS = new Stats(await stats.json(), DICT);
   TRIE = Trie.create(DICT);
 
-  const stores = [];
-  for (const dice of ['New', 'Old', 'Big']) {
-    for (const type of ['NWL', 'ENABLE', 'CSW']) {
-      stores.push(`${dice}-${type}`);
-    }
-  }
-  await Store.setup('training', stores);
+  await Store.setup('training', ['NWL', 'ENABLE', 'CSW']);
 
   const initial = setup();
   SEED = initial.seed;
@@ -275,11 +269,8 @@ const TOUCH = ('ontouchstart' in window) ||
     const div = getOrCreateElementById('defineAnagrams', 'div', true);
     while (div.firstChild) div.removeChild(stats.firstChild);
 
-    const a = Stats.toAnagram(word);
-    const words = a &&
-      STATS.anagrams[a] &&
-      STATS.anagrams[a].filter(w => isValid(w, DICT, SETTINGS.dict));
-    if (!words || words.length <= 1) return div;
+    const words = STATS.anagrams(word, SETTINGS.dict).words;
+    if (words.length <= 1) return div;
 
     const solo = [];
     const anadromes = new Set();
@@ -469,9 +460,9 @@ function backClick() {
 
 async function train(pool) {
   if (!pool || pool.dice !== SETTINGS.dice || pool.type !== SETTINGS.dict) {
-    const store = new Store('training', `${SETTINGS.dice}-${SETTINGS.dict}`);
+    const store = new Store('training', SETTINGS.dict);
     pool = await TrainingPool.create(
-      STATS, DICT, SETTINGS.dice, SETTINGS.dict, store, new Random());
+      STATS, SETTINGS.dice, SETTINGS.dict, store, new Random());
   }
   HASH_REFRESH = true;
 

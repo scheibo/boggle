@@ -1,4 +1,4 @@
-import { Dictionary, Type } from './dict';
+import { Type } from './dict';
 import { Random } from './random';
 import { Stats } from './stats';
 import { Store } from './store';
@@ -98,7 +98,7 @@ function adjust(q: number) {
 
 interface TrainingStats {
   k: string; // key
-  w: number; // weight
+  m: number; // modifer
   e?: number; // epoch
 }
 
@@ -108,48 +108,51 @@ export class TrainingPool {
   private readonly max: number;
   private readonly queue: Queue<TrainingStats>;
   private readonly store: Store;
-  private readonly dict: Dictionary;
   private readonly stats: Stats;
   private readonly random: Random;
 
   private epoch: number;
 
-  static async create(
-    stats: Stats,
-    dict: Dictionary,
-    dice: Dice,
-    type: Type,
-    store: Store,
-    random: Random
-  ) {
+  static async create(stats: Stats, dice: Dice, type: Type, store: Store, random: Random) {
     let epoch: number | undefined = await store.get('epoch');
     if (epoch === undefined) {
       epoch = 0;
       await store.set('epoch', epoch);
     }
 
-    const queue = new Queue<TrainingStats>([] /* filled in */, (a, b) => b.w - a.w);
+    const max = stats.max(type);
+    const clamp = (n: number) => Math.min(max, Math.max(1, n));
+    const d = dice.toLowerCase()[0] as 'n' | 'o' | 'b';
+    // NOTE: queue is shared across dice...
+    const queue = new Queue<TrainingStats>(
+      [] /* filled in */,
+      (a, b) =>
+        clamp(stats.anagrams(b.k, type)[d] || 0) * b.m -
+        clamp(stats.anagrams(a.k, type)[d] || 0) * a.m
+    );
 
-    const data: TrainingStats[] | undefined = await store.get('data');
-    if (data) {
-      queue.data = data;
-      queue.length = data.length;
+    const stored: { data: TrainingStats[]; type: Type } | undefined = await store.get('data');
+    if (stored) {
+      // If the types match then the queue can be used as is, otherwise we need to rebuild to sort it again
+      if (stored.type === type) {
+        queue.data = stored.data;
+        queue.length = stored.data.length;
+      } else {
+        for (const s of stored.data) {
+          queue.push(s);
+        }
+      }
     } else {
-      const d = dice.toLowerCase()[0] as 'n' | 'o' | 'b';
-      const t = type.charAt(0);
-      for (const k in stats.anagrams) {
-        if (k.length > 7) continue;
-        const anagrams = stats.anagrams[k].filter(w => !dict[w].dict || dict[w].dict!.includes(t));
-        const w = anagrams.reduce((acc, w) => acc + (dict[w][d] || 0), 0);
-        if (!w) continue;
-        queue.push({ k, w });
+      for (const k in stats.mixed) {
+        if (k.length <= 7 && stats.anagrams(k, type).words.length) {
+          queue.push({ k, m: 1 });
+        }
       }
 
-      await store.set('data', queue.data);
+      await store.set('data', { data: queue.data, type });
     }
 
-    const max = stats.max(type);
-    return new TrainingPool(epoch, max, queue, type, store, dict, stats, random);
+    return new TrainingPool(epoch, queue, type, store, stats, random);
   }
 
   private constructor(
@@ -158,7 +161,6 @@ export class TrainingPool {
     queue: Queue<TrainingStats>,
     type: Type,
     store: Store,
-    dict: Dictionary,
     stats: Stats,
     random: Random
   ) {
@@ -167,7 +169,6 @@ export class TrainingPool {
     this.queue = queue;
     this.type = type;
     this.store = store;
-    this.dict = dict;
     this.stats = stats;
     this.random = random;
   }
@@ -186,20 +187,17 @@ export class TrainingPool {
 
     const e = ++this.epoch;
     const update = async (q: number) => {
-      next.w = this.clamp(next.w * adjust(q));
+      next.m = next.m * adjust(q);
       next.e = e;
       for (const n of nexts) {
         this.queue.push(n);
       }
       await this.store.set('epoch', e);
-      await this.store.set('data', this.queue.data);
+      await this.store.set('data', { data: this.queue.data, type: this.type });
     };
 
     let key = next.k;
-    const t = this.type.charAt(0);
-    const group = this.stats.anagrams[key].filter(
-      w => !this.dict[w].dict || this.dict[w].dict!.includes(t)
-    );
+    const group = this.stats.anagrams(key, this.type).words;
 
     // @ts-ignore FIXME
     const random = new this.random.constructor(e);
@@ -210,10 +208,6 @@ export class TrainingPool {
     }
 
     return { label: key, group: order(random.shuffle(group)), update };
-  }
-
-  private clamp(n: number) {
-    return Math.min(this.max, Math.max(1, n));
   }
 }
 
