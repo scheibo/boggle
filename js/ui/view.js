@@ -1,8 +1,9 @@
 'use strict';
 
-const HISTORY = JSON.parse(localStorage.getItem('history')) || [];
 const SETTINGS = JSON.parse(localStorage.getItem('settings')) || {dice: 'New', dict: 'NWL', grade: 'C', display: 'Show'};
+const STORE = new Store('db', 'store');
 
+var HISTORY = null;
 var STATE = null;
 var DICT = null;
 var TRIE = null;
@@ -35,6 +36,7 @@ const TOUCH = ('ontouchstart' in window) ||
   STATS = new Stats(await stats.json(), DICT);
   TRIE = Trie.create(DICT);
 
+  HISTORY = await STORE.get('history') || [];
   await Store.setup('training', ['NWL', 'ENABLE', 'CSW']);
 
   const initial = setup();
@@ -42,7 +44,7 @@ const TOUCH = ('ontouchstart' in window) ||
   Object.assign(SETTINGS, initial.settings);
   localStorage.setItem('settings', JSON.stringify(SETTINGS));
 
-  STATE = refresh();
+  STATE = await refresh();
 
   document.getElementById('display').removeChild(document.getElementById('loader'));
   document.getElementById('game').classList.remove('hidden');
@@ -55,7 +57,7 @@ const TOUCH = ('ontouchstart' in window) ||
     permaFocus(word);
   }
 
-  window.addEventListener('hashchange', e => {
+  window.addEventListener('hashchange', async (e) => {
     if (!document.location.hash) return;
     const [settings, seed] = Game.decodeID(document.location.hash.slice(1));
     if (!isNaN(seed)) {
@@ -63,7 +65,7 @@ const TOUCH = ('ontouchstart' in window) ||
       SEED = seed;
     }
     if (HASH_REFRESH) {
-      STATE = refresh();
+      STATE = await refresh();
     } else {
       updateDOMSettings();
     }
@@ -319,7 +321,7 @@ const TOUCH = ('ontouchstart' in window) ||
 
     if (HISTORY.length) {
       const id = HISTORY[HISTORY.length - 1].seed;
-      const [settings, seed] = Game.decodeID(id);
+      const [settings] = Game.decodeID(id);
       const rand = new Random();
       rand.seed = SEED;
       rand.next();
@@ -419,10 +421,10 @@ function backToGame() {
   updateVisibility({show: ['refresh', 'score', 'timer'], hide: ['back', 'practice', 'settings']});
 }
 
-function refreshClick() {
+async function refreshClick() {
   HASH_REFRESH = true;
   document.getElementById('timer').style.visibility = 'inherit';
-  STATE = refresh();
+  STATE = await refresh();
 }
 
 function backClick() {
@@ -546,12 +548,12 @@ function createRatingToggles(update, pool) {
   return toggles;
 }
 
-function refresh() {
+async function refresh() {
   maybePerformUpdate();
 
   if (STATE) {
     HISTORY.push(STATE.game.toJSON());
-    localStorage.setItem('history', JSON.stringify(HISTORY));
+    await STORE.set('history', HISTORY);
     STATE.timer.stop();
   }
 

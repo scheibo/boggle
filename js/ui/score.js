@@ -32,7 +32,7 @@
       current.classList.add('active');
       div.style.display = 'block';
 
-      for (let i = HISTORY.length - 1; i > 0; i--) {
+      for (let i = HISTORY.length - 1; i >= 0; i--) {
         const state = HISTORY[i];
         let score = 0;
         for (const [w, t] of Object.entries(state.words)) {

@@ -166,6 +166,19 @@ export class Game {
     // @ts-ignore readonly
     game.played = json.words;
 
+    const score = { regular: 0, overtime: 0 };
+    for (const w in game.played) {
+      const s = Game.score(w);
+      if (!game.expired || game.played[w] <= game.expired) {
+        score.regular += s;
+      } else {
+        score.overtime += s;
+      }
+    }
+
+    // @ts-ignore readonly
+    game.score = score;
+
     return game;
   }
 

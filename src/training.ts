@@ -157,7 +157,7 @@ export class TrainingPool {
     queue: Queue<TrainingStats>,
     type: Type,
     store: Store,
-    stats: Stats,
+    stats: Stats
   ) {
     this.epoch = epoch;
     this.queue = queue;
