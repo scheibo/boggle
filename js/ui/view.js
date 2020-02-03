@@ -115,7 +115,6 @@ const TOUCH = ('ontouchstart' in window) ||
 
   document.getElementById('epoch').addEventListener('long-press-up', e => {
     document.getElementById('sizeHint').classList.add('hidden');
-
   });
 
   document.getElementById('practice').addEventListener('click', train);
@@ -444,15 +443,17 @@ async function train(pool) {
   }
   HASH_REFRESH = true;
 
-  let wrapper = document.getElementById('wrapper');
-  let rating = document.getElementById('rating');
-  let sizeHint = document.getElementById('sizeHint');
   const game = document.getElementById('game');
   const board = document.getElementById('board');
+
+  let rating = document.getElementById('rating');
+  if (rating) game.removeChild(rating);
+  let sizeHint = document.getElementById('sizeHint');
+  if (sizeHint) game.removeChild(sizeHint);
+
+  let wrapper = document.getElementById('wrapper');
   if (wrapper) {
     game.removeChild(wrapper);
-    game.removeChild(rating);
-    game.removeChild(sizeHint);
   } else {
     document.getElementById('timer').style.visibility = 'hidden';
 
