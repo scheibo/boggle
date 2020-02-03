@@ -440,7 +440,7 @@ async function train(pool) {
   if (!pool || pool.dice !== SETTINGS.dice || pool.type !== SETTINGS.dict) {
     const store = new Store('training', SETTINGS.dict);
     pool = await TrainingPool.create(
-      STATS, SETTINGS.dice, SETTINGS.dict, store, new Random());
+      STATS, SETTINGS.dice, SETTINGS.dict, store);
   }
   HASH_REFRESH = true;
 
