@@ -102,6 +102,7 @@ interface TrainingStats {
 }
 
 export class TrainingPool {
+  readonly dice: Dice;
   readonly type: Type;
 
   private readonly queue: Queue<TrainingStats>;
@@ -128,10 +129,10 @@ export class TrainingPool {
         clamp(stats.anagrams(a.k, type)[d] || 0) * a.m
     );
 
-    const stored: { data: TrainingStats[]; type: Type } | undefined = await store.get('data');
+    const stored: { data: TrainingStats[]; dice: Dice } | undefined = await store.get('data');
     if (stored) {
-      // If the types match then the queue can be used as is, otherwise we need to rebuild to sort it again
-      if (stored.type === type) {
+      // If the dice match then the queue can be used as is, otherwise we need to rebuild to sort it again
+      if (stored.dice === dice) {
         queue.data = stored.data;
         queue.length = stored.data.length;
       } else {
@@ -146,21 +147,23 @@ export class TrainingPool {
         }
       }
 
-      await store.set('data', { data: queue.data, type });
+      await store.set('data', { data: queue.data, dice });
     }
 
-    return new TrainingPool(epoch, queue, type, store, stats);
+    return new TrainingPool(epoch, queue, dice, type, store, stats);
   }
 
   private constructor(
     epoch: number,
     queue: Queue<TrainingStats>,
+    dice: Dice,
     type: Type,
     store: Store,
     stats: Stats
   ) {
     this.epoch = epoch;
     this.queue = queue;
+    this.dice = dice;
     this.type = type;
     this.store = store;
     this.stats = stats;
@@ -186,7 +189,7 @@ export class TrainingPool {
         this.queue.push(n);
       }
       await this.store.set('epoch', e);
-      await this.store.set('data', { data: this.queue.data, type: this.type });
+      await this.store.set('data', { data: this.queue.data, dice: this.dice });
     };
 
     let key = next.k;
