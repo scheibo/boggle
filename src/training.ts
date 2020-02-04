@@ -92,7 +92,7 @@ function adjust(q: number) {
   q = 5 - q; // invert
   // Standard update from SM2: https://www.supermemo.com/en/archives1990-2015/english/ol/sm2
   const sm2 = -0.8 + 0.28 * q - 0.02 * q * q;
-  return 1 - sm2;
+  return 1 + sm2;
 }
 
 interface TrainingStats {
