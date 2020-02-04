@@ -39,5 +39,5 @@ export function define(word: string, dict: Dictionary) {
 
 export function isValid(word: string, dict: Dictionary, type: Type) {
   const val = dict[word];
-  return word && (!val.dict || val.dict.includes(type.charAt(0)));
+  return val && (!val.dict || val.dict.includes(type.charAt(0)));
 }
