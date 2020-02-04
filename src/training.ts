@@ -3,7 +3,7 @@ import { Stats } from './stats';
 import { Store } from './store';
 import { Dice } from './settings';
 
-const EPOCH = 50;
+const COOLDOWN = 8 * 60 * 60 * 1000; // 8 hours
 
 type Comparator<T> = (a: T, b: T) => number;
 
@@ -89,16 +89,21 @@ function defaultCompare<T>(a: T, b: T) {
 }
 
 function adjust(q: number) {
-  q = 5 - q; // invert
-  // Standard update from SM2: https://www.supermemo.com/en/archives1990-2015/english/ol/sm2
-  const sm2 = -0.8 + 0.28 * q - 0.02 * q * q;
-  return 1 + sm2;
+  switch (q) {
+    case 0: return 1.01;
+    case 1: return 1;
+    case 2: return 0.98;
+    case 3: return 0.94;
+    case 4: return 0.88;
+    case 5: return 0.8;
+    default: throw new RangeError();
+  }
 }
 
 interface TrainingStats {
   k: string; // key
   m: number; // modifer
-  e?: number; // epoch
+  t?: number; // time
 }
 
 export class TrainingPool {
@@ -176,15 +181,17 @@ export class TrainingPool {
   next() {
     let next: TrainingStats;
     const nexts: TrainingStats[] = [];
+
+    const t = +new Date();
     do {
       next = this.queue.pop()!;
       nexts.push(next);
-    } while (next.e && this.epoch - next.e < EPOCH);
+    } while (next.t && t - next.t < COOLDOWN);
 
     const e = ++this.epoch;
     const update = async (q: number) => {
       next.m = next.m * adjust(q);
-      next.e = e;
+      next.t = t;
       for (const n of nexts) {
         this.queue.push(n);
       }
