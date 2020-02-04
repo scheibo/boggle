@@ -3,6 +3,7 @@
 
 const fs = require('fs');
 
+const define = require('../js/dict').define;
 const Game = require('../js/game').Game;
 const Stats = require('../js/stats').Stats;
 const Trie = require('../js/trie').Trie
@@ -18,24 +19,11 @@ for (const json of HISTORY) {
   const game = Game.fromJSON(json, TRIE, DICT, STATS);
   const valid = new Set();
 
-  let score = 0;
-  let last = game.start;
   for (const w in game.played) {
-    const t = game.played[w];
-    last = Math.abs(t);
-    if (t > 0) {
-      score += Game.score(w);
-      valid.add(w);
-    }
+    if (game.played[w] > 0) valid.add(w);
   }
 
-  if (score < 10 ||
-    (score / json.goal.D < 0.25) ||
-    (last - game.start < 90 * 1000)) {
-    continue;
-  }
-
-  games.set(game, valid);
+  if (valid.size) games.set(game, valid);
 }
 
 const ratio = {};
@@ -95,36 +83,58 @@ for (const w in possible) {
 
 
 let out = fs.createWriteStream('words');
-for (const e of Object.entries(ratio).sort((a, b) => b[1] - a[1])) {
-  if (found[e[0]] === possible[e[0]]) break;
-  out.write(`${e[0]} ${found[e[0]] || 0}/${possible[e[0]]}\n`);
+for (const [i, [k, w]] of Object.entries(ratio).sort((a, b) => b[1] - a[1]).entries()) {
+  if (found[k] === possible[k] || i > 100) break;
+  out.write(`${k} ${found[k] || 0}/${possible[k]}\n${define(k, DICT)}\n\n`);
 }
 out.close();
 
 
 out = fs.createWriteStream('anadromes');
-for (const e of Object.entries(anadromes).sort((a, b) => b[1] - a[1])) {
-  if (!e[1]) break;
+for (const [i, [k, w]] of Object.entries(anadromes).sort((a, b) => b[1] - a[1]).entries()) {
+  if (!w || i > 50) break;
 
-  const k = e[0];
   const r = k.split('').reverse().join('');
   const [n, d] = (found[r] || 0) > (found[k] || 0) ? [k, r] : [r, k];
 
-  out.write(`${n} ${found[n] || 0}/${found[d] || 0} ${d}\n`);
+  out.write(`${n} ${found[n] || 0}/${found[d] || 0} ${d}\n${n} ${define(n, DICT)}\n${d} ${define(d, DICT)}\n\n`);
 }
 out.close();
 
 out = fs.createWriteStream('anagrams');
-for (const e of Object.entries(anagrams).sort((a, b) => b[1] - a[1])) {
-  if (!e[1]) break;
+for (const [i, [k, w]] of Object.entries(anagrams).sort((a, b) => b[1] - a[1]).entries()) {
+  if (!w || i > 50) break;
 
   let s = [];
-  for (const w of stats.anagrams[e[0]]) {
-    if (!possible[w]) continue;
+  let defns = [];
+  for (const r of order(stats.anagrams(k, 'New').words)) {
+    const w = r.replace(/[^A-Z]/, '');
     s.push(`${w} ${found[w] || 0}/${possible[w] || 0}`);
+    defns.push(`${r} ${define(w, DICT)}`);
   }
 
-  if (s.length > 1) out.write(`${s.join(' ')}\n`);
+  if (s.length > 1) out.write(`${s.join(' ')}\n${defns.join('\n')}\n\n`);
 }
 out.close();
 
+function order(words) {
+  const ordered = [];
+
+  const anadromes = new Set();
+  for (const w of words) {
+    const r = w
+      .split('')
+      .reverse()
+      .join('');
+    if (r !== w && words.includes(r)) {
+      const key = `${[w, r].sort().join(' ')}`;
+      if (!anadromes.has(key)) {
+        anadromes.add(key);
+        ordered.push(`(${w}`, `${r})`);
+      }
+    } else {
+      ordered.push(w);
+    }
+  }
+  return ordered;
+}
