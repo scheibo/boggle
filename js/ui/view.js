@@ -553,6 +553,8 @@ async function refresh() {
   maybePerformUpdate();
 
   if (STATE) {
+    const last = HISTORY[HISTORY.length];
+    if (last && !Object.keys(last.words).length) HISTORY.pop();
     HISTORY.push(STATE.game.toJSON());
     await STORE.set('history', HISTORY);
     STATE.timer.stop();
