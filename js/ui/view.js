@@ -151,11 +151,9 @@ const TOUCH = ('ontouchstart' in window) ||
       } else if (isDefine) {
         toggleDefine();
       }
-    } else if (key === 8) {
-      if (isDefine && define.textContent === '') {
-        toggleDefine();
-      }
-    } else if ((key < 65 || key > 90)) {
+    } else if (key === 27 && isDefine) {
+      toggleDefine();
+    } else if ((key < 65 || key > 90) && key !== 8) {
       e.preventDefault();
     }
   });
@@ -224,7 +222,13 @@ const TOUCH = ('ontouchstart' in window) ||
           removeChildById(def, 'defineDefinition');
           removeChildById(def, 'defineStats');
         }
-        def.appendChild(displayAnagrams(word));
+        def.appendChild(displayAnagrams(word, w => {
+          w = w.toUpperCase();
+          search.textContent = w.toUpperCase();
+          LAST_DEFINITION = w;
+          updateDetails(w);
+          correctFocus();
+        }));
       };
 
       def.addEventListener('input', e => {
@@ -241,8 +245,7 @@ const TOUCH = ('ontouchstart' in window) ||
     correctFocus();
   }
 
-  function displayAnagrams(word) {
-
+  function displayAnagrams(word, fn) {
     const div = getOrCreateElementById('defineAnagrams', 'div', true);
     while (div.firstChild) div.removeChild(stats.firstChild);
 
@@ -264,6 +267,7 @@ const TOUCH = ('ontouchstart' in window) ||
     const format = w => {
       const e = document.createElement(w === word ? 'b' : 'span');
       e.textContent = w;
+      e.addEventListener('click', () => fn(w));
       return e;
     };
 
