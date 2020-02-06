@@ -100,58 +100,58 @@ interface TrainingStats {
 export class TrainingPool {
   readonly type: Type;
 
-  private readonly source: string[];
-  private readonly queue: Queue<TrainingStats>;
+  private readonly unlearned: string[];
+  private readonly learned: Queue<TrainingStats>;
   private readonly store: Store;
   private readonly stats: Stats;
 
   static async create(stats: Stats, dice: Dice, type: Type, store: Store) {
     const d = dice.toLowerCase()[0] as 'n' | 'o' | 'b';
-    // NOTE: queue is shared across dice...
-    const queue = new Queue<TrainingStats>([] /* filled in */, (a, b) => a.d - b.d);
+    // NOTE: learned is shared across dice...
+    const learned = new Queue<TrainingStats>([] /* filled in */, (a, b) => a.d - b.d);
 
+    const queued = new Set();
     const stored: TrainingStats[] | undefined = await store.get('data');
     if (stored) {
-      queue.data = stored;
-      queue.length = stored.length;
+      learned.data = stored;
+      learned.length = stored.length;
+      for (const s of stored) queued.add(s.k);
     }
 
-    const raw = Object.keys(stats.mixed)
-      .map(k => ({ k, w: stats.anagrams(k, type)[d] || 0 }))
-      .sort((a, b) => a.w - b.w);
-
-    const source = [];
-    for (let i = 0; i < raw.length - queue.length; i++) {
-      source.push(raw[i].k);
+    const raw = [];
+    for (const k in stats.mixed) {
+      if (!queued.has(k)) raw.push({ k, w: stats.anagrams(k, type)[d] || 0 });
     }
+    raw.sort((a, b) => a.w - b.w);
+    const unlearned = raw.map(e => e.k);
 
-    return new TrainingPool(source, queue, type, store, stats);
+    return new TrainingPool(unlearned, learned, type, store, stats);
   }
 
   private constructor(
-    source: string[],
-    queue: Queue<TrainingStats>,
+    unlearned: string[],
+    learned: Queue<TrainingStats>,
     type: Type,
     store: Store,
     stats: Stats
   ) {
-    this.source = source;
-    this.queue = queue;
+    this.unlearned = unlearned;
+    this.learned = learned;
     this.type = type;
     this.store = store;
     this.stats = stats;
   }
 
   size() {
-    return this.queue.length;
+    return this.learned.length;
   }
 
   next() {
     const now = +new Date();
     const backfill = () => {
-      if (!this.source.length) return undefined;
+      if (!this.unlearned.length) return undefined;
       return {
-        k: this.source.pop()!,
+        k: this.unlearned.pop()!,
         e: 2.5,
         c: 0,
         n: 0,
@@ -160,12 +160,12 @@ export class TrainingPool {
     };
 
     // TODO: consider introducing new words from backfill even if queue has valid word to practice?
-    let next: TrainingStats | undefined = this.queue.pop();
+    let next: TrainingStats | undefined = this.learned.pop();
     if (next) {
       if (next.d > now) {
         const fill = backfill();
         if (fill) {
-          this.queue.push(next);
+          this.learned.push(next);
           next = fill;
         }
       }
@@ -175,8 +175,8 @@ export class TrainingPool {
     if (!next) throw new RangeError();
 
     const update = async (q: number) => {
-      this.queue.push(adjust(next!, q));
-      await this.store.set('data', this.queue.data);
+      this.learned.push(adjust(next!, q));
+      await this.store.set('data', this.learned.data);
     };
 
     let key = next.k;
