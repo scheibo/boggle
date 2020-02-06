@@ -97,11 +97,80 @@ export class Stats {
     return result;
   }
 
+  static history(games: Array<[Set<string>, Set<string>]>, dice: Dice, dict: Dictionary) {
+    const d = dice.charAt(0).toLowerCase() as 'n' | 'o' | 'b';
+    // prettier-ignore
+    const reverse = (w: string) => w.split('').reverse().join('');
+
+    const ratio: { [k: string]: number } = {};
+    const anadromes: { [k: string]: number } = {};
+    const anagrams: { [k: string]: number } = {};
+
+    const all: { [k: string]: number } = {};
+    const found: { [k: string]: number } = {};
+    let n = games.length;
+    for (const [possible, played] of games) {
+      const as: { [k: string]: string[] } = {};
+      for (const w of possible) {
+        all[w] = (all[w] || 0) + 1;
+        const a = Stats.toAnagram(w);
+        as[a] = as[a] || [];
+        as[a].push(w);
+
+        if (played.has(w)) {
+          found[w] = (found[w] || 0) + 1;
+
+          const r = reverse(w);
+          if (r !== w && possible.has(r) && !played.has(r)) {
+            const k = [w, r].sort()[0];
+            anadromes[k] = (anadromes[w] || 0) + (1 / n) * dict[k][d]!;
+          }
+        } else {
+          ratio[w] = (ratio[w] || 0) + (1 / n) * dict[w][d]!;
+        }
+      }
+
+      for (const a in as) {
+        const group = as[a];
+        if (group.length <= 1) continue;
+        const f = group.filter(w => played.has(w)).length / group.length;
+        if (!f) continue;
+        const w = group.reduce((acc, w) => acc + dict[w][d]!, 0) / group.length;
+        anagrams[a] = (anagrams[a] || 0) + (1 / n) * w * (1 - f);
+      }
+      n--;
+    }
+
+    const K = Math.log(games.length);
+    for (const w in all) {
+      ratio[w] += K * dict[w][d]! * Math.pow(1 - (found[w] || 0) / all[w], 2);
+      if (anadromes[w]) {
+        const r = reverse(w);
+        const [a, b] = (found[r] || 0) > (found[w] || 0) ? [w, r] : [r, w];
+        anadromes[w] += K * dict[w][d]! * 2 * Math.pow(1 - (found[a] || 0) / (all[b] || 1), 2);
+      }
+
+      const a = Stats.toAnagram(w);
+      if (anagrams[a] && all[w]) {
+        anagrams[w] += K * dict[w][d]! * Math.pow(1 - (found[w] || 0) / all[w], 2);
+      }
+    }
+
+    const sorted = (obj: { [k: string]: number }, limit: number) =>
+      Object.entries(obj)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, limit);
+
+    return {
+      words: sorted(ratio, 100),
+      anadromes: sorted(ratio, 50),
+      anagrams: sorted(ratio, 50),
+    };
+  }
+
   static toAnagram(word: string) {
-    return word
-      .split('')
-      .sort()
-      .join('');
+    // prettier-ignore
+    return word.split('').sort().join('');
   }
 }
 
