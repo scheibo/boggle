@@ -13,6 +13,7 @@ var SEED = 0;
 var ORIGINAL = {settings: Object.assign({}, SETTINGS), seed: SEED};
 var LAST = '';
 var LAST_DEFINITION = '';
+var PLAYED = new Set();
 
 let kept = false;
 
@@ -37,6 +38,7 @@ const TOUCH = ('ontouchstart' in window) ||
   TRIE = Trie.create(DICT);
 
   HISTORY = await STORE.get('history') || [];
+  for (const h of HISTORY) PLAYED.add(h.seed);
   await Store.setup('training', ['NWL', 'ENABLE', 'CSW']);
 
   const initial = setup();
@@ -556,6 +558,7 @@ async function refresh() {
     const last = HISTORY[HISTORY.length];
     if (last && !Object.keys(last.words).length) HISTORY.pop();
     HISTORY.push(STATE.game.toJSON());
+    PLAYED.add(STATE.game.id);
     await STORE.set('history', HISTORY);
     STATE.timer.stop();
   }
@@ -563,9 +566,19 @@ async function refresh() {
   const timer = new Timer(180 * 1000, () => {
     if (!STATE.game.expired) STATE.game.expired = +new Date();
   });
+
   const random = new Random();
-  random.seed = SEED;
-  const game = new Game(TRIE, DICT, STATS, random, SETTINGS);
+  let game;
+  do {
+    random.seed = SEED;
+    const id = Game.encodeID(SETTINGS, random.seed);
+    if (PLAYED.has(id)) {
+      SEED++;
+      continue;
+    }
+    game = new Game(TRIE, DICT, STATS, random, SETTINGS);
+  } while (!game || !Object.keys(game.possible).length);
+
   const content = document.getElementById('content');
   if (content.firstChild) content.removeChild(content.firstChild);
 

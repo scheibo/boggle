@@ -85,16 +85,14 @@ export class Game {
     this.settings = settings as Settings;
 
     this.random = random;
-    do {
-      this.seed = this.random.seed;
-      this.board = [];
-      for (const die of this.dice) {
-        const c = this.random.sample(die.split(''));
-        this.board.push(c === 'Q' ? 'Qu' : c);
-      }
-      this.random.shuffle(this.board);
-      this.possible = this.solve();
-    } while (!Object.keys(this.possible).length);
+    this.seed = this.random.seed;
+    this.board = [];
+    for (const die of this.dice) {
+      const c = this.random.sample(die.split(''));
+      this.board.push(c === 'Q' ? 'Qu' : c);
+    }
+    this.random.shuffle(this.board);
+    this.possible = this.solve();
 
     this.id = Game.encodeID(this.settings, this.seed);
     this.played = {};
