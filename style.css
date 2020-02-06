@@ -428,6 +428,22 @@ img {
 .train .results {
   padding: 5px 18px;
 }
+#menu h1 {
+  font-size: 64px;
+  text-align: center;
+}
+#menu button {
+  display: block;
+  width: 60%;
+  font-weight: bold;
+  font-size: 32px;
+  margin: 5px 0;
+}
+#menu nav {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
 
 /* Pixel = 393 x 714 */
 @media(min-width: 393px) {
