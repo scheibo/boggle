@@ -3,6 +3,7 @@
 const SETTINGS = JSON.parse(localStorage.getItem('settings')) || {dice: 'New', dict: 'NWL', grade: 'C', display: 'Show'};
 const STORE = new Store('db', 'store');
 
+var GAMES = null;
 var HISTORY = null;
 var STATE = null;
 var DICT = null;
@@ -14,6 +15,8 @@ var ORIGINAL = {settings: Object.assign({}, SETTINGS), seed: SEED};
 var LAST = '';
 var LAST_DEFINITION = '';
 var PLAYED = new Set();
+
+const STATS_LIMIT = 500;
 
 let kept = false;
 
@@ -562,6 +565,7 @@ async function refresh() {
   if (STATE) {
     const last = HISTORY[HISTORY.length];
     if (last && !Object.keys(last.words).length) HISTORY.pop();
+    updateGames(STATE.game);
     HISTORY.push(STATE.game.toJSON());
     PLAYED.add(STATE.game.id);
     await STORE.set('history', HISTORY);
@@ -754,4 +758,37 @@ function focusContentEditable(element) {
 function permaFocus(e) {
   e.addEventListener('blur', () => setTimeout(() => focusContentEditable(e), 20));
   focusContentEditable(e);
+}
+
+function processHistoryIntoGames() {
+  GAMES = [];
+  for (let i = HISTORY.length; i >= 0 && GAMES.length <= STATS_LIMIT, i--) {
+    const game = Game.fromJSON(HISTORY[i], TRIE, DICT, STATS);
+    const played = new Set();
+    for (const w in game.played) {
+      if (game.played[w] > 0) played.add(w);
+    }
+    GAMES.push([game.possible, played]);
+  }
+}
+
+function updateGames(game) {
+  if (!GAMES) return;
+
+  const played = new Set();
+  for (const w in game.played) {
+    if (game.played[w] > 0) played.add(w);
+  }
+  if (!played.size) return GAMES;
+
+  if (GAMES.length >= STATS_LIMIT) history.shift();
+  GAMES.push([game.possible, played]);
+}
+
+function displayStats(data) {
+  const {words, anadromes, anagrams} = data;
+
+  // TODO: create toggle-group <ANADROMES | WORDS | ANAGRAMS>
+  // show table depending on which toggle is ticked
+  // LINK to definitions
 }

@@ -97,7 +97,7 @@ export class Stats {
     return result;
   }
 
-  static history(games: Array<[Set<string>, Set<string>]>, dice: Dice, dict: Dictionary) {
+  static history(games: Array<[{ [w: string]: any }, Set<string>]>, dice: Dice, dict: Dictionary) {
     const d = dice.charAt(0).toLowerCase() as 'n' | 'o' | 'b';
     // prettier-ignore
     const reverse = (w: string) => w.split('').reverse().join('');
@@ -111,7 +111,7 @@ export class Stats {
     let n = games.length;
     for (const [possible, played] of games) {
       const as: { [k: string]: string[] } = {};
-      for (const w of possible) {
+      for (const w in possible) {
         all[w] = (all[w] || 0) + 1;
         const a = Stats.toAnagram(w);
         as[a] = as[a] || [];
@@ -121,7 +121,7 @@ export class Stats {
           found[w] = (found[w] || 0) + 1;
 
           const r = reverse(w);
-          if (r !== w && possible.has(r) && !played.has(r)) {
+          if (r !== w && possible[r] && !played.has(r)) {
             const k = [w, r].sort()[0];
             anadromes[k] = (anadromes[w] || 0) + (1 / n) * dict[k][d]!;
           }
