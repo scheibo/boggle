@@ -440,7 +440,7 @@ function backClick() {
 }
 
 async function train(pool) {
-  if (!pool || pool.dice !== SETTINGS.dice || pool.type !== SETTINGS.dict) {
+  if (!pool || pool.type !== SETTINGS.dict) {
     const store = new Store('training', SETTINGS.dict);
     pool = await TrainingPool.create(
       STATS, SETTINGS.dice, SETTINGS.dict, store);
@@ -473,7 +473,8 @@ async function train(pool) {
   wrapper.setAttribute('id', 'wrapper');
   wrapper.classList.add('train');
 
-  document.getElementById('epoch').textContent = pool.getEpoch();
+  // TODO: rename epoch id...
+  document.getElementById('epoch').textContent = pool.size();
 
   // TODO need to make sure call update, even when navigate away! - need try {} finally or something similar!
   const {label, group, update} = pool.next();

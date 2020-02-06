@@ -3,9 +3,14 @@ import { Stats } from './stats';
 import { Store } from './store';
 import { Dice } from './settings';
 
-const COOLDOWN = 8 * 60 * 60 * 1000; // 8 hours
+const PERIOD = 3;
+const DAY = 24 * 60 * 60 * 1000;
 
 type Comparator<T> = (a: T, b: T) => number;
+
+function defaultCompare<T>(a: T, b: T) {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
 
 class Queue<T> {
   length: number;
@@ -84,126 +89,101 @@ class Queue<T> {
   }
 }
 
-function defaultCompare<T>(a: T, b: T) {
-  return a < b ? -1 : a > b ? 1 : 0;
-}
-
-function adjust(q: number) {
-  switch (q) {
-    case 0: return 1.01;
-    case 1: return 1;
-    case 2: return 0.98;
-    case 3: return 0.94;
-    case 4: return 0.88;
-    case 5: return 0.8;
-    default: throw new RangeError();
-  }
-}
-
 interface TrainingStats {
   k: string; // key
-  m: number; // modifer
-  t?: number; // time
+  e: number; // easiness
+  c: number; // correct
+  n: number; // encounters
+  d: number; // date
 }
 
 export class TrainingPool {
-  readonly dice: Dice;
   readonly type: Type;
 
+  private readonly source: string[];
   private readonly queue: Queue<TrainingStats>;
   private readonly store: Store;
   private readonly stats: Stats;
 
-  private epoch: number;
-
   static async create(stats: Stats, dice: Dice, type: Type, store: Store) {
-    let epoch: number | undefined = await store.get('epoch');
-    if (epoch === undefined) {
-      epoch = 0;
-      await store.set('epoch', epoch);
-    }
-
-    const max = stats.max(type);
-    const clamp = (n: number) => Math.min(max, Math.max(1, n));
     const d = dice.toLowerCase()[0] as 'n' | 'o' | 'b';
     // NOTE: queue is shared across dice...
-    const queue = new Queue<TrainingStats>(
-      [] /* filled in */,
-      (a, b) =>
-        clamp(stats.anagrams(b.k, type)[d] || 0) * b.m -
-        clamp(stats.anagrams(a.k, type)[d] || 0) * a.m
-    );
+    const queue = new Queue<TrainingStats>([] /* filled in */, (a, b) => a.d - b.d);
 
-    const stored: { data: TrainingStats[]; dice: Dice } | undefined = await store.get('data');
+    const stored: TrainingStats[] | undefined = await store.get('data');
     if (stored) {
-      // If the dice match then the queue can be used as is, otherwise we need to rebuild to sort it again
-      if (stored.dice === dice) {
-        queue.data = stored.data;
-        queue.length = stored.data.length;
-      } else {
-        for (const s of stored.data) {
-          queue.push(s);
-        }
-      }
-    } else {
-      for (const k in stats.mixed) {
-        if (k.length <= 7 && stats.anagrams(k, type).words.length) {
-          queue.push({ k, m: 1 });
-        }
-      }
-
-      await store.set('data', { data: queue.data, dice });
+      queue.data = stored;
+      queue.length = stored.length;
     }
 
-    return new TrainingPool(epoch, queue, dice, type, store, stats);
+    const raw = Object.keys(stats.mixed)
+      .map(k => ({ k, w: stats.anagrams(k, type)[d] || 0 }))
+      .sort((a, b) => a.w - b.w);
+
+    const source = [];
+    for (let i = 0; i < raw.length - queue.length; i++) {
+      source.push(raw[i].k);
+    }
+
+    return new TrainingPool(source, queue, type, store, stats);
   }
 
   private constructor(
-    epoch: number,
+    source: string[],
     queue: Queue<TrainingStats>,
-    dice: Dice,
     type: Type,
     store: Store,
     stats: Stats
   ) {
-    this.epoch = epoch;
+    this.source = source;
     this.queue = queue;
-    this.dice = dice;
     this.type = type;
     this.store = store;
     this.stats = stats;
   }
 
-  getEpoch() {
-    return this.epoch;
+  size() {
+    return this.queue.length;
   }
 
   next() {
-    let next: TrainingStats;
-    const nexts: TrainingStats[] = [];
+    const now = +new Date();
+    const backfill = () => {
+      if (!this.source.length) return undefined;
+      return {
+        k: this.source.pop()!,
+        e: 2.5,
+        c: 0,
+        n: 0,
+        d: 0,
+      };
+    };
 
-    const t = +new Date();
-    do {
-      next = this.queue.pop()!;
-      nexts.push(next);
-    } while (next.t && t - next.t < COOLDOWN);
-
-    const e = ++this.epoch;
-    const update = async (q: number) => {
-      next.m = next.m * adjust(q);
-      next.t = t;
-      for (const n of nexts) {
-        this.queue.push(n);
+    // TODO: consider introducing new words from backfill even if queue has valid word to practice?
+    let next: TrainingStats | undefined = this.queue.pop();
+    if (next) {
+      if (next.d > now) {
+        const fill = backfill();
+        if (fill) {
+          this.queue.push(next);
+          next = fill;
+        }
       }
-      await this.store.set('epoch', e);
-      await this.store.set('data', { data: this.queue.data, dice: this.dice });
+    } else {
+      next = backfill();
+    }
+    if (!next) throw new RangeError();
+
+    const update = async (q: number) => {
+      this.queue.push(adjust(next!, q));
+      await this.store.set('data', this.queue.data);
     };
 
     let key = next.k;
     const group = this.stats.anagrams(key, this.type).words;
 
     // @ts-ignore FIXME
-    const random = new Random(e);
+    const random = new Random(this.size());
     // try to find a permutation which isn't in the group
     for (let i = 0; i < 10; i++) {
       key = random.shuffle(key.split('')).join('');
@@ -212,6 +192,32 @@ export class TrainingPool {
 
     return { label: key, group: order(random.shuffle(group)), update };
   }
+}
+
+function adjust(v: TrainingStats, q: number) {
+  const now = +new Date();
+  // Standard update from SM2: https://www.supermemo.com/en/archives1990-2015/english/ol/sm2
+  let mod = -0.8 + 0.28 * q - 0.02 * q * q;
+  // During the initial learning phase (n < 5), only apply a fraction of the modifier if negative
+  // https://apps.ankiweb.net/docs/manual.html#what-spaced-repetition-algorithm-does-anki-use
+  if (mod < 0) mod *= Math.max(Math.pow(2, v.n + 1) * 2.5, 100) / 100;
+  // http://www.blueraja.com/blog/477/a-better-spaced-repetition-learning-algorithm-sm2
+  const bonus = v.d ? Math.min(2, (now - v.d) / DAY / PERIOD) : 1;
+  // SM2 uses a minimum easiness of 1.3
+  const min = 1.3;
+
+  if (q >= 3) {
+    v.c++;
+    v.e = Math.max(min, v.e + mod * bonus);
+    v.d = now + PERIOD * Math.pow(v.e, v.c - 1) * DAY * bonus;
+  } else {
+    v.c = 0;
+    v.e = Math.max(min, v.e + mod);
+    v.d = now + DAY;
+  }
+  v.n++;
+
+  return v;
 }
 
 function order(words: string[]) {
