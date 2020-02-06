@@ -3,9 +3,14 @@ import { Stats } from './stats';
 import { Store } from './store';
 import { Dice } from './settings';
 
-const EPOCH = 50;
+const PERIOD = 3;
+const DAY = 24 * 60 * 60 * 1000;
 
 type Comparator<T> = (a: T, b: T) => number;
+
+function defaultCompare<T>(a: T, b: T) {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
 
 class Queue<T> {
   length: number;
@@ -84,119 +89,101 @@ class Queue<T> {
   }
 }
 
-function defaultCompare<T>(a: T, b: T) {
-  return a < b ? -1 : a > b ? 1 : 0;
-}
-
-function adjust(q: number) {
-  q = 5 - q; // invert
-  // Standard update from SM2: https://www.supermemo.com/en/archives1990-2015/english/ol/sm2
-  const sm2 = -0.8 + 0.28 * q - 0.02 * q * q;
-  return 1 - sm2;
-}
-
 interface TrainingStats {
   k: string; // key
-  m: number; // modifer
-  e?: number; // epoch
+  e: number; // easiness
+  c: number; // correct
+  n: number; // encounters
+  d: number; // date
 }
 
 export class TrainingPool {
-  readonly dice: Dice;
   readonly type: Type;
 
-  private readonly queue: Queue<TrainingStats>;
+  private readonly unlearned: string[];
+  private readonly learned: Queue<TrainingStats>;
   private readonly store: Store;
   private readonly stats: Stats;
 
-  private epoch: number;
-
   static async create(stats: Stats, dice: Dice, type: Type, store: Store) {
-    let epoch: number | undefined = await store.get('epoch');
-    if (epoch === undefined) {
-      epoch = 0;
-      await store.set('epoch', epoch);
-    }
-
-    const max = stats.max(type);
-    const clamp = (n: number) => Math.min(max, Math.max(1, n));
     const d = dice.toLowerCase()[0] as 'n' | 'o' | 'b';
-    // NOTE: queue is shared across dice...
-    const queue = new Queue<TrainingStats>(
-      [] /* filled in */,
-      (a, b) =>
-        clamp(stats.anagrams(b.k, type)[d] || 0) * b.m -
-        clamp(stats.anagrams(a.k, type)[d] || 0) * a.m
-    );
+    // NOTE: learned is shared across dice...
+    const learned = new Queue<TrainingStats>([] /* filled in */, (a, b) => a.d - b.d);
 
-    const stored: { data: TrainingStats[]; dice: Dice } | undefined = await store.get('data');
+    const queued = new Set();
+    const stored: TrainingStats[] | undefined = await store.get('data');
     if (stored) {
-      // If the dice match then the queue can be used as is, otherwise we need to rebuild to sort it again
-      if (stored.dice === dice) {
-        queue.data = stored.data;
-        queue.length = stored.data.length;
-      } else {
-        for (const s of stored.data) {
-          queue.push(s);
-        }
-      }
-    } else {
-      for (const k in stats.mixed) {
-        if (k.length <= 7 && stats.anagrams(k, type).words.length) {
-          queue.push({ k, m: 1 });
-        }
-      }
-
-      await store.set('data', { data: queue.data, dice });
+      learned.data = stored;
+      learned.length = stored.length;
+      for (const s of stored) queued.add(s.k);
     }
 
-    return new TrainingPool(epoch, queue, dice, type, store, stats);
+    const raw = [];
+    for (const k in stats.mixed) {
+      if (!queued.has(k)) raw.push({ k, w: stats.anagrams(k, type)[d] || 0 });
+    }
+    raw.sort((a, b) => a.w - b.w);
+    const unlearned = raw.map(e => e.k);
+
+    return new TrainingPool(unlearned, learned, type, store, stats);
   }
 
   private constructor(
-    epoch: number,
-    queue: Queue<TrainingStats>,
-    dice: Dice,
+    unlearned: string[],
+    learned: Queue<TrainingStats>,
     type: Type,
     store: Store,
     stats: Stats
   ) {
-    this.epoch = epoch;
-    this.queue = queue;
-    this.dice = dice;
+    this.unlearned = unlearned;
+    this.learned = learned;
     this.type = type;
     this.store = store;
     this.stats = stats;
   }
 
-  getEpoch() {
-    return this.epoch;
+  size() {
+    return this.learned.length;
   }
 
   next() {
-    let next: TrainingStats;
-    const nexts: TrainingStats[] = [];
-    do {
-      next = this.queue.pop()!;
-      nexts.push(next);
-    } while (next.e && this.epoch - next.e < EPOCH);
+    const now = +new Date();
+    const backfill = () => {
+      if (!this.unlearned.length) return undefined;
+      return {
+        k: this.unlearned.pop()!,
+        e: 2.5,
+        c: 0,
+        n: 0,
+        d: 0,
+      };
+    };
 
-    const e = ++this.epoch;
-    const update = async (q: number) => {
-      next.m = next.m * adjust(q);
-      next.e = e;
-      for (const n of nexts) {
-        this.queue.push(n);
+    // TODO: consider introducing new words from backfill even if queue has valid word to practice?
+    let next: TrainingStats | undefined = this.learned.pop();
+    if (next) {
+      if (next.d > now) {
+        const fill = backfill();
+        if (fill) {
+          this.learned.push(next);
+          next = fill;
+        }
       }
-      await this.store.set('epoch', e);
-      await this.store.set('data', { data: this.queue.data, dice: this.dice });
+    } else {
+      next = backfill();
+    }
+    if (!next) throw new RangeError();
+
+    const update = async (q: number) => {
+      this.learned.push(adjust(next!, q));
+      await this.store.set('data', this.learned.data);
     };
 
     let key = next.k;
     const group = this.stats.anagrams(key, this.type).words;
 
     // @ts-ignore FIXME
-    const random = new Random(e);
+    const random = new Random(this.size());
     // try to find a permutation which isn't in the group
     for (let i = 0; i < 10; i++) {
       key = random.shuffle(key.split('')).join('');
@@ -205,6 +192,32 @@ export class TrainingPool {
 
     return { label: key, group: order(random.shuffle(group)), update };
   }
+}
+
+function adjust(v: TrainingStats, q: number) {
+  const now = +new Date();
+  // Standard update from SM2: https://www.supermemo.com/en/archives1990-2015/english/ol/sm2
+  let mod = -0.8 + 0.28 * q - 0.02 * q * q;
+  // During the initial learning phase (n < 5), only apply a fraction of the modifier if negative
+  // https://apps.ankiweb.net/docs/manual.html#what-spaced-repetition-algorithm-does-anki-use
+  if (mod < 0) mod *= Math.max(Math.pow(2, v.n + 1) * 2.5, 100) / 100;
+  // http://www.blueraja.com/blog/477/a-better-spaced-repetition-learning-algorithm-sm2
+  const bonus = v.d ? Math.min(2, (now - v.d) / DAY / PERIOD) : 1;
+  // SM2 uses a minimum easiness of 1.3
+  const min = 1.3;
+
+  if (q >= 3) {
+    v.c++;
+    v.e = Math.max(min, v.e + mod * bonus);
+    v.d = now + PERIOD * Math.pow(v.e, v.c - 1) * DAY * bonus;
+  } else {
+    v.c = 0;
+    v.e = Math.max(min, v.e + mod);
+    v.d = now + DAY;
+  }
+  v.n++;
+
+  return v;
 }
 
 function order(words: string[]) {
