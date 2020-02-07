@@ -94,7 +94,8 @@ interface TrainingStats {
   e: number; // easiness
   c: number; // correct
   n: number; // encounters
-  d: number; // date
+  d: number; // due date
+  p: number; // previous
 }
 
 export class TrainingPool {
@@ -156,6 +157,7 @@ export class TrainingPool {
         c: 0,
         n: 0,
         d: 0,
+        p: 0,
       };
     };
 
@@ -175,7 +177,7 @@ export class TrainingPool {
     if (!next) throw new RangeError();
 
     const update = async (q: number) => {
-      this.learned.push(adjust(next!, q));
+      this.learned.push(adjust(next!, q, now));
       await this.store.set('data', this.learned.data);
     };
 
@@ -194,28 +196,28 @@ export class TrainingPool {
   }
 }
 
-function adjust(v: TrainingStats, q: number) {
-  const now = +new Date();
+function adjust(v: TrainingStats, q: number, now: number) {
   // Standard update from SM2: https://www.supermemo.com/en/archives1990-2015/english/ol/sm2
   let mod = -0.8 + 0.28 * q - 0.02 * q * q;
   // During the initial learning phase (n < 5), only apply a fraction of the modifier if negative
   // https://apps.ankiweb.net/docs/manual.html#what-spaced-repetition-algorithm-does-anki-use
-  if (mod < 0) mod *= Math.max(Math.pow(2, v.n + 1) * 2.5, 100) / 100;
+  if (mod < 0) mod *= Math.min(Math.pow(2, v.n + 1) * 2.5, 100) / 100;
   // http://www.blueraja.com/blog/477/a-better-spaced-repetition-learning-algorithm-sm2
-  const bonus = v.d ? Math.min(2, (now - v.d) / DAY / PERIOD) : 1;
+  const bonus = v.d ? Math.min(2, (v.p - v.d) / DAY / (v.c ? PERIOD : 1)) : 1;
   // SM2 uses a minimum easiness of 1.3
   const min = 1.3;
 
   if (q >= 3) {
     v.c++;
     v.e = Math.max(min, v.e + mod * bonus);
-    v.d = now + PERIOD * Math.pow(v.e, v.c - 1) * DAY * bonus;
+    v.d = now + DAY * PERIOD * Math.pow(v.e, v.c - 1) * bonus;
   } else {
     v.c = 0;
     v.e = Math.max(min, v.e + mod);
     v.d = now + DAY;
   }
   v.n++;
+  v.p = now;
 
   return v;
 }
@@ -225,10 +227,8 @@ function order(words: string[]) {
 
   const anadromes = new Set();
   for (const w of words) {
-    const r = w
-      .split('')
-      .reverse()
-      .join('');
+    // prettier-ignore
+    const r = w.split('').reverse().join('');
     if (r !== w && words.includes(r)) {
       const key = `${[w, r].sort().join(' ')}`;
       if (!anadromes.has(key)) {
