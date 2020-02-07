@@ -202,8 +202,8 @@ function adjust(v: TrainingStats, q: number) {
   // https://apps.ankiweb.net/docs/manual.html#what-spaced-repetition-algorithm-does-anki-use
   if (mod < 0) mod *= Math.min(Math.pow(2, v.n + 1) * 2.5, 100) / 100;
   // http://www.blueraja.com/blog/477/a-better-spaced-repetition-learning-algorithm-sm2
-  let bonus = v.d ? Math.min(2, (now - v.d) / DAY / PERIOD) : 1;
-  if (!v.c) bonus = Math.max(1, bonus);
+  const bonus = 1; // FIXME v.d ? Math.min(2, (now - v.d) / DAY / PERIOD) : 1;
+  // if (!v.c) bonus = Math.max(1, bonus);
   // SM2 uses a minimum easiness of 1.3
   const min = 1.3;
 
