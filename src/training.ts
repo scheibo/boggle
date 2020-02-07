@@ -226,10 +226,8 @@ function order(words: string[]) {
 
   const anadromes = new Set();
   for (const w of words) {
-    const r = w
-      .split('')
-      .reverse()
-      .join('');
+    // prettier-ignore
+    const r = w.split('').reverse().join('');
     if (r !== w && words.includes(r)) {
       const key = `${[w, r].sort().join(' ')}`;
       if (!anadromes.has(key)) {
