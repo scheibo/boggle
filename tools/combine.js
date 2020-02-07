@@ -7,7 +7,7 @@ const path = require('path');
 const DICT = require('../data/dict.json');
 
 const stats = {};
-const results = path.join(__dirname, 'results.sav'); // TODO
+const results = path.join(__dirname, 'results');
 for (const f of fs.readdirSync(results)) {
   if (!f.endsWith('.json')) continue;
 
