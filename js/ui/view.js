@@ -40,6 +40,7 @@ const TOUCH = ('ontouchstart' in window) ||
   STATS = new Stats(await stats.json(), DICT);
   TRIE = Trie.create(DICT);
 
+  // HISTORY = await (await fetch('wip/history.json', {mode: 'no-cors'})).json();
   HISTORY = await STORE.get('history') || [];
   for (const h of HISTORY) PLAYED.add(h.seed);
   await Store.setup('training', ['NWL', 'ENABLE', 'CSW']);
@@ -83,6 +84,8 @@ const TOUCH = ('ontouchstart' in window) ||
   });
 
   document.getElementById('score').addEventListener('long-press', e => {
+    const board = document.getElementById('board');
+    if (board.classList.contains('hidden')) return;
     const size = STATE.game.size;
     const weights = [];
     for (let row = 0; row < size; row++) {
@@ -102,14 +105,16 @@ const TOUCH = ('ontouchstart' in window) ||
       }
     }
 
-    for (const td of document.getElementById('board').getElementsByTagName('td')) {
+    for (const td of board.getElementsByTagName('td')) {
       const w = weights[Number(td.dataset.x)][Number(td.dataset.y)] / total;
       td.style.backgroundColor = `rgba(255,0,0,${w})`;
     }
   });
 
   document.getElementById('score').addEventListener('long-press-up', e => {
-    for (const td of document.getElementById('board').getElementsByTagName('td')) {
+    const board = document.getElementById('board');
+    if (board.classList.contains('hidden')) return;
+    for (const td of board.getElementsByTagName('td')) {
       td.style.removeProperty('background-color');
     }
   });
@@ -165,161 +170,6 @@ const TOUCH = ('ontouchstart' in window) ||
 
   document.addEventListener('swiped-left', toggleDefine);
   document.addEventListener('swiped-right', toggleDefine);
-
-  function toggleDefine(e) {
-    const display = document.getElementById('display');
-    const game = document.getElementById('game');
-
-    if (!game.classList.contains('hidden')) {
-      const def = document.createElement('div');
-      def.setAttribute('id', 'define');
-
-      const search = document.createElement('div');
-      search.setAttribute('id', 'search');
-      search.contentEditable = true;
-      search.textContent = LAST_DEFINITION;
-
-      def.appendChild(search);
-      display.appendChild(def);
-
-      const updateDetails = word => {
-        if (DICT[word]) {
-          const defn = getOrCreateElementById('defineDefinition', 'div');
-          defn.textContent = define(word, DICT);
-          if (!isValid(word, DICT, SETTINGS.dict) || word.length < SETTINGS.min) {
-            def.classList.add('hard');
-          } else {
-            def.classList.remove('hard');
-          }
-
-          const stats = getOrCreateElementById('defineStats', 'table');
-          while (stats.firstChild) stats.removeChild(stats.firstChild);
-          const addCells = (tr, label, data) => {
-            let td = document.createElement('td');
-            let b = document.createElement('b');
-            b.textContent = label;
-            td.appendChild(b);
-            tr.appendChild(td);
-
-            td = document.createElement('td');
-            td.classList.add('value');
-            td.textContent = data;
-            tr.appendChild(td);
-          };
-
-          const s = STATS.stats(word, SETTINGS.dice, SETTINGS.type);
-
-          let tr = document.createElement('tr');
-          addCells(tr, 'Grade', s.grade === ' ' ? 'S' : s.grade);
-          addCells(tr, 'Score', s.word ? s.word.p : '-');
-          stats.appendChild(tr);
-
-          tr = document.createElement('tr');
-          addCells(tr, 'Frequency', s.freq ? s.freq : '-');
-          addCells(tr, 'Anagram',  s.anagram ? s.anagram.p : '-');
-          stats.appendChild(tr);
-
-          stats.appendChild(tr);
-
-          def.appendChild(defn);
-          def.appendChild(stats);
-        } else {
-          removeChildById(def, 'defineDefinition');
-          removeChildById(def, 'defineStats');
-        }
-        def.appendChild(displayAnagrams(word, w => {
-          w = w.toUpperCase();
-          search.textContent = w.toUpperCase();
-          LAST_DEFINITION = w;
-          updateDetails(w);
-          correctFocus();
-        }));
-      };
-
-      def.addEventListener('input', e => {
-        const word = search.textContent.toUpperCase();
-        LAST_DEFINITION = word;
-        updateDetails(word);
-      });
-      updateDetails(LAST_DEFINITION);
-      permaFocus(search);
-    } else {
-      display.removeChild(document.getElementById('define'));
-    }
-    game.classList.toggle('hidden');
-    correctFocus();
-  }
-
-  function displayAnagrams(word, fn) {
-    const div = getOrCreateElementById('defineAnagrams', 'div', true);
-    while (div.firstChild) div.removeChild(stats.firstChild);
-
-    const words = STATS.anagrams(word, SETTINGS.dict).words;
-    if (words.length <= 1) return div;
-
-    const solo = [];
-    const anadromes = new Set();
-
-    for (const w of words) {
-      const r = w.split('').reverse().join('');
-      if (r !== w && words.includes(r)) {
-        anadromes.add(`${[w, r].sort().join(' ')}`);
-      } else {
-        solo.push(w);
-      }
-    }
-
-    const format = w => {
-      const e = document.createElement(w === word ? 'b' : 'span');
-      e.textContent = w;
-      e.addEventListener('click', () => fn(w));
-      return e;
-    };
-
-    for (const pair of anadromes) {
-      const [a, b] = pair.split(' ');
-      div.appendChild(document.createTextNode(' ('));
-      div.appendChild(format(a));
-      div.appendChild(document.createTextNode(' '));
-      div.appendChild(format(b));
-      div.appendChild(document.createTextNode(') '));
-    }
-    for (const w of solo) {
-      div.appendChild(format(w));
-      div.appendChild(document.createTextNode(' '));
-    }
-
-    return div;
-  }
-
-  function getOrCreateElementById(id, type, clear) {
-    let element = document.getElementById(id);
-    if (element) {
-      if (!clear) return element;
-      element.parentNode.removeChild(element);
-    }
-    element = document.createElement(type);
-    element.setAttribute('id', id);
-    return element;
-  }
-
-  function removeChildById(element, id) {
-    const child = document.getElementById(id)
-    if (!child) return;
-    return element.removeChild(child);
-  }
-
-  function correctFocus() {
-    if (TOUCH) return;
-    const board = document.getElementById('board');
-    const settings = document.getElementById('settings');
-
-    if (board && !board.classList.contains('hidden')) {
-      focusContentEditable(document.getElementById('word'))
-    } else if (settings && !settings.classList.contains('hidden')) {
-      focusContentEditable(document.getElementById('seed'))
-    }
-  }
 
   function setup() {
     if (document.location.hash && document.location.hash.length > 1) {
@@ -439,6 +289,11 @@ function backClick() {
   const wrapper = document.getElementById('wrapper');
   if (wrapper && wrapper.classList.contains('train')) {
     displaySettings();
+  } else if (wrapper && wrapper.classList.contains('stats')) {
+    document.getElementById('game').removeChild(wrapper);
+    document.getElementById('timer').style.visibility = 'inherit';
+    updateVisibility({show: ['score']});
+    displayScore();
   } else {
     backToGame();
   }
@@ -762,7 +617,7 @@ function permaFocus(e) {
 
 function processHistoryIntoGames() {
   GAMES = [];
-  for (let i = HISTORY.length; i >= 0 && GAMES.length <= STATS_LIMIT; i--) {
+  for (let i = HISTORY.length - 1; i >= 0 && GAMES.length <= STATS_LIMIT; i--) {
     const game = Game.fromJSON(HISTORY[i], TRIE, DICT, STATS);
     const played = new Set();
     for (const w in game.played) {
@@ -785,10 +640,310 @@ function updateGames(game) {
   GAMES.push([game.possible, played]);
 }
 
-function displayStats(data) {
-  const {words, anadromes, anagrams} = data;
+function toggleDefine(e) {
+  const display = document.getElementById('display');
+  const game = document.getElementById('game');
 
-  // TODO: create toggle-group <ANADROMES | WORDS | ANAGRAMS>
-  // show table depending on which toggle is ticked
-  // LINK to definitions
+  if (!game.classList.contains('hidden')) {
+    const def = document.createElement('div');
+    def.setAttribute('id', 'define');
+
+    const search = document.createElement('div');
+    search.setAttribute('id', 'search');
+    search.contentEditable = true;
+    search.textContent = LAST_DEFINITION;
+
+    def.appendChild(search);
+    display.appendChild(def);
+
+    const updateDetails = word => {
+      if (DICT[word]) {
+        const defn = getOrCreateElementById('defineDefinition', 'div');
+        defn.textContent = define(word, DICT);
+        if (!isValid(word, DICT, SETTINGS.dict) || word.length < SETTINGS.min) {
+          def.classList.add('hard');
+        } else {
+          def.classList.remove('hard');
+        }
+
+        const stats = getOrCreateElementById('defineStats', 'table');
+        while (stats.firstChild) stats.removeChild(stats.firstChild);
+        const addCells = (tr, label, data) => {
+          let td = document.createElement('td');
+          let b = document.createElement('b');
+          b.textContent = label;
+          td.appendChild(b);
+          tr.appendChild(td);
+
+          td = document.createElement('td');
+          td.classList.add('value');
+          td.textContent = data;
+          tr.appendChild(td);
+        };
+
+        const s = STATS.stats(word, SETTINGS.dice, SETTINGS.type);
+
+        let tr = document.createElement('tr');
+        addCells(tr, 'Grade', s.grade === ' ' ? 'S' : s.grade);
+        addCells(tr, 'Score', s.word ? s.word.p : '-');
+        stats.appendChild(tr);
+
+        tr = document.createElement('tr');
+        addCells(tr, 'Frequency', s.freq ? s.freq : '-');
+        addCells(tr, 'Anagram',  s.anagram ? s.anagram.p : '-');
+        stats.appendChild(tr);
+
+        stats.appendChild(tr);
+
+        def.appendChild(defn);
+        def.appendChild(stats);
+      } else {
+        removeChildById(def, 'defineDefinition');
+        removeChildById(def, 'defineStats');
+      }
+      def.appendChild(displayAnagrams(word, w => {
+        w = w.toUpperCase();
+        search.textContent = w.toUpperCase();
+        LAST_DEFINITION = w;
+        updateDetails(w);
+        correctFocus();
+      }));
+    };
+
+    def.addEventListener('input', e => {
+      const word = search.textContent.toUpperCase();
+      LAST_DEFINITION = word;
+      updateDetails(word);
+    });
+    updateDetails(LAST_DEFINITION);
+    permaFocus(search);
+  } else {
+    display.removeChild(document.getElementById('define'));
+  }
+  game.classList.toggle('hidden');
+  correctFocus();
+}
+
+function displayAnagrams(word, fn) {
+  const div = getOrCreateElementById('defineAnagrams', 'div', true);
+  while (div.firstChild) div.removeChild(stats.firstChild);
+
+  const words = STATS.anagrams(word, SETTINGS.dict).words;
+  if (words.length <= 1) return div;
+
+  const solo = [];
+  const anadromes = new Set();
+
+  for (const w of words) {
+    const r = w.split('').reverse().join('');
+    if (r !== w && words.includes(r)) {
+      anadromes.add(`${[w, r].sort().join(' ')}`);
+    } else {
+      solo.push(w);
+    }
+  }
+
+  const format = w => {
+    const e = document.createElement(w === word ? 'b' : 'span');
+    e.textContent = w;
+    e.addEventListener('click', () => fn(w));
+    return e;
+  };
+
+  for (const pair of anadromes) {
+    const [a, b] = pair.split(' ');
+    div.appendChild(document.createTextNode(' ('));
+    div.appendChild(format(a));
+    div.appendChild(document.createTextNode(' '));
+    div.appendChild(format(b));
+    div.appendChild(document.createTextNode(') '));
+  }
+  for (const w of solo) {
+    div.appendChild(format(w));
+    div.appendChild(document.createTextNode(' '));
+  }
+
+  return div;
+}
+
+function getOrCreateElementById(id, type, clear) {
+  let element = document.getElementById(id);
+  if (element) {
+    if (!clear) return element;
+    element.parentNode.removeChild(element);
+  }
+  element = document.createElement(type);
+  element.setAttribute('id', id);
+  return element;
+}
+
+function removeChildById(element, id) {
+  const child = document.getElementById(id)
+  if (!child) return;
+  return element.removeChild(child);
+}
+
+function correctFocus() {
+  if (TOUCH) return;
+  const board = document.getElementById('board');
+  const settings = document.getElementById('settings');
+
+  if (board && !board.classList.contains('hidden')) {
+    focusContentEditable(document.getElementById('word'))
+  } else if (settings && !settings.classList.contains('hidden')) {
+    focusContentEditable(document.getElementById('seed'))
+  }
+}
+
+function displayStats(data) {
+  const game = document.getElementById('game');
+
+  let wrapper = document.getElementById('wrapper');
+  // Coming in from score, wrapper is already present, but check anyway
+  if (wrapper) game.removeChild(wrapper);
+  wrapper = createElementWithId('div', 'wrapper');
+  wrapper.classList.add('stats');
+  document.getElementById('timer').style.visibility = 'hidden';
+  updateVisibility({hide: ['score']});
+
+  const {words, anadromes, anagrams} = data;
+  const link = w => {
+    const b = document.createElement('b');
+    b.textContent = w;
+    b.addEventListener('click', () => {
+      LAST_DEFINITION = w.toUpperCase();
+      toggleDefine();
+    });
+    return b;
+  };
+
+  const display = view => {
+    let table = document.getElementById('stats');
+    if (table) wrapper.removeChild(table);
+    table = createElementWithId('table', 'stats');
+
+    if (view === 'ANADROMES') {
+      for (const {n, fn, d, fd} of anadromes) {
+        const tr = document.createElement('tr');
+
+        let td = document.createElement('td');
+        td.appendChild(link(n));
+        tr.appendChild(td);
+
+        td = document.createElement('td');
+        td.textContent = `${fn}/${fd}`;
+        tr.appendChild(td);
+
+        td = document.createElement('td');
+        td.appendChild(link(d));
+        tr.appendChild(td);
+
+        table.appendChild(tr);
+      }
+    } else if (view === 'WORDS') {
+      for (const {w, found, all} of words) {
+        const tr = document.createElement('tr');
+
+        let td = document.createElement('td');
+        td.appendChild(link(w));
+        tr.appendChild(td);
+
+        td = document.createElement('td');
+        td.textContent = `${found}/${all}`;
+        tr.appendChild(td);
+
+        table.appendChild(tr);
+      }
+    } else /* view === 'ANAGRAMS' */ {
+      for (const group of anagrams) {
+        const tr = document.createElement('tr');
+        let td = document.createElement('td');
+
+        let together = [];
+        let wait = false;
+        for (const {raw, found, all} of group) {
+          const w = raw.replace(/[^A-Z]/, '');
+
+          if (raw.startsWith('(')) {
+            const b = document.createElement('b');
+            b.textContent = '(';
+            together.push(b);
+            wait = true;
+          }
+
+          together.push(link(w));
+
+          let span = document.createElement('span');
+          span.textContent = ` ${found}/${all}`;
+
+          if (raw.endsWith(')')) {
+            together.push(span);
+            const b = document.createElement('b');
+            b.textContent = ')';
+            together.push(b);
+            wait = false;
+          } else {
+            if (wait) span.textContent += ' ';
+            together.push(span);
+          }
+
+          if (!wait) {
+            for (const e of together) td.appendChild(e);
+            td.appendChild(document.createElement('br')); // TODO i?
+            together = [];
+          }
+        }
+
+        tr.appendChild(td);
+        table.appendChild(tr);
+      }
+    }
+    wrapper.append(table);
+  };
+
+  const control = document.createElement('div');
+  control.classList.add('row');
+  control.appendChild(createRadios('statsSelect', ['ANADROMES', ['WORDS'], 'ANAGRAMS'], function() { display(this.value) }))
+
+  wrapper.append(control);
+  display('WORDS');
+  game.appendChild(wrapper);
+}
+
+function createRadios(id, values, listener) {
+  const radios = createElementWithId('span', id);
+  radios.classList.add('toggle-group');
+  radios.classList.add('horizontal');
+  radios.setAttribute('role', 'radiogroup');
+  for (let val of values) {
+    let checked = false;
+    if (Array.isArray(val)) {
+      checked = true;
+      val = val[0];
+    }
+
+    const radio = createElementWithId('input', `${id}${val}`);
+    radio.classList.add('hide');
+    radio.setAttribute('type', 'radio');
+    radio.setAttribute('name', id);
+    radio.setAttribute('value', val);
+    if (checked) radio.setAttribute('checked', 'checked');
+
+    const label = document.createElement('label');
+    label.classList.add('toggle');
+    label.setAttribute('for', `${id}${val}`);
+    label.textContent = val.toUpperCase();
+
+    radio.addEventListener('click', listener.bind(radio));
+
+    radios.appendChild(radio);
+    radios.appendChild(label);
+  }
+  return radios;
+}
+
+function createElementWithId(type, id) {
+  const element = document.createElement(type);
+  element.setAttribute('id', id);
+  return element;
 }

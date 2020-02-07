@@ -57,6 +57,8 @@ body {
   flex-direction: column;
   position: relative;
   overflow: hidden;
+
+  border: 1px solid red;
 }
 #loader, #content {
   display: flex;
@@ -133,39 +135,58 @@ body {
   width: 80px;
   border-radius: 8px;
 }
-#defineStats {
-  min-width: 90%;
-  margin: 34px auto 0;
-  text-align: left;
+#defineStats,
+#stats {
   line-height: 1.15em;
   border-collapse: separate;
   border-left: 0;
   border-spacing: 0px;
 }
-#defineStats td {
+#defineStats {
+  min-width: 90%;
+  margin: 34px auto 0;
+  text-align: left;
+}
+#stats {
+  min-width: 50%;
+  max-width: 90%;
+  margin: 25px auto 0;
+  text-align: center;
+}
+#defineStats td,
+#stats td {
   border-top: 3px solid var(--fg-color);
   border-left: 3px solid var(--fg-color);
   padding: 4px 10px;
 }
+#stats td {
+  padding: 8px 10px;
+}
 #defineStats td.value {
   text-align: right;
 }
-#defineStats tr:last-of-type td {
+#defineStats tr:last-of-type td,
+#stats tr:last-of-type td {
   border-bottom: 3px solid var(--fg-color);
 }
-#defineStats tr td:last-of-type {
+#defineStats tr td:last-of-type,
+#stats tr td:last-of-type {
   border-right: 3px solid var(--fg-color);
 }
-#defineStats tr:first-of-type td:first-of-type {
+#defineStats tr:first-of-type td:first-of-type,
+#stats tr:first-of-type td:first-of-type {
   border-top-left-radius: 8px;
 }
-#defineStats tr:first-of-type td:last-of-type {
+#defineStats tr:first-of-type td:last-of-type,
+#stats tr:first-of-type td:last-of-type {
   border-top-right-radius: 8px;
 }
-#defineStats tr:last-of-type td:first-of-type {
+#defineStats tr:last-of-type td:first-of-type,
+#stats tr:last-of-type td:first-of-type {
   border-bottom-left-radius: 8px;
 }
-#defineStats tr:last-of-type td:last-of-type {
+#defineStats tr:last-of-type td:last-of-type,
+#stats tr:last-of-type td:last-of-type {
   border-bottom-right-radius: 8px;
 }
 #defineAnagrams {
@@ -362,7 +383,7 @@ img {
   display: table;
   margin: 0px auto;
 }
-#settings .row {
+.row {
   text-align: center;
   padding: 10px;
 }
@@ -443,6 +464,13 @@ img {
   display: flex;
   align-items: center;
   flex-direction: column;
+}
+#statsSelect .toggle {
+  width: 6em;
+}
+#statsSelect .hide:focus + .toggle,
+#statsSelect .toggle:hover {
+  z-index: 0;
 }
 
 /* Pixel = 393 x 714 */

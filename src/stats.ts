@@ -1,5 +1,5 @@
 import { Dice } from './settings';
-import { Dictionary, Type, isValid } from './dict';
+import { Dictionary, Type, isValid, order } from './dict';
 
 interface Data {
   New: DiceEntry;
@@ -97,7 +97,7 @@ export class Stats {
     return result;
   }
 
-  static history(games: Array<[{ [w: string]: any }, Set<string>]>, dice: Dice, dict: Dictionary) {
+  history(games: Array<[{ [w: string]: any }, Set<string>]>, dice: Dice, type: Type) {
     const d = dice.charAt(0).toLowerCase() as 'n' | 'o' | 'b';
     // prettier-ignore
     const reverse = (w: string) => w.split('').reverse().join('');
@@ -123,10 +123,10 @@ export class Stats {
           const r = reverse(w);
           if (r !== w && possible[r] && !played.has(r)) {
             const k = [w, r].sort()[0];
-            anadromes[k] = (anadromes[w] || 0) + (1 / n) * dict[k][d]!;
+            anadromes[k] = (anadromes[w] || 0) + (1 / n) * this.dict[k][d]!;
           }
         } else {
-          ratio[w] = (ratio[w] || 0) + (1 / n) * dict[w][d]!;
+          ratio[w] = (ratio[w] || 0) + (1 / n) * this.dict[w][d]!;
         }
       }
 
@@ -135,7 +135,7 @@ export class Stats {
         if (group.length <= 1) continue;
         const f = group.filter(w => played.has(w)).length / group.length;
         if (!f) continue;
-        const w = group.reduce((acc, w) => acc + dict[w][d]!, 0) / group.length;
+        const w = group.reduce((acc, w) => acc + this.dict[w][d]!, 0) / group.length;
         anagrams[a] = (anagrams[a] || 0) + (1 / n) * w * (1 - f);
       }
       n--;
@@ -143,16 +143,16 @@ export class Stats {
 
     const K = Math.log(games.length);
     for (const w in all) {
-      ratio[w] += K * dict[w][d]! * Math.pow(1 - (found[w] || 0) / all[w], 2);
+      ratio[w] += K * this.dict[w][d]! * Math.pow(1 - (found[w] || 0) / all[w], 2);
       if (anadromes[w]) {
         const r = reverse(w);
         const [a, b] = (found[r] || 0) > (found[w] || 0) ? [w, r] : [r, w];
-        anadromes[w] += K * dict[w][d]! * 2 * Math.pow(1 - (found[a] || 0) / (all[b] || 1), 2);
+        anadromes[w] += K * this.dict[w][d]! * 2 * Math.pow(1 - (found[a] || 0) / (all[b] || 1), 2);
       }
 
       const a = Stats.toAnagram(w);
       if (anagrams[a] && all[w]) {
-        anagrams[w] += K * dict[w][d]! * Math.pow(1 - (found[w] || 0) / all[w], 2);
+        anagrams[w] += K * this.dict[w][d]! * Math.pow(1 - (found[w] || 0) / all[w], 2);
       }
     }
 
@@ -162,9 +162,28 @@ export class Stats {
         .slice(0, limit);
 
     return {
-      words: sorted(ratio, 100),
-      anadromes: sorted(ratio, 50),
-      anagrams: sorted(ratio, 50),
+      words: sorted(ratio, 100).map(e => ({
+        w: e[0],
+        found: found[e[0]] || 0,
+        all: all[e[0]] || 0,
+      })),
+      anadromes: sorted(anadromes, 50).map(e => {
+        const k = e[0];
+        const r = k
+          .split('')
+          .reverse()
+          .join('');
+        const [n, d] = (found[r] || 0) > (found[k] || 0) ? [k, r] : [r, k];
+        return { n, fn: found[n] || 0, d, fd: found[d] || 0 };
+      }),
+      anagrams: sorted(anagrams, 50).map(e => {
+        const group = [];
+        for (const r of order(this.anagrams(e[0], type).words)) {
+          const w = r.replace(/[^A-Z]/, '');
+          group.push({ raw: r, found: found[w] || 0, all: all[w] || 0 });
+        }
+        return group;
+      }),
     };
   }
 

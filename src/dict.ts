@@ -41,3 +41,23 @@ export function isValid(word: string, dict: Dictionary, type: Type) {
   const val = dict[word];
   return val && (!val.dict || val.dict.includes(type.charAt(0)));
 }
+
+export function order(words: string[]) {
+  const ordered = [];
+
+  const anadromes = new Set();
+  for (const w of words) {
+    // prettier-ignore
+    const r = w.split('').reverse().join('');
+    if (r !== w && words.includes(r)) {
+      const key = `${[w, r].sort().join(' ')}`;
+      if (!anadromes.has(key)) {
+        anadromes.add(key);
+        ordered.push(`(${w}`, `${r})`);
+      }
+    } else {
+      ordered.push(w);
+    }
+  }
+  return ordered;
+}

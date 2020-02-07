@@ -192,7 +192,9 @@ export class TrainingPool {
       if (!group.includes(key)) break;
     }
 
-    return { label: key, group: order(random.shuffle(group)), update };
+    // @ts-ignore FIXME
+    const o = order;
+    return { label: key, group: o(random.shuffle(group)), update };
   }
 }
 
@@ -220,24 +222,4 @@ function adjust(v: TrainingStats, q: number, now: number) {
   v.p = now;
 
   return v;
-}
-
-function order(words: string[]) {
-  const ordered = [];
-
-  const anadromes = new Set();
-  for (const w of words) {
-    // prettier-ignore
-    const r = w.split('').reverse().join('');
-    if (r !== w && words.includes(r)) {
-      const key = `${[w, r].sort().join(' ')}`;
-      if (!anadromes.has(key)) {
-        anadromes.add(key);
-        ordered.push(`(${w}`, `${r})`);
-      }
-    } else {
-      ordered.push(w);
-    }
-  }
-  return ordered;
 }
