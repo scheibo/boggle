@@ -57,8 +57,6 @@ body {
   flex-direction: column;
   position: relative;
   overflow: hidden;
-
-  border: 1px solid red;
 }
 #loader, #content {
   display: flex;
@@ -148,7 +146,7 @@ body {
   text-align: left;
 }
 #stats {
-  min-width: 50%;
+  min-width: 75%;
   max-width: 90%;
   margin: 25px auto 0;
   text-align: center;
@@ -509,7 +507,8 @@ img {
     position: relative;
     top: -10px;
   }
-  #wrapper.train {
+  #wrapper.train,
+  #wrapper.stats {
     position: relative;
     top: -20px;
   }
