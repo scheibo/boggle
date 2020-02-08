@@ -636,7 +636,7 @@ function updateGames(game) {
   }
   if (!played.size) return GAMES;
 
-  if (GAMES.length >= STATS_LIMIT) history.shift();
+  if (GAMES.length >= STATS_LIMIT) GAMES.shift();
   GAMES.push([game.possible, played]);
 }
 
