@@ -617,7 +617,7 @@ function permaFocus(e) {
 
 function processHistoryIntoGames() {
   GAMES = [];
-  for (let i = HISTORY.length - 1; i >= 0 && GAMES.length <= STATS_LIMIT; i--) {
+  for (let i = HISTORY.length - 1; i >= 0 && GAMES.length < STATS_LIMIT; i--) {
     const game = Game.fromJSON(HISTORY[i], TRIE, DICT, STATS);
     const played = new Set();
     for (const w in game.played) {
