@@ -123,10 +123,10 @@ export class Stats {
           const r = reverse(w);
           if (r !== w && possible[r] && !played.has(r)) {
             const k = [w, r].sort()[0];
-            anadromes[k] = (anadromes[w] || 0) + (1 / n) * this.dict[k][d]!;
+            anadromes[k] = (anadromes[w] || 0) + (1 / n * this.dict[k][d]!);
           }
         } else {
-          ratio[w] = (ratio[w] || 0) + (1 / n) * this.dict[w][d]!;
+          ratio[w] = (ratio[w] || 0) + (1 / n * this.dict[w][d]!);
         }
       }
 
@@ -169,10 +169,7 @@ export class Stats {
       })),
       anadromes: sorted(anadromes, 50).map(e => {
         const k = e[0];
-        const r = k
-          .split('')
-          .reverse()
-          .join('');
+        const r = reverse(k);
         const [n, d] = (found[r] || 0) > (found[k] || 0) ? [k, r] : [r, k];
         return { n, fn: found[n] || 0, d, fd: found[d] || 0 };
       }),
