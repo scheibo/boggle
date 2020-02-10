@@ -204,12 +204,12 @@ function adjust(v: TrainingStats, q: number, now: number) {
   // During the initial learning phase (n < 5), only apply a fraction of the modifier if negative
   // https://apps.ankiweb.net/docs/manual.html#what-spaced-repetition-algorithm-does-anki-use
   if (mod < 0) mod *= Math.min(Math.pow(2, v.n + 1) * 2.5, 100) / 100;
-  // http://www.blueraja.com/blog/477/a-better-spaced-repetition-learning-algorithm-sm2
-  const bonus = v.d ? Math.min(2, (v.d - v.p) / DAY / (v.c ? PERIOD : 1)) : 1;
   // SM2 uses a minimum easiness of 1.3
   const min = 1.3;
 
   if (q >= 3) {
+    // http://www.blueraja.com/blog/477/a-better-spaced-repetition-learning-algorithm-sm2
+    const bonus = v.d ? Math.min(2, (v.d - v.p) / DAY / (v.c ? PERIOD : 1)) : 1;
     v.c++;
     v.e = Math.max(min, v.e + mod * bonus);
     v.d = now + DAY * PERIOD * Math.pow(v.e, v.c - 1) * bonus;
