@@ -71,7 +71,7 @@ const TOUCH = ('ontouchstart' in window) ||
       SEED = seed;
     }
     if (HASH_REFRESH) {
-      STATE = await refresh();
+      STATE = await refresh(true);
     } else {
       updateDOMSettings();
     }
@@ -414,7 +414,7 @@ function createRatingToggles(update, pool) {
   return toggles;
 }
 
-async function refresh() {
+async function refresh(allowDupes) {
   maybePerformUpdate();
 
   if (STATE) {
@@ -436,7 +436,7 @@ async function refresh() {
   do {
     random.seed = SEED;
     const id = Game.encodeID(SETTINGS, random.seed);
-    if (PLAYED.has(id)) {
+    if (PLAYED.has(id) && !allowDupes) {
       SEED++;
       continue;
     }
