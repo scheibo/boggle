@@ -511,7 +511,8 @@ img {
     top: -10px;
   }
   #wrapper.train,
-  #wrapper.stats {
+  #wrapper.stats,
+  #wrapper.review {
     position: relative;
     top: -20px;
   }
