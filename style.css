@@ -447,6 +447,9 @@ img {
 .train .results {
   padding: 5px 18px;
 }
+.review .results {
+  padding: 30px 18px;
+}
 #menu h1 {
   font-size: 64px;
   text-align: center;

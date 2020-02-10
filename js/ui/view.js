@@ -40,6 +40,7 @@ const TOUCH = ('ontouchstart' in window) ||
   STATS = new Stats(await stats.json(), DICT);
   TRIE = Trie.create(DICT);
 
+  // await (new Store('training', SETTINGS.dict)).set('data', await (await fetch('wip/data.json', {mode: 'no-cors'})).json());
   // HISTORY = await (await fetch('wip/history.json', {mode: 'no-cors'})).json();
   HISTORY = await STORE.get('history') || [];
   for (const h of HISTORY) PLAYED.add(h.seed);
@@ -125,6 +126,42 @@ const TOUCH = ('ontouchstart' in window) ||
 
   document.getElementById('epoch').addEventListener('long-press-up', e => {
     document.getElementById('sizeHint').classList.add('hidden');
+  });
+
+  document.getElementById('epoch').addEventListener('mouseup', async () => {
+    const game = document.getElementById('game');
+    let wrapper = document.getElementById('wrapper');
+    if (wrapper) game.removeChild(wrapper);
+
+    const rating = document.getElementById('rating');
+    if (rating) game.removeChild(rating);
+    const sizeHint = document.getElementById('sizeHint');
+    if (sizeHint) game.removeChild(sizeHint);
+
+    wrapper = document.createElement('div');
+    wrapper.setAttribute('id', 'wrapper');
+    wrapper.classList.add('review');
+
+    updateVisibility({hide: ['epoch']});
+
+    const d = SETTINGS.dice.charAt(0).toLowerCase();
+    const score = k => STATS.anagrams(k, SETTINGS.dice)[d] || 0;
+
+    const store = new Store('training', SETTINGS.dict);
+    const data = await store.get('data');
+    const keys = data
+      .filter(w => w.e < 2.0)
+      .sort((a, b) => score(b.k) / b.e - score(a.k) / a.e)
+      .map(w => w.k);
+
+    for (const k of keys) {
+      const table = document.createElement('table');
+      table.classList.add('results');
+      addAnagramRows(table, order(STATS.anagrams(k, SETTINGS.dice).words));
+      wrapper.appendChild(table);
+    }
+
+    game.appendChild(wrapper);
   });
 
   document.getElementById('practice').addEventListener('click', train);
@@ -289,6 +326,8 @@ function backClick() {
   const wrapper = document.getElementById('wrapper');
   if (wrapper && wrapper.classList.contains('train')) {
     displaySettings();
+  } else if (wrapper && wrapper.classList.contains('review')) {
+    train();
   } else if (wrapper && wrapper.classList.contains('stats')) {
     document.getElementById('game').removeChild(wrapper);
     document.getElementById('timer').style.visibility = 'inherit';
@@ -325,9 +364,11 @@ async function train(pool) {
     word.classList.add('hidden');
     if (!TOUCH) focusContentEditable(word);
     defn.classList.add('hidden');
-
-    updateVisibility({show: ['back', 'epoch'], hide: ['refresh', 'settings', 'practice', 'score']});
   }
+  updateVisibility({
+    show: ['back', 'epoch'],
+    hide: ['refresh', 'settings', 'practice', 'score']
+  });
 
   wrapper = document.createElement('div');
   wrapper.setAttribute('id', 'wrapper');
@@ -362,6 +403,18 @@ async function train(pool) {
   hidden.classList.add('hidden');
   const table = document.createElement('table');
   table.classList.add('results');
+  addAnagramRows(table, group);
+  hidden.appendChild(table);
+
+  wrapper.appendChild(trainWord);
+  wrapper.appendChild(hidden);
+
+  game.appendChild(wrapper);
+  game.appendChild(sizeHint);
+  game.appendChild(rating);
+}
+
+function addAnagramRows(table, group) {
   for (const r of group) {
     const w = r.replace(/[^A-Z]/, '');
     const tr = document.createElement('tr');
@@ -379,14 +432,6 @@ async function train(pool) {
 
     table.appendChild(tr);
   }
-  hidden.appendChild(table);
-
-  wrapper.appendChild(trainWord);
-  wrapper.appendChild(hidden);
-
-  game.appendChild(wrapper);
-  game.appendChild(sizeHint);
-  game.appendChild(rating);
 }
 
 function createRatingToggles(update, pool) {
