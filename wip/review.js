@@ -8,9 +8,11 @@ const Stats = require('../js/stats').Stats;
 const stats = new Stats(STATS, DICT);
 
 const data = require('./data.json');
+
+const score = k => stats.anagrams(k, 'New').n || 0;
 const keys = data
-  .filter(w => w.e < 2.5)
-  .sort((a, b) => a.e - b.e)
+  .filter(w => w.e < 2.0)
+  .sort((a, b) => score(b.k) / b.e - score(a.k) / a.e)
   .map(w => w.k);
 
 for (const k of keys) {
