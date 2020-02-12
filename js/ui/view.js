@@ -522,7 +522,6 @@ async function refresh(allowDupes) {
   ORIGINAL.seed = SEED;
 
   let touched;
-  let lastTouched = null;
   const deselect = () => {
     if (!touched) return;
     for (const td of touched) {
@@ -530,24 +529,14 @@ async function refresh(allowDupes) {
     }
   };
 
-  // TODO: use...
-  const adjacent = (a, b) =>
-    Math.abs(b.dataset.x - a.dataset.x) <= 1 && Math.abs(b.dataset.y - a.dataset.y) <= 1;
-
   const registerTouch = e => {
     const touch = e.touches[0];
     const cell = document.elementFromPoint(touch.clientX, touch.clientY);
     if (cell && cell.matches('.target')) {
-      // TODO: make sure is adjacent to last td!
-      /* if (lastTouched && !adjacent(cell, lastTouched)) {
-          deselect();
-          play(word);
-        } */
       const td = cell.parentNode;
       td.classList.add('selected');
       if (!touched.has(td)) {
         touched.add(td);
-        lastTouched = cell;
         word.textContent += td.textContent;
       }
     }
@@ -556,7 +545,6 @@ async function refresh(allowDupes) {
     clearWord();
     deselect();
     touched = new Set();
-    lastTouched = null;
 
     registerTouch(e);
   });
