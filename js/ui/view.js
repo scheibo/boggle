@@ -121,6 +121,8 @@ const TOUCH = ('ontouchstart' in window) ||
   });
 
   document.getElementById('epoch').addEventListener('long-press', e => {
+    const rating = document.getElementById('rating');
+    if (!rating.classList.contains('hidden')) return
     document.getElementById('sizeHint').classList.remove('hidden');
   });
 
