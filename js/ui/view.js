@@ -152,7 +152,7 @@ const TOUCH = ('ontouchstart' in window) ||
     const store = new Store('training', SETTINGS.dict);
     const data = await store.get('data');
     const keys = data
-      .filter(w => w.e < 2.0)
+      .filter(w => w.e < 2.0) // TODO: !v.c, figure out 2.0 based on average?
       .sort((a, b) => score(b.k) / b.e - score(a.k) / a.e)
       .map(w => w.k);
 
@@ -344,7 +344,7 @@ async function train(pool) {
   if (!pool || pool.type !== SETTINGS.dict) {
     const store = new Store('training', SETTINGS.dict);
     pool = await TrainingPool.create(
-      STATS, SETTINGS.dice, SETTINGS.dict, store);
+      STATS, SETTINGS.dice, SETTINGS.dict, store, SETTINGS.min);
   }
   HASH_REFRESH = true;
 

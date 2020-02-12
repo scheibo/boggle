@@ -41,7 +41,7 @@ export class Stats {
     }
   }
 
-  anagrams(word: string, type: Type) {
+  anagrams(word: string, type: Type, min?: number) {
     const a = Stats.toAnagram(word);
     const group = this.mixed[a];
 
@@ -49,6 +49,7 @@ export class Stats {
     if (!group) return result;
 
     for (const w of group) {
+      if (min && w.length < min) continue;
       if (isValid(w, this.dict, type)) {
         result.words.push(w);
         const v = this.dict[w];
