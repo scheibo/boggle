@@ -5,7 +5,6 @@ import { Dice } from './settings';
 
 const PERIOD = 3;
 const DAY = 24 * 60 * 60 * 1000;
-const COOLDOWN = DAY / 3;
 
 type Comparator<T> = (a: T, b: T) => number;
 
@@ -105,7 +104,6 @@ export class TrainingPool {
   private readonly d: 'n' | 'o' | 'b';
   private readonly unlearned: string[];
   private readonly learned: Queue<TrainingStats>;
-  private readonly weights: { learned: number; total: number };
   private readonly store: Store;
   private readonly stats: Stats;
 
@@ -117,37 +115,28 @@ export class TrainingPool {
     const queued = new Set();
     // TODO: store short separately and iterate over depending on min length
     const stored: TrainingStats[] | undefined = await store.get('data');
-    const weights = { learned: 0, total: 0 };
     if (stored) {
       learned.data = stored;
       learned.length = stored.length;
-      for (const s of stored) {
-        queued.add(s.k);
-        weights.learned += stats.anagrams(s.k, type, min)[d] || 0;
-      }
+      for (const s of stored) queued.add(s.k);
     }
-    weights.total = weights.learned;
 
     const raw = [];
     for (const k in stats.mixed) {
       if (!queued.has(k)) {
         const w = stats.anagrams(k, type, min)[d] || 0;
-        if (w) {
-          raw.push({ k, w });
-          weights.total += w;
-        }
+        if (w) raw.push({ k, w });
       }
     }
     raw.sort((a, b) => a.w - b.w);
     const unlearned = raw.map(e => e.k);
 
-    return new TrainingPool(unlearned, learned, weights, d, type, store, stats);
+    return new TrainingPool(unlearned, learned, d, type, store, stats);
   }
 
   private constructor(
     unlearned: string[],
     learned: Queue<TrainingStats>,
-    weights: { learned: number; total: number },
     d: 'n' | 'o' | 'b',
     type: Type,
     store: Store,
@@ -155,7 +144,6 @@ export class TrainingPool {
   ) {
     this.unlearned = unlearned;
     this.learned = learned;
-    this.weights = weights;
     this.d = d;
     this.type = type;
     this.store = store;
@@ -183,19 +171,6 @@ export class TrainingPool {
     let next: TrainingStats | undefined = this.learned.pop();
     if (next) {
       if (next.d > now) {
-        // Enough time has past that we can mix in learned words ahead of schedule
-        if (next.p + COOLDOWN < now) {
-          // x from [0, 1] representing how close next is to being due
-          const x = (now - next.p) / (next.d - next.p);
-          // y from [0, 1] representing what fraction of the total weight we've learned
-          const y = this.weights.learned / this.weights.total;
-          // We want a z from [0, 1] based on x and y such that:
-          //   - x -> 1 implies z -> 1 (ie. when next is now due)
-          //   - y -> 1 implies z -> 1 (ie. when we've learned all the words)
-          //   - TODO
-          // We keep track of the unlearned words we backfill and if TODO
-          console.log({ x, y }); // DEBUG
-        } //else {
         const fill = backfill();
         if (fill) {
           this.learned.push(next);
@@ -214,7 +189,6 @@ export class TrainingPool {
     const update = async (q: number) => {
       this.learned.push(adjust(next!, q, now));
       await this.store.set('data', this.learned.data);
-      this.weights.learned += anagrams[this.d] || 0;
     };
 
     // @ts-ignore FIXME
