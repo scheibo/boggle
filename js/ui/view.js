@@ -212,7 +212,16 @@ const TOUCH = ('ontouchstart' in window) ||
         play(word);
         focusContentEditable(word);
       } else if (isDefine) {
-        toggleDefine();
+        const search = document.getElementById('search');
+        if (search.textContent) {
+          search.textContent = '';
+          LAST_DEFINITION = '';
+          for (const e of Array.from(define.children)) {
+            if (e !== search) define.removeChild(e);
+          }
+        } else {
+          toggleDefine();
+        }
       }
     } else if (key === 27 && isDefine) {
       toggleDefine();
