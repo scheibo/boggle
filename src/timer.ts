@@ -7,8 +7,9 @@ export class Timer {
   private begin: number | undefined;
   private last: number | undefined;
   private expireFn: (() => void) | null;
+  private updateFn: (() => void) | null;
 
-  constructor(duration: number, expireFn = null) {
+  constructor(duration: number, expireFn = null, updateFn = null) {
     this.duration = duration;
     this.display = document.getElementById('timer')!;
     this.display.classList.remove('expired');
@@ -16,6 +17,9 @@ export class Timer {
     this.elapsed = 0;
     this.interval = null;
     this.expireFn = expireFn;
+    this.updateFn = updateFn;
+
+    this.render(this.duration - this.elapsed);
   }
 
   start() {
@@ -67,9 +71,16 @@ export class Timer {
       distance = this.duration - this.elapsed;
     }
 
+    const before = this.display.textContent;
+    this.render(distance);
+    if (before !== this.display.textContent && this.updateFn) {
+      this.updateFn();
+    }
+  }
+
+  private render(distance: number) {
     const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = `${Math.floor((distance % (1000 * 60)) / 1000)}`.padStart(2, '0');
-
     this.display.textContent = `${minutes}:${seconds}`;
   }
 }

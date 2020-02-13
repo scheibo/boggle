@@ -46,12 +46,26 @@ const TOUCH = ('ontouchstart' in window) ||
   for (const h of HISTORY) PLAYED.add(h.seed);
   await Store.setup('training', ['NWL', 'ENABLE', 'CSW']);
 
-  const initial = setup();
-  SEED = initial.seed;
-  Object.assign(SETTINGS, initial.settings);
-  localStorage.setItem('settings', JSON.stringify(SETTINGS));
-
-  STATE = await refresh();
+  const existing = JSON.parse(localStorage.getItem('current'));
+  if (existing && existing.timer > 0 &&
+    (!document.location.hash || document.location.hash.slice(1) === existing.game.seed)) {
+    const game = Game.fromJSON(existing.game, TRIE, DICT, STATS);
+    SEED = game.random.seed;
+    Object.assign(SETTINGS, game.settings);
+    game.settings = SETTINGS;
+    localStorage.setItem('settings', JSON.stringify(SETTINGS));
+    const timer = new Timer(existing.timer, () => {
+      if (!game.expired) game.expired = +new Date();
+    }, saveGame);
+    STATE = await refresh(false, timer, game);
+    LAST = existing.last;
+  } else {
+    const initial = setup();
+    SEED = initial.seed;
+    Object.assign(SETTINGS, initial.settings);
+    localStorage.setItem('settings', JSON.stringify(SETTINGS));
+    STATE = await refresh();
+  }
 
   document.getElementById('display').removeChild(document.getElementById('loader'));
   document.getElementById('game').classList.remove('hidden');
@@ -461,7 +475,7 @@ function createRatingToggles(update, pool) {
   return toggles;
 }
 
-async function refresh(allowDupes) {
+async function refresh(allowDupes, timer, game) {
   maybePerformUpdate();
 
   if (STATE) {
@@ -474,13 +488,12 @@ async function refresh(allowDupes) {
     STATE.timer.stop();
   }
 
-  const timer = new Timer(180 * 1000, () => {
+  timer = timer || new Timer(180 * 1000, () => {
     if (!STATE.game.expired) STATE.game.expired = +new Date();
-  });
+  }, saveGame);
 
   const random = new Random();
-  let game;
-  do {
+  while (!game || !Object.keys(game.possible).length) {
     random.seed = SEED;
     const id = Game.encodeID(SETTINGS, random.seed);
     if (PLAYED.has(id) && !allowDupes) {
@@ -488,7 +501,7 @@ async function refresh(allowDupes) {
       continue;
     }
     game = new Game(TRIE, DICT, STATS, random, SETTINGS);
-  } while (!game || !Object.keys(game.possible).length);
+  }
 
   const content = document.getElementById('content');
   if (content.firstChild) content.removeChild(content.firstChild);
@@ -555,9 +568,15 @@ async function refresh(allowDupes) {
   table.addEventListener('touchmove', registerTouch);
 
   content.appendChild(table);
-  document.getElementById('score').textContent = game.settings.display === 'Hide' ? '?' : '0';
+  document.getElementById('score').textContent = game.settings.display === 'Hide' ? '?' : game.score.regular;
   if (game.settings.display === 'Full') {
-    document.getElementById('full').textContent = `0/0/0 (0): 0/${game.state().totals[SETTINGS.grade.toLowerCase()]} (0%)`;
+    const state = game.state();
+    const p = state.progress;
+    const details = `(${p.score}) ${Object.keys(p.suffixes).length}/${p.subwords}/${p.anagrams}`;
+    const score = game.score.regular + game.score.overtime;
+    const goal = state.totals[SETTINGS.grade.toLowerCase()];
+    document.getElementById('full').textContent =
+      `${details} - ${score}/${goal} (${Math.round(score / goal * 100).toFixed(0)}%)`;
   }
 
   // Cleanup
@@ -591,6 +610,14 @@ async function refresh(allowDupes) {
   return {timer, game};
 }
 
+function saveGame() {
+  localStorage.setItem('current', JSON.stringify({
+    last: LAST,
+    game: STATE.game,
+    timer: STATE.timer.duration - STATE.timer.elapsed
+  }));
+}
+
 function play(word) {
   let w = word.textContent.toUpperCase();
   if (w.length < 3 || SUFFIXES.includes(w)) {
@@ -599,6 +626,7 @@ function play(word) {
   }
   const score = STATE.game.play(w);
   LAST = w;
+  saveGame();
 
   const hide = STATE.game.settings.display === 'Hide';
   kept = true;
