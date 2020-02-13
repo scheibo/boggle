@@ -48,6 +48,7 @@ const FILES = [
   '/js/ui/view.js',
   '/js/ui/score.js',
   '/js/ui/settings.js',
+  '/js/ui/debug.js',
   '/img/refresh.svg',
   '/img/back.svg',
   '/img/play.svg',

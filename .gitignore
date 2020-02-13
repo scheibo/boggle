@@ -9,7 +9,7 @@ data/clean_1w.txt
 data/nwl.2018.txt
 
 sw.js
-js/
+js/*
 !js/ui
 
 tools/results
