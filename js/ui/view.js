@@ -48,7 +48,8 @@ const TOUCH = ('ontouchstart' in window) ||
 
   const existing = JSON.parse(localStorage.getItem('current'));
   if (existing && existing.timer > 0 &&
-    (!document.location.hash || document.location.hash.slice(1) === existing.game.seed)) {
+    (!document.location.hash || document.location.hash.slice(1) === existing.game.seed) &&
+    Object.values(existing.game.words).filter(v => v > 0).length > 0) {
     const game = Game.fromJSON(existing.game, TRIE, DICT, STATS);
     SEED = game.random.seed;
     Object.assign(SETTINGS, game.settings);
