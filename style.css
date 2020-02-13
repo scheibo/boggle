@@ -45,9 +45,14 @@ body {
   background-color: var(--bg-color);
   color: var(--fg-color);
 }
+[contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+}
 ::-webkit-scrollbar {
   width: 0px;
   background: transparent;
+  display: none;
 }
 #display, #game {
   width: 360px;
@@ -98,6 +103,8 @@ body {
   font-size: 40px;
   font-weight: bold;
   text-transform: uppercase;
+  -webkit-user-select: text;
+  user-select: text;
 }
 #search {
   margin: 20px 0;

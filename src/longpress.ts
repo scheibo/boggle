@@ -29,7 +29,7 @@
   }
 
   function isTouch(e: MouseEvent | TouchEvent): e is TouchEvent {
-    return e instanceof TouchEvent;
+    return 'touches' in e;
   }
 
   function fireLongPressEvent(element: EventTarget, e: MouseEvent | TouchEvent) {

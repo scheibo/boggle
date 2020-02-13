@@ -115,6 +115,7 @@ export class TrainingPool {
     const learned = new Queue<TrainingStats>([] /* filled in */, (a, b) => a.d - b.d);
 
     const queued = new Set();
+    // TODO: store short separately and iterate over depending on min length
     const stored: TrainingStats[] | undefined = await store.get('data');
     const weights = { learned: 0, total: 0 };
     if (stored) {
