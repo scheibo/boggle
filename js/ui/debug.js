@@ -1,10 +1,10 @@
 'use strict';
 
-const Debug = (new class {
+const Debug = new (class {
   async backup() {
     const data = { history: await STORE.get('history') };
     for (const type of ['NWL', 'ENABLE', 'CSW']) {
-      store = new Store('training', type);
+      const store = new Store('training', type);
       data[type] = await store.get('data');
     }
     data.settings = JSON.parse(localStorage.getItem('settings'));
@@ -14,7 +14,7 @@ const Debug = (new class {
   async restore(data) {
     await STORE.set('history', data.history);
     for (const type of ['NWL', 'ENABLE', 'CSW']) {
-      store = new Store('training', type);
+      const store = new Store('training', type);
       await store.set('data', data[type]);
     }
     localStorage.setItem('settings', JSON.stringify(data.settings));
@@ -27,7 +27,9 @@ const Debug = (new class {
 
     let found;
     const popped = [];
-    for (found = pool.learned.pop(); found && found.k != k; ) popped.push(found);
+    for (found = pool.learned.pop(); found && found.k !== k; found = pool.learned.pop()) {
+      popped.push(found);
+    }
     if (!found) throw RangeError();
 
     pool.learned.push(fn(found));
@@ -35,4 +37,4 @@ const Debug = (new class {
 
     return store.set('data', pool.learned.data);
   }
-}());
+})();
