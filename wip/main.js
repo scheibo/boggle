@@ -1,15 +1,12 @@
 'use strict';
 
 var DICT, STATS;
-const LOADED = (async () => {
-  const dict = await fetch('data/dict.json', {mode: 'no-cors'});
-  const stats = await fetch('data/stats.json', {mode: 'no-cors'});
-  DICT = await dict.json();
-  STATS = new Stats(await stats.json(), DICT);
-})();
-// await LOADED before STATS/DICT can be accessed!
+const LOADED = (() =>
+  Promise.all([
+    fetch('data/dict.json', {mode: 'no-cors'}).then(j => j.json().then(d => { DICT = d})),
+    fetch('data/stats.json', {mode: 'no-cors'}).then(j => j.json().then(s => { STATS = s}))]))();
 
-const UI = new class({
+const UI = new (class{
   constructor() {
     this.root = document.getElementById('content');
 
