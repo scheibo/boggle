@@ -6,7 +6,7 @@ const STORE = new Store('db', 'store');
 const PLAYED = new Set();
 
 const fetchJSON = url => fetch(url, {mode: 'no-cors'}).then(j => j.json());
-var DICT, STATS, HISTORY;
+var DICT, STATS, HISTORY, TRIE, GAMES;
 
 const loaded = {
   DICT: fetchJSON('../data/dict.json').then(d => { DICT = d; }), // TODO ../
@@ -14,6 +14,10 @@ const loaded = {
 };
 const LOADED = {
   DICT: loaded.DICT,
+  TRIE: (async () => {
+    await loaded.DICT;
+    TRIE = Trie.create(DICT);
+  })(),
   STATS: (async () => {
     let stats;
     fetchJSON('../data/stats.json').then(s => { stats = s; }); // TODO ../
@@ -63,7 +67,7 @@ class MenuView extends View {
     nav.appendChild(createButton('PLAY', () => {}));
     nav.appendChild(createButton('TRAIN', () => {}));
     nav.appendChild(createButton('DEFINE', () => UI.toggleView('Define')));
-    nav.appendChild(createButton('STATS', () => {}));
+    nav.appendChild(createButton('STATS', () => UI.toggleView('Stats')));
     nav.appendChild(createButton('SETTINGS', () => {}));
 
     this.menu.appendChild(nav);
@@ -89,8 +93,10 @@ class DefineView extends View {
     this.word = json.word;
   }
 
-  async attach() {
+  async attach(data) {
     await Promise.all([LOADED.DICT, LOADED.STATS]);
+
+    if (data) this.word = data;
 
     this.define = createElementWithId('div', 'define');
     this.search = createElementWithId('div', 'search');
@@ -148,7 +154,8 @@ class DefineView extends View {
 
       const s = STATS.stats(this.word, SETTINGS.dice, SETTINGS.type);
 
-      const stats = createElementWithId('table', 'defineStats');
+      const stats = document.createElement('table');
+      stats.classList.add('roundedTable');
   
       let tr = document.createElement('tr');
       addCells(tr, 'Grade', s.grade === ' ' ? 'S' : s.grade);
@@ -203,6 +210,149 @@ class DefineView extends View {
   }
 }
 
+class StatsView extends View {
+  constructor() {
+    super();
+    this.section = 'WORD';
+  }
+
+  toJSON() {
+    return {section: this.section};
+  }
+
+  fromJSON(json) {
+    this.section = json.section;
+  }
+
+  async attach() {
+    await Promise.all([, LOADED.HISTORY, LOADED.TRIE, LOADED.DICT, LOADED.STATS]);
+    if (!GAMES) {
+      GAMES = [];
+      for (let i = HISTORY.length - 1; i >= 0 && GAMES.length < 500; i--) {
+        const game = Game.fromJSON(HISTORY[i], TRIE, DICT, STATS);
+        const played = new Set();
+        for (const w in game.played) {
+          if (game.played[w] > 0) played.add(w);
+        }
+        GAMES.push([game.possible, played]);
+      }
+    }
+    const data = STATS.history(GAMES, SETTINGS.dice, SETTINGS.dict);
+
+    this.stats = createElementWithId('div', 'stats');
+    const control = document.createElement('div');
+    control.classList.add('row');
+    const display = w => this.display(w, data);
+    control.appendChild(createRadios('statsSelect', ['WORD', 'ANAGRAM', 'PAIR'].map(s => s === this.section ? [s] : s), function() {
+      display(this.value);
+      UI.persist();
+    }))
+    this.stats.append(control);
+    this.display(this.section, data);
+
+    return this.stats;
+  }
+
+  detach() {
+    this.table = null;
+    return this.stats;
+  }
+
+  display(section, data) {
+    this.section = section;
+    const {words, anadromes, anagrams} = data;
+
+    const link = w => {
+      const b = document.createElement('b');
+      b.textContent = w;
+      b.addEventListener('click', () => UI.toggleView('Define', w));
+      return b;
+    };
+
+    const table = document.createElement('table');
+    table.classList.add('roundedTable');
+    if (section === 'PAIR') {
+      for (const {n, fn, d, fd} of anadromes) {
+        const tr = document.createElement('tr');
+
+        let td = document.createElement('td');
+        td.appendChild(link(n));
+        tr.appendChild(td);
+
+        td = document.createElement('td');
+        td.textContent = `${fn}/${fd}`;
+        tr.appendChild(td);
+
+        td = document.createElement('td');
+        td.appendChild(link(d));
+        tr.appendChild(td);
+
+        table.appendChild(tr);
+      }
+    } else if (section === 'WORD') {
+      for (const {w, found, all} of words) {
+        const tr = document.createElement('tr');
+
+        let td = document.createElement('td');
+        td.appendChild(link(w));
+        tr.appendChild(td);
+
+        td = document.createElement('td');
+        td.textContent = `${found}/${all}`;
+        tr.appendChild(td);
+
+        table.appendChild(tr);
+      }
+    } else /* section === 'ANAGRAM' */ {
+      for (const group of anagrams) {
+        const tr = document.createElement('tr');
+        let td = document.createElement('td');
+
+        let together = [];
+        let wait = false;
+        for (const {raw, found, all} of group) {
+          const w = raw.replace(/[^A-Z]/, '');
+
+          if (raw.startsWith('(')) {
+            const b = document.createElement('b');
+            b.textContent = '(';
+            together.push(b);
+            wait = true;
+          }
+
+          together.push(link(w));
+
+          let span = document.createElement('span');
+          span.textContent = ` ${found}/${all}`;
+
+          if (raw.endsWith(')')) {
+            together.push(span);
+            const b = document.createElement('b');
+            b.textContent = ')';
+            together.push(b);
+            wait = false;
+          } else {
+            if (wait) span.textContent += ' ';
+            together.push(span);
+          }
+
+          if (!wait) {
+            for (const e of together) td.appendChild(e);
+            td.appendChild(document.createElement('br'));
+            together = [];
+          }
+        }
+
+        tr.appendChild(td);
+        table.appendChild(tr);
+      }
+    }
+    if (this.table) this.stats.removeChild(this.table);
+    this.stats.appendChild(table);
+    this.table = table;
+  }
+}
+
 // DEBUG
 class DebugView extends View {
   constructor(id, state) {
@@ -247,11 +397,7 @@ class TrainingView extends DebugView {
     super('training')
   }
 }
-class StatsView extends DebugView {
-  constructor() {
-    super('stats')
-  }
-}
+
 class SettingsView extends DebugView {
   constructor() {
     super('settings')
@@ -336,7 +482,7 @@ function createRadios(id, values, listener) {
   radios.classList.add('toggle-group');
   radios.classList.add('horizontal');
   radios.setAttribute('role', 'radiogroup');
-  for (const val of values) {
+  for (let val of values) {
     let checked = false;
     if (Array.isArray(val)) {
       checked = true;
@@ -405,6 +551,19 @@ function displayAnagrams(word, fn) {
   return div;
 }
 
+function updateGames(game) {
+  if (!GAMES) return;
+
+  const played = new Set();
+  for (const w in game.played) {
+    if (game.played[w] > 0) played.add(w);
+  }
+  if (!played.size) return GAMES;
+
+  if (GAMES.length >= STATS_LIMIT) GAMES.shift();
+  GAMES.push([game.possible, played]);
+}
+
 const UI = new (class{
   constructor() {
     this.root = document.getElementById('display');
@@ -461,9 +620,9 @@ const UI = new (class{
     localStorage.setItem('state', JSON.stringify(state));
   }
 
-  async attachView(view) {
-    console.log('ATTACHING', view, this.Views[view]);
-    const p = this.Views[view].attach();
+  async attachView(view, data) {
+    console.log('ATTACHING', view, data, this.Views[view]);
+    const p = this.Views[view].attach(data);
     if (Promise.resolve(p) !== p) {
       this.root.appendChild(p);
     } else {
@@ -482,18 +641,18 @@ const UI = new (class{
     this.root.removeChild(this.Views[view].detach());
   }
 
-  async toggleView(view) {
+  async toggleView(view, data) {
     console.log('TOGGLE', view, {current: this.current, previous: this.previous});
     if (this.current === view) {
       this.detachView(view);
       this.current = this.previous;
       this.previous = view;
-      await this.attachView(this.current);
+      await this.attachView(this.current, data);
     } else {
       this.detachView(this.current);
       this.previous = this.current;
       this.current = view;
-      await this.attachView(view);
+      await this.attachView(view, data);
     }
     this.persist(true);
   }
