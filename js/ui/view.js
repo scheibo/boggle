@@ -34,205 +34,227 @@ const TOUCH = ('ontouchstart' in window) ||
     setTheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'Dark' : 'Light');
   }
 
-  const dict = await fetch('data/dict.json', {mode: 'no-cors'});
-  const stats = await fetch('data/stats.json', {mode: 'no-cors'});
-  DICT = await dict.json();
-  STATS = new Stats(await stats.json(), DICT);
-  TRIE = Trie.create(DICT);
+  const dict = fetch('data/dict.json', {mode: 'no-cors'}).then(r => r.json());
+  const stats = fetch('data/stats.json', {mode: 'no-cors'}).then(r => r.json());
+  const history = STORE.get('history');
+  const storeInit = Store.setup('training', ['NWL', 'ENABLE', 'CSW']);
 
-  // await (new Store('training', SETTINGS.dict)).set('data', await (await fetch('wip/data.json', {mode: 'no-cors'})).json());
-  // HISTORY = await (await fetch('wip/history.json', {mode: 'no-cors'})).json();
-  HISTORY = await STORE.get('history') || [];
-  for (const h of HISTORY) PLAYED.add(h.seed);
-  await Store.setup('training', ['NWL', 'ENABLE', 'CSW']);
+  const init = async fn => {
+    const menu = document.getElementById('menu');
+    menu.classList.add('hidden');
 
-  const existing = JSON.parse(localStorage.getItem('current'));
-  if (existing && existing.timer > 0 &&
-    (!document.location.hash || document.location.hash.slice(1) === existing.game.seed) &&
-    Object.values(existing.game.words).filter(v => v > 0).length > 0) {
-    const game = Game.fromJSON(existing.game, TRIE, DICT, STATS);
-    SEED = game.random.seed;
-    Object.assign(SETTINGS, game.settings);
-    game.settings = SETTINGS;
-    localStorage.setItem('settings', JSON.stringify(SETTINGS));
-    const timer = new Timer(existing.timer, () => {
-      if (!game.expired) game.expired = +new Date();
-    }, saveGame);
-    STATE = await refresh(false, timer, game);
-    LAST = existing.last;
-  } else {
-    const initial = setup();
-    SEED = initial.seed;
-    Object.assign(SETTINGS, initial.settings);
-    localStorage.setItem('settings', JSON.stringify(SETTINGS));
-    STATE = await refresh();
-  }
+    await withLoader(async () => {
+      DICT = await dict;
+      STATS = new Stats(await stats, DICT);
+      TRIE = Trie.create(DICT);
+  
+      // await (new Store('training', SETTINGS.dict)).set('data', await (await fetch('wip/data.json', {mode: 'no-cors'})).json());
+      // HISTORY = await (await fetch('wip/history.json', {mode: 'no-cors'})).json();
+      HISTORY = await history || [];
+      for (const h of HISTORY) PLAYED.add(h.seed);
+      await storeInit;
+    });
 
-  document.getElementById('display').removeChild(document.getElementById('loader'));
-  document.getElementById('game').classList.remove('hidden');
-
-  const menu = document.getElementById('menu');
-  const word = document.getElementById('word');
-  const defn = document.getElementById('defn');
-  if (!TOUCH) {
-    word.contentEditable = true;
-    permaFocus(word);
-  }
-
-  window.addEventListener('hashchange', async (e) => {
-    if (!document.location.hash) return;
-    const [settings, seed] = Game.decodeID(document.location.hash.slice(1));
-    if (!isNaN(seed)) {
-      updateSettings(settings);
-      SEED = seed;
-    }
-    if (HASH_REFRESH) {
-      STATE = await refresh(true);
+    let existing = JSON.parse(localStorage.getItem('current'));
+    if (existing && existing.timer > 0 &&
+      (!document.location.hash || document.location.hash.slice(1) === existing.game.seed) &&
+      Object.values(existing.game.words).filter(v => v > 0).length > 0) {
+      const game = Game.fromJSON(existing.game, TRIE, DICT, STATS);
+      SEED = game.random.seed;
+      Object.assign(SETTINGS, game.settings);
+      game.settings = SETTINGS;
+      localStorage.setItem('settings', JSON.stringify(SETTINGS));
     } else {
-      updateDOMSettings();
+      existing = null;
+      const initial = setup();
+      SEED = initial.seed;
+      Object.assign(SETTINGS, initial.settings);
+      localStorage.setItem('settings', JSON.stringify(SETTINGS));
     }
-  });
 
-  document.getElementById('refresh').addEventListener('mouseup', refreshClick);
+    attachListeners();
+  
+    fn(existing);
+  };
 
-  document.getElementById('timer').addEventListener('click', () => {
-    STATE.timer.pause();
-  });
+  document.getElementById('menuPlay').addEventListener('click', () => init(async (existing) => {
+    if (existing) {
+      const timer = new Timer(existing.timer, () => {
+        if (!game.expired) game.expired = +new Date();
+      }, saveGame);
+      STATE = await refresh(false, timer, game);
+      LAST = existing.last;
+    } else {
+      STATE = await refresh();
+    }
+  }));
+  document.getElementById('menuTrain').addEventListener('click', () => init(() => train()));
+  document.getElementById('menuDefine').addEventListener('click', () => init(() => toggleDefine()));
+  document.getElementById('menuStats').addEventListener('click', () => init(() => displayStats()));
+  document.getElementById('menuSettings').addEventListener('click', () => init(() => displaySettings()));
 
-  document.getElementById('score').addEventListener('long-press', e => {
-    const board = document.getElementById('board');
-    if (board.classList.contains('hidden')) return;
-    const size = STATE.game.size;
-    const weights = [];
-    for (let row = 0; row < size; row++) {
-      const a = [];
-      for (let col = 0; col < size; col++) {
-        a.push(0);
+  function attachListeners() {
+    const word = document.getElementById('word');
+    if (!TOUCH) {
+      word.contentEditable = true;
+      permaFocus(word);
+    }
+
+    window.addEventListener('hashchange', async (e) => {
+      if (!document.location.hash) return;
+      const [settings, seed] = Game.decodeID(document.location.hash.slice(1));
+      if (!isNaN(seed)) {
+        updateSettings(settings);
+        SEED = seed;
       }
-      weights.push(a);
-    }
-    let total = 0;
-    for (const word in STATE.game.possible) {
-      if (STATE.game.played[word]) continue;
-      const score = Game.score(word);
-      total += score;
-      for (const p of STATE.game.possible[word]) {
-        weights[p[1]][p[0]] += score;
+      if (HASH_REFRESH) {
+        STATE = await refresh(true);
+      } else {
+        updateDOMSettings();
       }
-    }
+    });
 
-    for (const td of board.getElementsByTagName('td')) {
-      const w = weights[Number(td.dataset.x)][Number(td.dataset.y)] / total;
-      td.style.backgroundColor = `rgba(255,0,0,${w})`;
-    }
-  });
+    document.getElementById('refresh').addEventListener('mouseup', refreshClick);
 
-  document.getElementById('score').addEventListener('long-press-up', e => {
-    const board = document.getElementById('board');
-    if (board.classList.contains('hidden')) return;
-    for (const td of board.getElementsByTagName('td')) {
-      td.style.removeProperty('background-color');
-    }
-  });
+    document.getElementById('timer').addEventListener('click', () => {
+      STATE.timer.pause();
+    });
 
-  document.getElementById('epoch').addEventListener('long-press', e => {
-    const rating = document.getElementById('rating');
-    if (!rating.classList.contains('hidden')) return
-    document.getElementById('sizeHint').classList.remove('hidden');
-  });
-
-  document.getElementById('epoch').addEventListener('long-press-up', e => {
-    document.getElementById('sizeHint').classList.add('hidden');
-  });
-
-  document.getElementById('epoch').addEventListener('mouseup', async () => {
-    const game = document.getElementById('game');
-    let wrapper = document.getElementById('wrapper');
-    if (wrapper) game.removeChild(wrapper);
-
-    const rating = document.getElementById('rating');
-    if (rating) game.removeChild(rating);
-    const sizeHint = document.getElementById('sizeHint');
-    if (sizeHint) game.removeChild(sizeHint);
-
-    wrapper = document.createElement('div');
-    wrapper.setAttribute('id', 'wrapper');
-    wrapper.classList.add('review');
-
-    updateVisibility({hide: ['epoch']});
-
-    const d = SETTINGS.dice.charAt(0).toLowerCase();
-    const score = k => STATS.anagrams(k, SETTINGS.dice)[d] || 0;
-
-    const store = new Store('training', SETTINGS.dict);
-    const data = await store.get('data');
-    const keys = data
-      .filter(w => w.e < 2.0) // TODO: !v.c, figure out 2.0 based on average?
-      .sort((a, b) => score(b.k) / b.e - score(a.k) / a.e)
-      .map(w => w.k);
-
-    for (const k of keys) {
-      const table = document.createElement('table');
-      table.classList.add('results');
-      addAnagramRows(table, order(STATS.anagrams(k, SETTINGS.dice).words));
-      wrapper.appendChild(table);
-    }
-
-    game.appendChild(wrapper);
-  });
-
-  document.getElementById('practice').addEventListener('click', train);
-
-  document.getElementById('back').addEventListener('click', backClick);
-
-  // TODO: shouldnt work when in score mode or settings!
-  document.addEventListener('keydown', e => {
-    const board = document.getElementById('board');
-    const settings = document.getElementById('settings');
-    const define = document.getElementById('define');
-
-    const isBoard = board && board.offsetParent !== null;;
-    const isSettings = settings && settings.offsetParent !== null;
-    const isDefine = !!define;
-
-    if (board) {
-      if (kept) clearWord();
-      focusContentEditable(word);
-    } else if (isDefine) {
-      focusContentEditable(document.getElementById('search'));
-    }
-
-    // TODO support 3/4/5 in settings mode
-    const key = e.keyCode;
-    if (key === 191 && e.shiftKey) {
-      e.preventDefault(); 
-      toggleDefine();
-    } else if (key === 13 || key === 32) {
-      e.preventDefault();
-      if (isBoard) {
-        play(word);
-        focusContentEditable(word);
-      } else if (isDefine) {
-        const search = document.getElementById('search');
-        if (search.textContent) {
-          search.textContent = '';
-          LAST_DEFINITION = '';
-          for (const e of Array.from(define.children)) {
-            if (e !== search) define.removeChild(e);
-          }
-        } else {
-          toggleDefine();
+    document.getElementById('score').addEventListener('long-press', e => {
+      const board = document.getElementById('board');
+      if (board.classList.contains('hidden')) return;
+      const size = STATE.game.size;
+      const weights = [];
+      for (let row = 0; row < size; row++) {
+        const a = [];
+        for (let col = 0; col < size; col++) {
+          a.push(0);
+        }
+        weights.push(a);
+      }
+      let total = 0;
+      for (const word in STATE.game.possible) {
+        if (STATE.game.played[word]) continue;
+        const score = Game.score(word);
+        total += score;
+        for (const p of STATE.game.possible[word]) {
+          weights[p[1]][p[0]] += score;
         }
       }
-    } else if (key === 27 && isDefine) {
-      toggleDefine();
-    } else if ((key < 65 || key > 90) && key !== 8) {
-      e.preventDefault();
-    }
-  });
 
-  document.addEventListener('swiped-left', toggleDefine);
-  document.addEventListener('swiped-right', toggleDefine);
+      for (const td of board.getElementsByTagName('td')) {
+        const w = weights[Number(td.dataset.x)][Number(td.dataset.y)] / total;
+        td.style.backgroundColor = `rgba(255,0,0,${w})`;
+      }
+    });
+
+    document.getElementById('score').addEventListener('long-press-up', e => {
+      const board = document.getElementById('board');
+      if (board.classList.contains('hidden')) return;
+      for (const td of board.getElementsByTagName('td')) {
+        td.style.removeProperty('background-color');
+      }
+    });
+
+    document.getElementById('epoch').addEventListener('long-press', e => {
+      const rating = document.getElementById('rating');
+      if (!rating.classList.contains('hidden')) return
+      document.getElementById('sizeHint').classList.remove('hidden');
+    });
+
+    document.getElementById('epoch').addEventListener('long-press-up', e => {
+      document.getElementById('sizeHint').classList.add('hidden');
+    });
+
+    document.getElementById('epoch').addEventListener('mouseup', async () => {
+      const game = document.getElementById('game');
+      let wrapper = document.getElementById('wrapper');
+      if (wrapper) game.removeChild(wrapper);
+
+      const rating = document.getElementById('rating');
+      if (rating) game.removeChild(rating);
+      const sizeHint = document.getElementById('sizeHint');
+      if (sizeHint) game.removeChild(sizeHint);
+
+      wrapper = document.createElement('div');
+      wrapper.setAttribute('id', 'wrapper');
+      wrapper.classList.add('review');
+
+      updateVisibility({hide: ['epoch']});
+
+      const d = SETTINGS.dice.charAt(0).toLowerCase();
+      const score = k => STATS.anagrams(k, SETTINGS.dice)[d] || 0;
+
+      const store = new Store('training', SETTINGS.dict);
+      const data = await store.get('data');
+      const keys = data
+        .filter(w => w.e < 2.0) // TODO: !v.c, figure out 2.0 based on average?
+        .sort((a, b) => score(b.k) / b.e - score(a.k) / a.e)
+        .map(w => w.k);
+
+      for (const k of keys) {
+        const table = document.createElement('table');
+        table.classList.add('results');
+        addAnagramRows(table, order(STATS.anagrams(k, SETTINGS.dice).words));
+        wrapper.appendChild(table);
+      }
+
+      game.appendChild(wrapper);
+    });
+
+    document.getElementById('practice').addEventListener('click', train);
+
+    document.getElementById('back').addEventListener('click', backClick);
+
+    // TODO: shouldnt work when in score mode or settings!
+    document.addEventListener('keydown', e => {
+      const board = document.getElementById('board');
+      const settings = document.getElementById('settings');
+      const define = document.getElementById('define');
+
+      const isBoard = board && board.offsetParent !== null;;
+      const isSettings = settings && settings.offsetParent !== null;
+      const isDefine = !!define;
+
+      if (board) {
+        if (kept) clearWord();
+        focusContentEditable(word);
+      } else if (isDefine) {
+        focusContentEditable(document.getElementById('search'));
+      }
+
+      // TODO support 3/4/5 in settings mode
+      const key = e.keyCode;
+      if (key === 191 && e.shiftKey) {
+        e.preventDefault();
+        toggleDefine();
+      } else if (key === 13 || key === 32) {
+        e.preventDefault();
+        if (isBoard) {
+          play(word);
+          focusContentEditable(word);
+        } else if (isDefine) {
+          const search = document.getElementById('search');
+          if (search.textContent) {
+            search.textContent = '';
+            LAST_DEFINITION = '';
+            for (const e of Array.from(define.children)) {
+              if (e !== search) define.removeChild(e);
+            }
+          } else {
+            toggleDefine();
+          }
+        }
+      } else if (key === 27 && isDefine) {
+        toggleDefine();
+      } else if ((key < 65 || key > 90) && key !== 8) {
+        e.preventDefault();
+      }
+    });
+
+    document.addEventListener('swiped-left', toggleDefine);
+    document.addEventListener('swiped-right', toggleDefine);
+  }
 
   function setup() {
     if (document.location.hash && document.location.hash.length > 1) {
@@ -270,6 +292,9 @@ function updateVisibility(opts) {
         if (SETTINGS.display === 'Full') {
           document.getElementById('full').classList.remove('hidden');
         }
+      } else if (id === 'word') {
+        e.classList.remove('hidden');
+        if (!TOUCH) focusContentEditable(e);
       } else {
         e.classList.remove('hidden');
       }
@@ -278,6 +303,7 @@ function updateVisibility(opts) {
   if (opts.hide) {
     for (const id of opts.hide) {
       const e = document.getElementById(id);
+      if (!e) continue; // nothing to hide
       if (id === 'timer') {
         e.style.visibility = 'hidden';
       } else if (id === 'score') {
@@ -329,17 +355,10 @@ function backToGame() {
   maybePerformUpdate();
 
   const game = document.getElementById('game');
-  const board = document.getElementById('board');
   const wrapper = document.getElementById('wrapper');
-
   if (wrapper) game.removeChild(wrapper);
 
-  board.classList.remove('hidden');
-  word.classList.remove('hidden');
-  if (!TOUCH) focusContentEditable(word);
-  defn.classList.remove('hidden');
-
-  updateVisibility({show: ['refresh', 'score', 'timer'], hide: ['back', 'practice', 'settings']});
+  updateVisibility({show: ['board', 'word', 'defn', 'refresh', 'score', 'timer'], hide: ['back', 'practice', 'settings']});
 }
 
 async function refreshClick() {
@@ -366,14 +385,15 @@ function backClick() {
 
 async function train(pool) {
   if (!pool || pool.type !== SETTINGS.dict) {
-    const store = new Store('training', SETTINGS.dict);
-    pool = await TrainingPool.create(
-      STATS, SETTINGS.dice, SETTINGS.dict, store, SETTINGS.min);
+    await withLoader(async () => {
+      const store = new Store('training', SETTINGS.dict);
+      pool = await TrainingPool.create(
+        STATS, SETTINGS.dice, SETTINGS.dict, store, SETTINGS.min);
+    });
   }
   HASH_REFRESH = true;
 
   const game = document.getElementById('game');
-  const board = document.getElementById('board');
 
   let rating = document.getElementById('rating');
   if (rating) game.removeChild(rating);
@@ -381,19 +401,10 @@ async function train(pool) {
   if (sizeHint) game.removeChild(sizeHint);
 
   let wrapper = document.getElementById('wrapper');
-  if (wrapper) {
-    game.removeChild(wrapper);
-  } else {
-    document.getElementById('timer').style.visibility = 'hidden';
-
-    board.classList.add('hidden');
-    word.classList.add('hidden');
-    if (!TOUCH) focusContentEditable(word);
-    defn.classList.add('hidden');
-  }
+  if (wrapper) game.removeChild(wrapper);
   updateVisibility({
     show: ['back', 'epoch'],
-    hide: ['refresh', 'settings', 'practice', 'score']
+    hide: ['board', 'word', 'defn', 'timer', 'refresh', 'settings', 'practice', 'score']
   });
 
   wrapper = document.createElement('div');
@@ -868,7 +879,10 @@ function correctFocus() {
   }
 }
 
-function displayStats(data) {
+function displayStats() {
+  if (!GAMES) processHistoryIntoGames();
+  const data = STATS.history(GAMES, SETTINGS.dice, SETTINGS.dict);
+
   const game = document.getElementById('game');
 
   let wrapper = document.getElementById('wrapper');
@@ -1019,4 +1033,20 @@ function createElementWithId(type, id) {
   const element = document.createElement(type);
   element.setAttribute('id', id);
   return element;
+}
+
+async function withLoader(asyncFn) {
+  const game = document.getElementById('game');
+  game.classList.add('hidden');
+
+  const display = document.getElementById('display');
+  const loader = createElementWithId('div', 'loader');
+  const spinner = createElementWithId('div', 'spinner');
+  loader.appendChild(spinner);
+  display.appendChild(loader);
+
+  await asyncFn();
+
+  display.removeChild(loader);
+  game.classList.remove('hidden');
 }

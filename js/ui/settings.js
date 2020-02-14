@@ -57,14 +57,9 @@ function displaySettings() {
   const rating = document.getElementById('rating');
   if (rating) game.removeChild(rating);
 
-  const board = document.getElementById('board');
-  board.classList.add('hidden');
-  word.classList.add('hidden');
-  defn.classList.add('hidden');
-
   updateVisibility({
     show: ['back', 'timer', 'practice', 'settings'],
-    hide: ['refresh', 'play', 'score', 'epoch'],
+    hide: ['board', 'word', 'defn', 'refresh', 'play', 'score', 'epoch'],
   });
 
   ORIGINAL = {settings: Object.assign({}, SETTINGS), seed: SEED};

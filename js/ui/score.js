@@ -58,8 +58,7 @@ function displayScore() {
 
     game.appendChild(wrapper);
   } else {
-    if (!GAMES) processHistoryIntoGames();
-    displayStats(STATS.history(GAMES, SETTINGS.dice, SETTINGS.dict));
+    displayStats();
   }
 }
 
