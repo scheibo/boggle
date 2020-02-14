@@ -259,7 +259,7 @@ body {
   display: none !important;
 }
 #board td.selected {
-  background: lightblue;
+  background-color: lightblue;
 }
 #wrapper {
   height: 100%;
