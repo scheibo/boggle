@@ -56,8 +56,15 @@ const FILES = [
   '/img/android-chrome-192x192.png',
   '/img/android-chrome-512x512.png',
   '/img/apple-touch-icon.png',
+  '/fonts/roboto-400-italic.woff',
+  '/fonts/roboto-400.woff',
+  '/fonts/roboto-700.woff',
+  '/fonts/roboto-700-italic.woff',
+  '/fonts/roboto-400.woff2',
+  '/fonts/roboto-400-italic.woff2',
+  '/fonts/roboto-700.woff2',
+  '/fonts/roboto-700-italic.woff2',
 ];
-
 
 fs.writeFileSync(path.join(__dirname, 'sw.js'), `'use strict';
 
