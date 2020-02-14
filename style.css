@@ -31,7 +31,7 @@ body, html {
   height: 100%; /* https://bugs.chromium.org/p/chromium/issues/detail?id=844848#c4 */
 }
 
-/* LG-H873 = 360 x 588  */
+/* LG-H873 = 360 x 588, iPhone = '375 x 667' */
 body {
   font-family: "Roboto", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
   margin: 0px;
@@ -390,7 +390,7 @@ img {
 }
 .row {
   text-align: center;
-  padding: 10px;
+  padding: 8px;
 }
 #full {
   text-align: center;
@@ -398,7 +398,7 @@ img {
   font-size: 13px;
   margin-bottom: -15px;
   position: relative;
-  top: 3px;
+  top: -14px;
 }
 #rating .toggle {
   border: solid var(--fg-color);
@@ -481,11 +481,23 @@ img {
   z-index: 0;
 }
 
+/* iPhone = '414 x 736' */
+@media(min-height: 600px) {
+  #full {
+    top: 0px;
+  }
+  #board {
+    margin: 30px 0;
+  }
+  #settings .row {
+    padding: 12px;
+  }
+}
+
 /* Pixel = 393 x 714 */
-@media(min-width: 393px) {
-  #display, #game {
-    width: 393px;
-    height: 714px;
+@media(min-height: 650px) {
+  #full {
+    top: 3px;
   }
   #board {
     margin: 40px 0;
@@ -495,8 +507,12 @@ img {
   }
 }
 
-/* iPhone 6S Plus = 414 x 736 */
-/* TODO */
+@media(min-width: 393px) {
+  #display, #game {
+    width: 393px;
+    height: 714px;
+  }
+}
 
 /* Tablet */
 @media(min-width: 768px) {
