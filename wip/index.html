@@ -3,8 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <meta name="description" content="Boggle">
+  <meta name="theme-color" content="#FFF" />
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Boggle">
   <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
   <link rel="icon" href="favicon.ico">
+  <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" type="text/css" href="style.css">
   <title>Boggle</title>
 </head>
@@ -17,6 +23,20 @@
     var exports = window;
     function require() { return exports };
   </script>
+  <!-- TODO other scripts -->
+  <!-- <script type="application/javascript" src="js/random.js"></script>
+  <script type="application/javascript" src="js/dict.js"></script>
+  <script type="application/javascript" src="js/trie.js"></script>
+  <script type="application/javascript" src="js/stats.js"></script>
+  <script type="application/javascript" src="js/game.js"></script>
+  <script type="application/javascript" src="js/longpress.js"></script>
+  <script type="application/javascript" src="js/swipe.js"></script>
+  <script type="application/javascript" src="js/timer.js"></script>
+  <script type="application/javascript" src="js/store.js"></script>
+  <script type="application/javascript" src="js/training.js"></script> -->
   <script type="application/javascript" src="main.js"></script>
+  <!-- <script>
+    if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
+  </script> -->
 </body>
 </html>
