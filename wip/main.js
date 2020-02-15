@@ -1,6 +1,6 @@
 'use strict';
 
-const DEFAULTS = {dice: 'New', dict: 'NWL', grade: 'C', display: 'Show'};
+const DEFAULTS = {dice: 'New', min: 3, dict: 'NWL', grade: 'C', display: 'Show'};
 const SETTINGS = JSON.parse(localStorage.getItem('settings')) || DEFAULTS;
 const STORE = new Store('db', 'store');
 const PLAYED = new Set();
@@ -34,6 +34,8 @@ const LOADED = {
 
 class View {
   toJSON() {}
+  attach() {}
+  detach() {}
 }
 
 class LoadingView extends View {
@@ -43,6 +45,7 @@ class LoadingView extends View {
     this.loader.appendChild(this.spinner);
     return this.loader;
   }
+
   detach() {
     return this.loader;
   }
@@ -65,10 +68,10 @@ class MenuView extends View {
     }
 
     nav.appendChild(createButton('PLAY', () => {}));
-    nav.appendChild(createButton('TRAIN', () => {}));
+    nav.appendChild(createButton('TRAIN', () => UI.toggleView('Training')));
     nav.appendChild(createButton('DEFINE', () => UI.toggleView('Define')));
     nav.appendChild(createButton('STATS', () => UI.toggleView('Stats')));
-    nav.appendChild(createButton('SETTINGS', () => {}));
+    nav.appendChild(createButton('SETTINGS', () => UI.toggleView('Settings')));
 
     this.menu.appendChild(nav);
     return this.menu;
@@ -80,26 +83,23 @@ class MenuView extends View {
 }
 
 class DefineView extends View {
-  constructor() {
+  constructor(json) {
     super();
-    this.word = '';
+    this.word = json ? json.word : '';
   }
 
   toJSON() {
     return {word: this.word};
   }
 
-  fromJSON(json) {
-    this.word = json.word;
-  }
-
-  async attach(data) {
+  async attach(word) {
     await Promise.all([LOADED.DICT, LOADED.STATS]);
 
-    if (data) this.word = data;
+    if (word) this.word = word;
 
     this.define = createElementWithId('div', 'define');
     this.search = createElementWithId('div', 'search');
+    this.search.classList.add('word');
     this.search.contentEditable = true;
     this.search.textContent = this.word;
     this.define.appendChild(this.search);
@@ -110,7 +110,7 @@ class DefineView extends View {
     return this.define;
   }
 
-  onAttach() {
+  afterAttach() {
     permaFocus(this.search);
   }
 
@@ -156,7 +156,7 @@ class DefineView extends View {
 
       const stats = document.createElement('table');
       stats.classList.add('roundedTable');
-  
+
       let tr = document.createElement('tr');
       addCells(tr, 'Grade', s.grade === ' ' ? 'S' : s.grade);
       addCells(tr, 'Score', s.word ? s.word.p : '-');
@@ -187,10 +187,53 @@ class DefineView extends View {
       }
     }
 
-    const anagrams = displayAnagrams(this.word, w => this.query(w));
+    const anagrams = this.renderAnagrams();
     if (this.anagrams) this.define.removeChild(this.anagrams);
     this.define.appendChild(anagrams);
     this.anagrams = anagrams;
+  }
+
+   renderAnagrams() {
+    const div = createElementWithId('div', 'defineAnagrams');
+    while (div.firstChild) div.removeChild(stats.firstChild);
+
+    const words = STATS.anagrams(this.word, SETTINGS.dict).words;
+    if (words.length <= 1) return div;
+
+    const solo = [];
+    const anadromes = new Set();
+
+    for (const w of words) {
+      const r = w.split('').reverse().join('');
+      if (r !== w && words.includes(r)) {
+        anadromes.add(`${[w, r].sort().join(' ')}`);
+      } else {
+        solo.push(w);
+      }
+    }
+
+    const format = w => {
+      const e = document.createElement(w === this.word ? 'b' : 'span');
+      e.textContent = w;
+      e.addEventListener('click', () => this.query(w));
+      return e;
+    };
+
+    for (const pair of anadromes) {
+      const [a, b] = pair.split(' ');
+      div.appendChild(document.createTextNode(' ('));
+      div.appendChild(format(a));
+      div.appendChild(document.createTextNode(' '));
+      div.appendChild(format(b));
+      div.appendChild(document.createTextNode(') '));
+    }
+
+    for (const w of solo) {
+      div.appendChild(format(w));
+      div.appendChild(document.createTextNode(' '));
+    }
+
+    return div;
   }
 
   async onKeydown(e) {
@@ -211,17 +254,13 @@ class DefineView extends View {
 }
 
 class StatsView extends View {
-  constructor() {
+  constructor(json) {
     super();
-    this.section = 'WORD';
+    this.section = json ? json.section : 'WORD';
   }
 
   toJSON() {
     return {section: this.section};
-  }
-
-  fromJSON(json) {
-    this.section = json.section;
   }
 
   async attach() {
@@ -240,14 +279,14 @@ class StatsView extends View {
     const data = STATS.history(GAMES, SETTINGS.dice, SETTINGS.dict);
 
     this.stats = createElementWithId('div', 'stats');
-    const control = document.createElement('div');
-    control.classList.add('row');
+    const back = createBackButton(() => UI.toggleView('Menu'));
     const display = w => this.display(w, data);
-    control.appendChild(createRadios('statsSelect', ['WORD', 'ANAGRAM', 'PAIR'].map(s => s === this.section ? [s] : s), function() {
+    const radios = createRadios('statsSelect', ['WORD', 'ANAGRAM', 'PAIR'].map(s => s === this.section ? [s] : s), function() {
       display(this.value);
       UI.persist();
-    }))
-    this.stats.append(control);
+    });
+
+    this.stats.append(createTopbar(back, radios, null));
     this.display(this.section, data);
 
     return this.stats;
@@ -353,111 +392,230 @@ class StatsView extends View {
   }
 }
 
-// DEBUG
-class DebugView extends View {
-  constructor(id, state) {
+class ReviewView extends View {
+  constructor(json) {
     super();
-    this.id = id;
-    this.state = state;
+    this.size = json ? json.size : 0;
   }
 
   toJSON() {
-    return {state: this.state};
+    return {size: this.size};
   }
 
-  fromJSON() {
-    this.state = state;
-  }
-
-  async attach() {
+  async attach(size) {
     await Promise.all([LOADED.DICT, LOADED.STATS]);
 
-    this.element = createElementWithId('div', this.id);
-    this.element.textContent = id.toUpperCase();
-    return this.element;
+    this.review = createElementWithId('div', 'review');
+    if (size) this.size = size;
+
+    const back = createBackButton(() => UI.toggleView('Training'));
+    const progress = createElementWithId('div', 'progress');
+    progress.textContent = this.size;
+    this.review.appendChild(createTopbar(back, null, progress));
+
+    const d = SETTINGS.dice.charAt(0).toLowerCase();
+    const score = k => STATS.anagrams(k, SETTINGS.dice)[d] || 0;
+
+    const store = new Store('training', SETTINGS.dict);
+    const data = await store.get('data');
+    const keys = data
+      .filter(w => w.e < 2.0) // TODO: !v.c, figure out 2.0 based on average?
+      .sort((a, b) => score(b.k) / b.e - score(a.k) / a.e)
+      .map(w => w.k);
+
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('wrapper');
+
+    for (const k of keys) {
+      const table = document.createElement('table');
+      table.classList.add('results');
+      addAnagramRows(table, order(STATS.anagrams(k, SETTINGS.dice).words));
+      wrapper.appendChild(table);
+    }
+    this.review.appendChild(wrapper);
+
+    return this.review;
   }
 
   detach() {
-    return this.element;
+    return this.review;
   }
 }
 
-class BoardView extends DebugView {
-  constructor() {
-    super('board')
+class TrainingView extends View {
+  async attach() {
+    await Promise.all([LOADED.TRAINING, LOADED.DICT, LOADED.STATS]);
+    if (!this.pool || this.pool.type !== SETTINGS.dict) {
+      const store = new Store('training', SETTINGS.dict);
+      this.pool = await TrainingPool.create(
+        STATS, SETTINGS.dice, SETTINGS.dict, store, SETTINGS.min);
+    }
+
+    this.train = createElementWithId('div', 'train');
+    this.next();
+    return this.train;
+  }
+
+  async detach() {
+    if (this.save) await this.save();
+    this.content = null;
+    return this.train;
+  }
+
+  next() {
+    const content = createElementWithId('div', 'content');
+    const progress = createElementWithId('div', 'progress');
+    progress.textContent = this.pool.size();
+
+    const {label, group, update, save} = this.pool.next();
+    this.save = save;
+    const trainWord = document.createElement('div');
+    trainWord.classList.add('word');
+    trainWord.textContent = label;
+
+    const sizeHint = createElementWithId('div', 'sizeHint');
+    sizeHint.classList.add('hidden');
+    sizeHint.textContent = group.length;
+
+    const rating = this.createRatingToggles(update);
+    const table = document.createElement('table');
+    table.classList.add('results', 'hidden');
+    addAnagramRows(table, group);
+
+    progress.addEventListener('mouseup', () => UI.toggleView('Review', progress.textContent));
+    progress.addEventListener('long-press', () => {
+      if (!rating.classList.contains('hidden')) return;
+      sizeHint.classList.remove('hidden')
+    });
+    progress.addEventListener('long-press-up', () => sizeHint.classList.add('hidden'));
+
+    const back = createBackButton(() => UI.toggleView('Menu'));
+    content.appendChild(createTopbar(back, null, progress));
+
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('wrapper');
+    wrapper.appendChild(trainWord);
+    wrapper.appendChild(table);
+
+    content.appendChild(wrapper);
+    content.appendChild(sizeHint);
+    content.appendChild(rating);
+
+    const listener = e => {
+      if (![back, progress].includes(e.target)) {
+        content.removeEventListener('click', listener);
+        trainWord.classList.add('hidden');
+        table.classList.remove('hidden');
+        rating.classList.remove('hidden');
+      }
+    };
+    content.addEventListener('click', listener);
+
+    if (this.content) this.train.removeChild(this.content);
+    this.train.appendChild(content);
+    this.content = content;
+  }
+
+  createRatingToggles(update) {
+    const toggles = document.createElement('div');
+    toggles.setAttribute('id', 'rating');
+    toggles.classList.add('toggle-group');
+    toggles.classList.add('horizontal');
+    toggles.classList.add('hidden');
+
+    for (let i = 0; i < 6; i++) {
+      const toggle = document.createElement('button');
+      toggle.setAttribute('id', `rating${i}`);
+      toggle.setAttribute('type', 'button');
+      toggle.classList.add('toggle');
+      toggle.textContent = i;
+
+      toggles.appendChild(toggle);
+
+      toggle.addEventListener('click', async () => {
+        await update(Number(toggle.textContent));
+        this.save = null;
+        this.next();
+      });
+    }
+
+    return toggles;
   }
 }
-class ScoreView extends DebugView {
-  constructor() {
-    super('score')
+
+class BoardView extends View {
+  async attach() {
+
+  }
+  detach() {
+
   }
 }
-class TrainingView extends DebugView {
-  constructor() {
-    super('training')
+class ScoreView extends View {
+  async attach() {
+
+  }
+  detach() {
+
   }
 }
 
-class SettingsView extends DebugView {
-  constructor() {
-    super('settings')
+class SettingsView extends View {
+  attach() {
+    this.settings = createElementWithId('div', 'settings');
+
+    const createRow = (e) => {
+      const row = document.createElement('div');
+      row.classList.add('row');
+      row.appendChild(e);
+      return row;
+    };
+
+    const seed = createElementWithId('div', 'seed');
+    seed.setAttribute('contenteditable', true);
+    const back = createBackButton(() => UI.toggleView('Menu'));
+    this.settings.appendChild(createTopbar(back, seed, null));
+
+    const checkedRadioRow = (k, opts, fn, id) =>
+      createRow(createRadios(id || k, opts.map(s => s === String(SETTINGS[k]) ? [s] : s), fn));
+    this.settings.appendChild(checkedRadioRow('dice', ['New', 'Old', 'Big'], function () {
+      const min = this.value === 'Big' ? 4 : 3;
+      document.getElementById(`min${min}`).checked = true;
+      updateSettings({dice: this.value, min});
+    }));
+    this.settings.appendChild(checkedRadioRow('min', ['3', '4', '5'], function () {
+      updateSettings({min: Number(this.value)});
+    }));
+    this.settings.appendChild(checkedRadioRow('dict', ['NWL', 'ENABLE', 'CSW'], function () {
+      updateSettings({dict: this.value});
+    }));
+    this.settings.appendChild(checkedRadioRow('grade', ['A', 'B', 'C', 'D'], function () {
+      updateSettings({grade: this.value});
+    }));
+    this.settings.appendChild(checkedRadioRow('display', ['Hide', 'Show', 'Full'], function () {
+      updateSettings({display: this.value});
+    }, 'scoreDisplay'));
+    this.settings.appendChild(checkedRadioRow('theme', ['Light', 'Dark'], function () {
+      updateSettings({theme: this.value});
+      setTheme(this.value);
+    }));
+
+    return this.settings;
+  }
+
+  detach() {
+    return this.settings;
   }
 }
 
-// class SettingsView {
-//   attach() {
-//     this.settings = createElementWithId('div', 'settings');
-
-//     const createRow = (e) => { 
-//       const row = document.createElement('div');
-//       row.classlist.add('row');
-//       row.appendChild(e);
-//       return e;
-//     }
-
-//     const seed = createElementWithId('div', 'seed');
-//     seed.setAttribute('contenteditable', true);
-
-//     this.settings.appendChild(createRow(seed));
-//     this.settings.appendChild(createRow(createRadios('dice', [['New'], 'Old', 'Big'], e => {
-//       const min = this.value === 'Big' ? 4 : 3;
-//       document.getElementById(`min${min}`).checked = true;
-//       updateSettings({dice: this.value, min});
-//     })));
-//     this.settings.appendChild(createRow(createRadios('min', [['3'], '4', '5'], e => {
-//       updateSettings({min: Number(this.value)});
-//     })));
-//     this.settings.appendChild(createRow(createRadios('dict', [['NWL'], 'ENABLE', 'CSW'], e => {
-//       updateSettings({dict: this.value});
-//     })));
-//     this.settings.appendChild(createRow(createRadios('grade', ['A', 'B', ['C'], 'D'], e => {
-//       updateSettings({grade: this.value});
-//     })));
-//     this.settings.appendChild(createRow(createRadios('scoreDisplay', ['Hide', ['Show'], 'Full'], e => {
-//       updateSettings({display: this.value});
-//     })));
-//     this.settings.appendChild(createRow(createRadios('theme', [['Light'], 'Dark'], e => {
-//       updateSettings({theme: this.value});
-//       setTheme(this.value);
-//     })));
-
-//     return this.settings;
-//   }
-
-//   update(settings) {
-//     document.getElementById('seed').textContent = Game.encodeID(settings, SEED);
-//     document.getElementById(`dice${settings.dice}`).checked = true;
-//     document.getElementById(`min${settings.min}`).checked = true;
-//     document.getElementById(`dict${settings.dict}`).checked = true;
-//     document.getElementById(`grade${settings.grade}`).checked = true;
-//     document.getElementById(`scoreDisplay${settings.display}`).checked = true;
-//     document.getElementById(`theme${settings.theme || 'Light'}`).checked = true;
-//   }
-
-//   detach() {
-//     return this.settings;
-//   }
-// }
+function updateSettings(settings) {
+  Object.assign(SETTINGS, settings);
+  localStorage.setItem('settings', JSON.stringify(SETTINGS));
+  // TODO
+  // const id = Game.encodeID(SETTINGS, SEED);
+  // document.getElementById('seed').textContent = id;
+  // window.history.replaceState(null, null, `#${id}`);
+}
 
 function createElementWithId(type, id) {
   const element = document.createElement(type);
@@ -509,46 +667,36 @@ function createRadios(id, values, listener) {
   return radios;
 }
 
-function displayAnagrams(word, fn) {
-  const div = createElementWithId('div', 'defineAnagrams');
-  while (div.firstChild) div.removeChild(stats.firstChild);
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme.toLowerCase());
+}
 
-  const words = STATS.anagrams(word, SETTINGS.dict).words;
-  if (words.length <= 1) return div;
+function addAnagramRows(table, group) {
+  for (const r of group) {
+    const w = r.replace(/[^A-Z]/, '');
+    const tr = document.createElement('tr');
+    const grade = STATS.stats(w, SETTINGS.dice, SETTINGS.dict).grade;
+    if (grade < SETTINGS.grade) tr.classList.add('hard');
 
-  const solo = [];
-  const anadromes = new Set();
+    let td = document.createElement('td');
+    const b = document.createElement('b');
+    b.textContent = r.endsWith(')') ? `\xa0${r}` : r;
+    td.appendChild(b);
+    tr.appendChild(td);
+    td = document.createElement('td');
+    td.textContent = define(w, DICT);
+    tr.appendChild(td);
 
-  for (const w of words) {
-    const r = w.split('').reverse().join('');
-    if (r !== w && words.includes(r)) {
-      anadromes.add(`${[w, r].sort().join(' ')}`);
-    } else {
-      solo.push(w);
-    }
+    table.appendChild(tr);
   }
+}
 
-  const format = w => {
-    const e = document.createElement(w === word ? 'b' : 'span');
-    e.textContent = w;
-    e.addEventListener('click', () => fn(w));
-    return e;
-  };
-
-  for (const pair of anadromes) {
-    const [a, b] = pair.split(' ');
-    div.appendChild(document.createTextNode(' ('));
-    div.appendChild(format(a));
-    div.appendChild(document.createTextNode(' '));
-    div.appendChild(format(b));
-    div.appendChild(document.createTextNode(') '));
-  }
-  for (const w of solo) {
-    div.appendChild(format(w));
-    div.appendChild(document.createTextNode(' '));
-  }
-
-  return div;
+function createTopbar(left, center, right) {
+  const topbar = createElementWithId('header', 'topbar');
+  topbar.appendChild(left || document.createElement('div'));
+  topbar.appendChild(center || document.createElement('div'));
+  topbar.appendChild(right || document.createElement('div'));
+  return topbar;
 }
 
 function updateGames(game) {
@@ -564,59 +712,64 @@ function updateGames(game) {
   GAMES.push([game.possible, played]);
 }
 
+function createBackButton(fn) {
+  const back = createElementWithId('div', 'back');
+  const img = document.createElement('img');
+  img.src = '../img/back.svg'; // TODO ../
+  img.height = 20;
+  back.appendChild(img);
+  back.addEventListener('click', fn);
+  return back;
+}
+
 const UI = new (class{
-  constructor() {
-    this.root = document.getElementById('display');
-
-    this.Views = {
-      Menu: new MenuView(),
-      Loading: new LoadingView(),
-      Board: new BoardView(),
-      Score: new ScoreView(),
-      Training: new TrainingView(),
-      Define: new DefineView(),
-      Stats: new StatsView(),
-      Settings: new SettingsView(),
-    }
-
-    this.current = 'Menu';
-    this.previous = 'Menu';
-  }
-
   async create() {
     setTimeout(() => window.scrollTo(0, 1), 0);
+
+    // If theme has been explicitly set by the user then that trumps the system value
+    if (SETTINGS.theme !== undefined) {
+      setTheme(SETTINGS.theme);
+    } else {
+      setTheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'Dark' : 'Light');
+    }
+
+    this.root = document.getElementById('display');
+
+    const state = JSON.parse(localStorage.getItem('state'));
+    console.log(state); // DEBUG
+    this.current = state ? state.current : 'Menu';
+    this.previous = state ? state.previous : 'Menu';
+    const VIEWS = {
+      Menu: MenuView,
+      Loading: LoadingView,
+      Board: BoardView,
+      Score: ScoreView,
+      Training: TrainingView,
+      Review: ReviewView,
+      Define: DefineView,
+      Stats: StatsView,
+      Settings: SettingsView,
+    };
+    const views = state ? state.views : {};
+    this.Views = {};
+    for (const [type, view] of Object.entries(VIEWS)) {
+      this.Views[type] = new view(views[type]);
+    }
 
     document.addEventListener('keydown', e => this.onKeydown(e));
     document.addEventListener('swiped-left', () => this.toggleView('Define'));
     document.addEventListener('swiped-right', () => this.toggleView('Define'));
 
-    const state = JSON.parse(localStorage.getItem('state'));
-    console.log(state);
-    if (state) {
-      this.current = state.current.type;
-      if (this.Views[this.current].fromJSON){
-        this.Views[this.current].fromJSON(state.current.data);
-      }
-      this.previous = state.previous.type;
-      if (this.Views[this.previous].fromJSON) {
-        this.Views[this.previous].fromJSON(state.previous.data);
-      }
-    }
     await this.attachView(this.current);
   }
 
   persist(previous) {
     const state = JSON.parse(localStorage.getItem('state')) || {};
-    state.current = {
-      type: this.current,
-      data: this.Views[this.current],
-    };
-    if (previous || !state.previous) {
-      state.previous = {
-        type: this.previous,
-        data: this.Views[this.previous],
-      };
-    }
+    state.current = this.current;
+    state.previous = this.previous;
+    state.views = state.views || {};
+    state.views[this.current] = this.Views[this.current];
+    if (previous) state.views[this.previous] = this.Views[this.previous];
     localStorage.setItem('state', JSON.stringify(state));
   }
 
@@ -631,25 +784,25 @@ const UI = new (class{
       this.detachView('Loading');
       this.root.appendChild(v);
     }
-    if (this.Views[view].onAttach) {
-      this.Views[view].onAttach();
+    if (this.Views[view].afterAttach) {
+      this.Views[view].afterAttach();
     }
   }
 
-  detachView(view) {
+  async detachView(view) {
     console.log('DETACHING', view, this.Views[view]);
-    this.root.removeChild(this.Views[view].detach());
+    this.root.removeChild(await this.Views[view].detach());
   }
 
   async toggleView(view, data) {
     console.log('TOGGLE', view, {current: this.current, previous: this.previous});
     if (this.current === view) {
-      this.detachView(view);
+      await this.detachView(view);
       this.current = this.previous;
       this.previous = view;
       await this.attachView(this.current, data);
     } else {
-      this.detachView(this.current);
+      await this.detachView(this.current);
       this.previous = this.current;
       this.current = view;
       await this.attachView(view, data);
@@ -660,7 +813,7 @@ const UI = new (class{
   async onKeydown(e) {
     const key = e.keyCode;
     if (key === 191 && e.shiftKey) {
-      e.preventDefault(); 
+      e.preventDefault();
       await this.toggleView('Define');
     } else if ('onKeydown' in this.Views[this.current]) {
       await this.Views[this.current].onKeydown(e);

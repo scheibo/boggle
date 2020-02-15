@@ -92,7 +92,7 @@
 
   function mouseDownHandler(e: MouseEvent | TouchEvent) {
     const board = document.getElementById('board');
-    if (!board || board.contains(e.target! as Node)) return;
+    if (board && board.contains(e.target! as Node)) return;
 
     startX = isTouch(e) ? e.touches[0].clientX : e.clientX;
     startY = isTouch(e) ? e.touches[0].clientY : e.clientY;

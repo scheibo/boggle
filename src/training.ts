@@ -186,13 +186,18 @@ export class TrainingPool {
     const anagrams = this.stats.anagrams(key, this.type);
     const group = anagrams.words;
 
-    const update = async (q: number) => {
-      this.learned.push(adjust(next!, q, now));
-      await this.store.set('data', this.learned.data);
+    const save = () => {
+      this.learned.push(next!);
+      return this.store.set('data', this.learned.data);
+    };
+
+    const update = (q: number) => {
+      next = adjust(next!, q, now);
+      return save();
     };
 
     // @ts-ignore FIXME
-    const random = new Random(this.size());
+    const random = new Random(this.size() * next.e);
     // try to find a permutation which isn't in the group
     for (let i = 0; i < 10; i++) {
       key = random.shuffle(key.split('')).join('');
@@ -201,7 +206,7 @@ export class TrainingPool {
 
     // @ts-ignore FIXME
     const o = order;
-    return { label: key, group: o(random.shuffle(group)), update };
+    return { label: key, group: o(random.shuffle(group)), update, save };
   }
 }
 

@@ -60,7 +60,7 @@
 
   function handleTouchStart(e: TouchEvent) {
     const board = document.getElementById('board');
-    if (!board || board.contains(e.target! as Node)) return;
+    if (board && board.contains(e.target! as Node)) return;
 
     startElement = e.target;
 
