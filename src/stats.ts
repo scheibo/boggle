@@ -127,6 +127,7 @@ export class Stats {
             const k = [w, r].sort()[0];
             if (!played.has(r)) {
               either[k] = (either[k] || 0) + 1;
+              // FIXME: why does this not remove NOD/DON in Big dice?
               anadromes[k] = (anadromes[w] || 0) + (1 / n) * this.dict[k][d]!;
              } else if (w === k) {
               either[k] = (either[k] || 0) + 1;
