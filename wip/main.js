@@ -3,34 +3,28 @@
 const DEFAULTS = {dice: 'New', min: 3, dict: 'NWL', grade: 'C', display: 'Show'};
 const SETTINGS = JSON.parse(localStorage.getItem('settings')) || DEFAULTS;
 const STORE = new Store('db', 'store');
-const PLAYED = new Set();
 
 const fetchJSON = url => fetch(url, {mode: 'no-cors'}).then(j => j.json());
-var DICT, STATS, HISTORY, TRIE, GAMES;
+var DICT, STATS, HISTORY, TRIE, PLAYED, GAMES;
 
-const loaded = {
-  DICT: fetchJSON('../data/dict.json').then(d => { DICT = d; }), // TODO ../
-  HISTORY: STORE.get('history').then(h => HISTORY = h || []),
-};
 // TODO: TRIE, STATS, PLAYED, GAMES, and the TrainingPool creation
 // need to be moved to a background worker and transferred in.
 const LOADED = {
-  DICT: loaded.DICT,
-  TRIE: (async () => {
-    await loaded.DICT;
+  DICT: fetchJSON('../data/dict.json').then(d => { DICT = d; }), // TODO ../,
+  TRIE: async () => {
+    await LOADED.DICT;
     TRIE = Trie.create(DICT);
-  })(),
-  STATS: (async () => {
+  },
+  STATS: async () => {
+    if (STATS) return;
     let stats;
-    fetchJSON('../data/stats.json').then(s => { stats = s; }); // TODO ../
-    await loaded.DICT;
+    await Promise.all([
+      LOADED.DICT,
+      fetchJSON('../data/stats.json').then(s => { stats = s; }) // TODO ../
+    ]);
     STATS = new Stats(stats, DICT);
-  })(),
-  HISTORY: loaded.HISTORY,
-  PLAYED: (async () => {
-    await loaded.HISTORY;
-    for (const h of HISTORY) PLAYED.add(h.seed);
-  })(),
+  },
+  HISTORY: STORE.get('history').then(h => HISTORY = h || []),
   TRAINING: Store.setup('training', ['NWL', 'ENABLE', 'CSW']),
 };
 
@@ -100,7 +94,7 @@ class DefineView extends View {
   }
 
   async attach(word) {
-    await Promise.all([LOADED.DICT, LOADED.STATS]);
+    await Promise.all([LOADED.DICT, LOADED.STATS()]);
 
     if (word) this.word = word;
 
@@ -272,7 +266,7 @@ class StatsView extends View {
 
   // TODO: why is there no spinner?
   async attach() {
-    await Promise.all([, LOADED.HISTORY, LOADED.TRIE, LOADED.DICT, LOADED.STATS]);
+    await Promise.all([LOADED.HISTORY, LOADED.TRIE(), LOADED.DICT, LOADED.STATS()]);
     if (!GAMES) {
       GAMES = [];
       for (let i = HISTORY.length - 1; i >= 0 && GAMES.length < 500; i--) {
@@ -411,7 +405,7 @@ class ReviewView extends View {
   }
 
   async attach(size) {
-    await Promise.all([LOADED.DICT, LOADED.STATS]);
+    await Promise.all([LOADED.DICT, LOADED.STATS()]);
 
     this.review = createElementWithId('div', 'review');
     if (size) this.size = size;
@@ -452,7 +446,7 @@ class ReviewView extends View {
 
 class TrainingView extends View {
   async attach() {
-    await Promise.all([LOADED.TRAINING, LOADED.DICT, LOADED.STATS]);
+    await Promise.all([LOADED.TRAINING, LOADED.DICT, LOADED.STATS()]);
     if (!this.pool || this.pool.type !== SETTINGS.dict) {
       const store = new Store('training', SETTINGS.dict);
       this.pool = await TrainingPool.create(
@@ -551,6 +545,12 @@ class TrainingView extends View {
   }
 }
 
+// PLAYED: async () => {
+//   if (PLAYED) return;
+//   await LOADED.HISTORY;
+//   PLAYED = new Set();
+//   for (const h of HISTORY) PLAYED.add(h.seed);
+// },
 class BoardView extends View {
   async attach() {
 
