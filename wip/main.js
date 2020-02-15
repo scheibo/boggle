@@ -722,10 +722,7 @@ function updateGames(game) {
 
 function createBackButton(fn) {
   const back = createElementWithId('div', 'back');
-  const img = document.createElement('img');
-  img.src = '../img/back.svg'; // TODO ../
-  img.height = 20;
-  back.appendChild(img);
+  back.appendChild(UI.BACK);
   back.addEventListener('click', fn);
   return back;
 }
@@ -763,6 +760,10 @@ const UI = new (class{
     for (const [type, view] of Object.entries(VIEWS)) {
       this.Views[type] = new view(views[type]);
     }
+
+    this.BACK = document.createElement('img');
+    this.BACK.src = '../img/back.svg'; // TODO ../
+    this.BACK.height = 20;
 
     document.addEventListener('keydown', e => this.onKeydown(e));
     document.addEventListener('swiped-left', () => this.toggleView('Define'));
