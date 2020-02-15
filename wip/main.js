@@ -278,6 +278,7 @@ class StatsView extends View {
         GAMES.push([game.possible, played]);
       }
     }
+    // FIXME: cache this, invalidate if GAMES/dice/dict/min changes
     const data = STATS.history(GAMES, SETTINGS.dice, SETTINGS.dict);
 
     this.stats = createElementWithId('div', 'stats');

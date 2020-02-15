@@ -183,6 +183,7 @@ export class Stats {
       }),
       anagrams: sorted(anagrams, 50).map(e => {
         const group = [];
+        // FIXME: should pass in min length and 3 letter words should have B scores
         for (const r of order(this.anagrams(e[0], type).words)) {
           const w = r.replace(/[^A-Z]/, '');
           group.push({ raw: r, found: found[w] || 0, all: all[w] || 0 });
