@@ -108,6 +108,7 @@ export class Stats {
     const anagrams: { [k: string]: number } = {};
 
     const all: { [k: string]: number } = {};
+    const either: { [k: string]: number } = {};
     const found: { [k: string]: number } = {};
     let n = games.length;
     for (const [possible, played] of games) {
@@ -122,9 +123,14 @@ export class Stats {
           found[w] = (found[w] || 0) + 1;
 
           const r = reverse(w);
-          if (r !== w && possible[r] && !played.has(r)) {
+          if (r !== w && possible[r]) {
             const k = [w, r].sort()[0];
-            anadromes[k] = (anadromes[w] || 0) + (1 / n) * this.dict[k][d]!;
+            if (!played.has(r)) {
+              either[k] = (either[k] || 0) + 1;
+              anadromes[k] = (anadromes[w] || 0) + (1 / n) * this.dict[k][d]!;
+             } else if (w === k) {
+              either[k] = (either[k] || 0) + 1;
+             }
           }
         } else {
           ratio[w] = (ratio[w] || 0) + (1 / n) * this.dict[w][d]!;
@@ -172,7 +178,7 @@ export class Stats {
         const k = e[0];
         const r = reverse(k);
         const [n, d] = (found[r] || 0) > (found[k] || 0) ? [k, r] : [r, k];
-        return { n, fn: found[n] || 0, d, fd: found[d] || 0 };
+        return { n, fn: found[n] || 0, d, fd: found[d] || 0, e: either[k] || 0 };
       }),
       anagrams: sorted(anagrams, 50).map(e => {
         const group = [];

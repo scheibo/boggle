@@ -319,7 +319,7 @@ class StatsView extends View {
     const table = document.createElement('table');
     table.classList.add('roundedTable');
     if (section === 'PAIR') {
-      for (const {n, fn, d, fd} of anadromes) {
+      for (const {n, fn, d, fd, e} of anadromes) {
         const tr = document.createElement('tr');
 
         let td = document.createElement('td');
@@ -327,7 +327,7 @@ class StatsView extends View {
         tr.appendChild(td);
 
         td = document.createElement('td');
-        td.textContent = `${fn}/${fd}`;
+        td.textContent = `${fn}/${fd} (${e})`;
         tr.appendChild(td);
 
         td = document.createElement('td');
