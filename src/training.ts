@@ -186,14 +186,11 @@ export class TrainingPool {
     const anagrams = this.stats.anagrams(key, this.type);
     const group = anagrams.words;
 
-    const save = () => {
-      this.learned.push(next!);
-      return this.store.set('data', this.learned.data);
-    };
-
+    const restore = () => this.learned.push(next!);
     const update = (q: number) => {
       next = adjust(next!, q, now);
-      return save();
+      restore();
+      return this.store.set('data', this.learned.data);
     };
 
     // @ts-ignore FIXME
@@ -206,7 +203,7 @@ export class TrainingPool {
 
     // @ts-ignore FIXME
     const o = order;
-    return { label: key, group: o(random.shuffle(group)), update, save };
+    return { label: key, group: o(random.shuffle(group)), update, restore };
   }
 }
 

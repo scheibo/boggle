@@ -465,7 +465,7 @@ class TrainingView extends View {
   }
 
   async detach() {
-    if (this.save) await this.save();
+    if (this.restore) await this.restore();
     this.content = null;
     return this.train;
   }
@@ -475,8 +475,8 @@ class TrainingView extends View {
     const progress = createElementWithId('div', 'progress');
     progress.textContent = this.pool.size();
 
-    const {label, group, update, save} = this.pool.next();
-    this.save = save;
+    const {label, group, update, restore} = this.pool.next();
+    this.restore = restore;
     const trainWord = document.createElement('div');
     trainWord.classList.add('word');
     trainWord.textContent = label;
@@ -542,7 +542,7 @@ class TrainingView extends View {
 
       toggle.addEventListener('click', async () => {
         await update(Number(toggle.textContent));
-        this.save = null;
+        this.restore = null;
         this.next();
       });
     }
