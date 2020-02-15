@@ -194,7 +194,7 @@ export class TrainingPool {
     };
 
     // @ts-ignore FIXME
-    const random = new Random(this.size() * next.e);
+    const random = new Random(next.n);
     // try to find a permutation which isn't in the group
     for (let i = 0; i < 10; i++) {
       key = random.shuffle(key.split('')).join('');
@@ -203,7 +203,7 @@ export class TrainingPool {
 
     // @ts-ignore FIXME
     const o = order;
-    return { label: key, group: o(random.shuffle(group)), update, restore };
+    return { label: key, group: o(group), update, restore };
   }
 }
 
