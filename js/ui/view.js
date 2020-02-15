@@ -47,7 +47,7 @@ const TOUCH = ('ontouchstart' in window) ||
       DICT = await dict;
       STATS = new Stats(await stats, DICT);
       TRIE = Trie.create(DICT);
-  
+
       // await (new Store('training', SETTINGS.dict)).set('data', await (await fetch('wip/data.json', {mode: 'no-cors'})).json());
       // HISTORY = await (await fetch('wip/history.json', {mode: 'no-cors'})).json();
       HISTORY = await history || [];
@@ -73,7 +73,7 @@ const TOUCH = ('ontouchstart' in window) ||
     }
 
     attachListeners();
-  
+
     fn(existing);
   };
 

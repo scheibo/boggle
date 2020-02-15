@@ -85,23 +85,22 @@ self.addEventListener('activate', e =>
                 if (key !== CACHE && key !== DATA) return caches.delete(key);
             })))));
 
+const writeBack = which =>
+    caches.open(which).then(async cache => {
+        const cached = await cache.match(e.request);
+        if (cached) return cached;
+        const response = await fetch(e.request);
+        if (response.status === 200) cache.put(e.request.url, response.clone());
+        return response;
+    });
+
 self.addEventListener('fetch', e => {
     if (e.request.url.includes('/data/dict.json') ||
         e.request.url.includes('/data/stats.json')) {
-        e.respondWith(
-            caches.open(DATA).then(async cache => {
-                const cached = await cache.match(e.request);
-                if (cached) return cached;
-                const response = await fetch(e.request);
-                if (response.status === 200) cache.put(e.request.url, response.clone());
-                return response;
-            }));
-        return;
-      }
-
-    e.respondWith(
-        caches.open(CACHE).then(cache => cache.match(e.request).then(
-            response => response || fetch(e.request))));
+      e.respondWith(writeBack(DATA));
+    } else {
+      e.respondWith(writeBack(CACHE));
+    }
 });
 `);
 

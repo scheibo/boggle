@@ -56,9 +56,14 @@ class LoadingView extends View {
 class MenuView extends View {
   attach() {
     this.menu = createElementWithId('div', 'menu');
-    const h1 = document.createElement('h1');
-    h1.textContent = 'BOGGLE';
-    this.menu.appendChild(h1);
+    const title = createElementWithId('h1', 'title');
+    title.textContent = 'BOGGLE';
+    // TODO: needs testing!
+    title.addEventListener('long-press', async () => {
+      await caches.delete((await caches.keys()).find(n => n.startsWith('cache')));
+      document.location.reload(true);
+    });
+    this.menu.appendChild(title);
     const nav = document.createElement('nav');
 
     const createButton = (name, fn) => {
