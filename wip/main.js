@@ -12,6 +12,8 @@ const loaded = {
   DICT: fetchJSON('../data/dict.json').then(d => { DICT = d; }), // TODO ../
   HISTORY: STORE.get('history').then(h => HISTORY = h || []),
 };
+// TODO: TRIE, STATS, PLAYED, GAMES, and the TrainingPool creation
+// need to be moved to a background worker and transferred in.
 const LOADED = {
   DICT: loaded.DICT,
   TRIE: (async () => {
@@ -263,6 +265,7 @@ class StatsView extends View {
     return {section: this.section};
   }
 
+  // TODO: why is there no spinner?
   async attach() {
     await Promise.all([, LOADED.HISTORY, LOADED.TRIE, LOADED.DICT, LOADED.STATS]);
     if (!GAMES) {
@@ -775,15 +778,12 @@ const UI = new (class{
 
   async attachView(view, data) {
     console.log('ATTACHING', view, data, this.Views[view]);
-    const p = this.Views[view].attach(data);
-    if (Promise.resolve(p) !== p) {
-      this.root.appendChild(p);
-    } else {
-      this.attachView('Loading');
-      const v = await p;
-      this.detachView('Loading');
-      this.root.appendChild(v);
-    }
+
+    this.root.appendChild(this.Views.Loading.attach());
+    const v = await this.Views[view].attach(data);
+    this.root.removeChild(this.Views.Loading.detach());
+    this.root.appendChild(v);
+
     if (this.Views[view].afterAttach) {
       this.Views[view].afterAttach();
     }
