@@ -468,6 +468,8 @@ body {
 #display { border: 1px solid red; }
 
 /** MEDIA QUERIES **/
+/** FIXME: separate out min height vs. min-width requirements! **/
+/** FIXME: should be setting max-height and max-width! */
 
 @media(min-width: 393px) {
   #display, #content, #review {
