@@ -141,12 +141,16 @@ export class Game {
     return `${s.dice.charAt(0)}${s.min}${s.dict.charAt(0)}${seed}`;
   }
 
-  static decodeID(id: string): [GameSettings, number] {
-    const dice = id.charAt(0) === 'B' ? 'Big' : id.charAt(0) === 'O' ? 'Old' : 'New';
+  static decodeID(id: string): [Partial<GameSettings>, number] {
+    const d = id.charAt(0);
+    const dice = d === 'N' ? 'New' : d === 'O' ? 'Old' : d === 'B' ? 'Big' : undefined;
     const min = Number(id.charAt(1)) as MinLength;
-    const dict = id.charAt(2) === 'N' ? 'NWL' : id.charAt(2) === 'E' ? 'ENABLE' : 'CSW';
+    const t = id.charAt(2);
+    const dict = t === 'N' ? 'NWL' : t === 'E' ? 'ENABLE' : t === 'C' ? 'CSW' : undefined;
 
-    const seed = Number(id.slice(3));
+    const num = id.slice(3);
+    let seed = num.length ? Number(num) : NaN;
+    if (String(seed) !== num) seed = NaN;
 
     return [{ dice, min, dict }, seed];
   }
@@ -155,7 +159,7 @@ export class Game {
     const [settings, seed] = Game.decodeID(json.seed);
     const random = new Random();
     random.seed = seed;
-    const game = new Game(trie, dict, stats, random, settings);
+    const game = new Game(trie, dict, stats, random, settings as GameSettings);
 
     // @ts-ignore readonly
     game.start = json.start;

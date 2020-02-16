@@ -129,9 +129,9 @@ export class Stats {
               either[k] = (either[k] || 0) + 1;
               // FIXME: why does this not remove NOD/DON in Big dice?
               anadromes[k] = (anadromes[w] || 0) + (1 / n) * this.dict[k][d]!;
-             } else if (w === k) {
+            } else if (w === k) {
               either[k] = (either[k] || 0) + 1;
-             }
+            }
           }
         } else {
           ratio[w] = (ratio[w] || 0) + (1 / n) * this.dict[w][d]!;

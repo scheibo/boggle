@@ -5,7 +5,9 @@ const SETTINGS = JSON.parse(localStorage.getItem('settings')) || DEFAULTS;
 const STORE = new Store('db', 'store');
 
 const fetchJSON = url => fetch(url, {mode: 'no-cors'}).then(j => j.json());
-var DICT, STATS, HISTORY, TRIE, PLAYED, GAMES;
+var DICT, STATS, HISTORY, TRIE, PLAYED, GAMES, SEED;
+
+SEED = 123456789; // FIXME
 
 // TODO: TRIE, STATS, PLAYED, GAMES, and the TrainingPool creation
 // need to be moved to a background worker and transferred in.
@@ -581,7 +583,9 @@ class SettingsView extends View {
     };
 
     const seed = createElementWithId('div', 'seed');
+    seed.textContent = Game.encodeID(SETTINGS, SEED);
     seed.setAttribute('contenteditable', true);
+    seed.addEventListener('input', () => this.editSeed(seed.textContent));
     const back = createBackButton(() => UI.toggleView('Menu'));
     this.settings.appendChild(createTopbar(back, seed, null));
 
@@ -615,15 +619,43 @@ class SettingsView extends View {
   detach() {
     return this.settings;
   }
+
+  update() {
+    const seed = document.getElementById('seed');
+    seed.textContent = Game.encodeID(SETTINGS, SEED);
+    seed.classList.remove('error');
+    document.getElementById(`dice${SETTINGS.dice}`).checked = true;
+    document.getElementById(`min${SETTINGS.min}`).checked = true;
+    document.getElementById(`dict${SETTINGS.dict}`).checked = true;
+    document.getElementById(`grade${SETTINGS.grade}`).checked = true;
+    document.getElementById(`scoreDisplay${SETTINGS.display}`).checked = true;
+    document.getElementById(`theme${SETTINGS.theme || 'Light'}`).checked = true;
+  }
+
+  editSeed(id) {
+    const [settings, seed] = Game.decodeID(id);
+    if (isNaN(seed) || !(settings.dice && settings.dict && settings.min)) {
+      document.getElementById('seed').classList.add('error');
+    } else {
+      updateSettings(settings, seed, false);
+      this.update();
+    }
+  }
 }
 
-function updateSettings(settings) {
+function updateSettings(settings, seed, dom = true) {
   Object.assign(SETTINGS, settings);
   localStorage.setItem('settings', JSON.stringify(SETTINGS));
-  // TODO
-  // const id = Game.encodeID(SETTINGS, SEED);
-  // document.getElementById('seed').textContent = id;
-  // window.history.replaceState(null, null, `#${id}`);
+  if (seed) SEED = seed;
+
+  const id = Game.encodeID(SETTINGS, SEED);
+  window.history.replaceState(null, null, `#${id}`);
+
+  if (dom && UI.current === 'Settings') {
+    const seed = document.getElementById('seed');
+    seed.textContent = id;
+    seed.classList.remove('error');
+  }
 }
 
 function createElementWithId(type, id) {
@@ -769,6 +801,7 @@ const UI = new (class{
     document.addEventListener('keydown', e => this.onKeydown(e));
     document.addEventListener('swiped-left', () => this.toggleView('Define'));
     document.addEventListener('swiped-right', () => this.toggleView('Define'));
+    window.addEventListener('hashchange',  () => this.onHashchange());
 
     await this.attachView(this.current);
   }
@@ -784,7 +817,7 @@ const UI = new (class{
   }
 
   async attachView(view, data) {
-    console.log('ATTACHING', view, data, this.Views[view]);
+    // console.log('ATTACHING', view, data, this.Views[view]);
 
     this.root.appendChild(this.Views.Loading.attach());
     const v = await this.Views[view].attach(data);
@@ -797,12 +830,12 @@ const UI = new (class{
   }
 
   async detachView(view) {
-    console.log('DETACHING', view, this.Views[view]);
+    // console.log('DETACHING', view, this.Views[view]);
     this.root.removeChild(await this.Views[view].detach());
   }
 
   async toggleView(view, data) {
-    console.log('TOGGLE', view, {current: this.current, previous: this.previous});
+    // console.log('TOGGLE', view, {current: this.current, previous: this.previous});
     if (this.current === view) {
       await this.detachView(view);
       this.current = this.previous;
@@ -826,4 +859,64 @@ const UI = new (class{
       await this.Views[this.current].onKeydown(e);
     }
   }
+
+  async onHashchange() {
+    if (!document.location.hash) return;
+    const [settings, seed] = Game.decodeID(document.location.hash.slice(1));
+    if (isNaN(seed) || !(settings.dice && settings.dict && settings.min)) return;
+
+    let refresh = seed !== SEED;
+    if (!refresh) {
+      const s = Object.assign({}, SETTINGS);
+      refresh = s.dice !== SETTINGS.dice || s.min !== SETTINGS.min || s.dict !== SETTINGS.dict;
+    }
+    updateSettings(settings, seed, false);
+
+    if (this.current === 'Settings') {
+      this.Views[this.current].update();
+    } else if (refresh && this.current === 'Play' || this.current === 'Score') {
+      // TODO: REFRESH
+      // - requirement => hash reflects current SETTINGS and SEED value
+      // - if on board, the seed and settings applied must reflect hash (and thus SETTINGS and SEED.
+      // BoardView MAY have out of date game/game settings (until user switches back)
+    }
+  }
 })();
+
+/*
+function setup() {
+  if (document.location.hash && document.location.hash.length > 1) {
+    const [settings, seed] = Game.decodeID(document.location.hash.slice(1));
+    if (!isNaN(seed)) return {settings, seed};
+  }
+
+  if (HISTORY.length) {
+    const id = HISTORY[HISTORY.length - 1].seed;
+    const [settings] = Game.decodeID(id);
+    const rand = new Random();
+    rand.seed = SEED;
+    rand.next();
+
+    return {settings, seed: rand.seed};
+  }
+
+  return {settings: SETTINGS, seed: SEED};
+}
+
+let existing = JSON.parse(localStorage.getItem('current'));
+if (existing && existing.timer > 0 &&
+  (!document.location.hash || document.location.hash.slice(1) === existing.game.seed) &&
+  Object.values(existing.game.words).filter(v => v > 0).length > 0) {
+  const game = Game.fromJSON(existing.game, TRIE, DICT, STATS);
+  SEED = game.random.seed;
+  Object.assign(SETTINGS, game.settings);
+  game.settings = SETTINGS;
+  localStorage.setItem('settings', JSON.stringify(SETTINGS));
+} else {
+  existing = null;
+  const initial = setup();
+  SEED = initial.seed;
+  Object.assign(SETTINGS, initial.settings);
+  localStorage.setItem('settings', JSON.stringify(SETTINGS));
+}
+*/
