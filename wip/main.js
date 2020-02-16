@@ -817,12 +817,12 @@ const UI = new (class{
   }
 
   async attachView(view, data) {
-    // console.log('ATTACHING', view, data, this.Views[view]);
-
+    // console.log(+new Date(), 'ATTACHING', view, data, this.Views[view]);
     this.root.appendChild(this.Views.Loading.attach());
     const v = await this.Views[view].attach(data);
     this.root.removeChild(this.Views.Loading.detach());
     this.root.appendChild(v);
+    // console.log(+new Date(), 'ATTACHED', view, data, this.Views[view]);
 
     if (this.Views[view].afterAttach) {
       this.Views[view].afterAttach();
@@ -830,8 +830,9 @@ const UI = new (class{
   }
 
   async detachView(view) {
-    // console.log('DETACHING', view, this.Views[view]);
+    // console.log(+new Date(), 'DETACHING', view, this.Views[view]);
     this.root.removeChild(await this.Views[view].detach());
+    // console.log(+new Date(), 'DETACHED', view, this.Views[view]);
   }
 
   async toggleView(view, data) {
