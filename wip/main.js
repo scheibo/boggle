@@ -14,6 +14,7 @@ SEED = 123456789; // FIXME
 const LOADED = {
   DICT: fetchJSON('../data/dict.json').then(d => { DICT = d; }), // TODO ../,
   TRIE: async () => {
+    if (TRIE) return;
     await LOADED.DICT;
     TRIE = Trie.create(DICT);
   },
