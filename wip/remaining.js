@@ -37,98 +37,6 @@ document.getElementById('menuPlay').addEventListener('click', () => init(async (
   }
 }));
 
-const word = document.getElementById('word');
-if (!TOUCH) {
-  word.contentEditable = true;
-  permaFocus(word);
-}
-
-document.getElementById('timer').addEventListener('click', () => {
-  STATE.timer.pause();
-});
-
-document.getElementById('score').addEventListener('long-press', e => {
-  const board = document.getElementById('board');
-  if (board.classList.contains('hidden')) return;
-  const size = STATE.game.size;
-  const weights = [];
-  for (let row = 0; row < size; row++) {
-    const a = [];
-    for (let col = 0; col < size; col++) {
-      a.push(0);
-    }
-    weights.push(a);
-  }
-  let total = 0;
-  for (const word in STATE.game.possible) {
-    if (STATE.game.played[word]) continue;
-    const score = Game.score(word);
-    total += score;
-    for (const p of STATE.game.possible[word]) {
-      weights[p[1]][p[0]] += score;
-    }
-  }
-
-  for (const td of board.getElementsByTagName('td')) {
-    const w = weights[Number(td.dataset.x)][Number(td.dataset.y)] / total;
-    td.style.backgroundColor = `rgba(255,0,0,${w})`;
-  }
-});
-
-document.getElementById('score').addEventListener('long-press-up', e => {
-  const board = document.getElementById('board');
-  if (board.classList.contains('hidden')) return;
-  for (const td of board.getElementsByTagName('td')) {
-    td.style.removeProperty('background-color');
-  }
-});
-
-// TODO: shouldnt work when in score mode or settings!
-document.addEventListener('keydown', e => {
-  const board = document.getElementById('board');
-  const settings = document.getElementById('settings');
-  const define = document.getElementById('define');
-
-  const isBoard = board && board.offsetParent !== null;;
-  const isSettings = settings && settings.offsetParent !== null;
-  const isDefine = !!define;
-
-  if (board) {
-    if (kept) clearWord();
-    focusContentEditable(word);
-  } else if (isDefine) {
-    focusContentEditable(document.getElementById('search'));
-  }
-
-  // TODO support 3/4/5 in settings mode
-  const key = e.keyCode;
-  if (key === 191 && e.shiftKey) {
-    e.preventDefault();
-    toggleDefine();
-  } else if (key === 13 || key === 32) {
-    e.preventDefault();
-    if (isBoard) {
-      play(word);
-      focusContentEditable(word);
-    } else if (isDefine) {
-      const search = document.getElementById('search');
-      if (search.textContent) {
-        search.textContent = '';
-        LAST_DEFINITION = '';
-        for (const e of Array.from(define.children)) {
-          if (e !== search) define.removeChild(e);
-        }
-      } else {
-        toggleDefine();
-      }
-    }
-  } else if (key === 27 && isDefine) {
-    toggleDefine();
-  } else if ((key < 65 || key > 90) && key !== 8) {
-    e.preventDefault();
-  }
-});
-
 function setup() {
   if (document.location.hash && document.location.hash.length > 1) {
     const [settings, seed] = Game.decodeID(document.location.hash.slice(1));
@@ -146,16 +54,6 @@ function setup() {
   }
 
   return {settings: SETTINGS, seed: SEED};
-}
-
-function backToGame() {
-  maybePerformUpdate();
-
-  const game = document.getElementById('game');
-  const wrapper = document.getElementById('wrapper');
-  if (wrapper) game.removeChild(wrapper);
-
-  updateVisibility({show: ['board', 'word', 'defn', 'refresh', 'score', 'timer'], hide: ['back', 'practice', 'settings']});
 }
 
 async function refresh(allowDupes, timer, game) {
@@ -336,39 +234,5 @@ function play(word) {
       word.removeEventListener('animationend', animationend);
     }
     word.addEventListener('animationend', animationend);
-  }
-}
-
-function clearWord(w) {
-  if (w && w !== word.textContent) return;
-  word.textContent = '';
-  word.classList.remove('error');
-  word.classList.remove('fade');
-  defn.textContent = '';
-  kept = false;
-}
-
-function updateGames(game) {
-  if (!GAMES) return;
-
-  const played = new Set();
-  for (const w in game.played) {
-    if (game.played[w] > 0) played.add(w);
-  }
-  if (!played.size) return GAMES;
-
-  if (GAMES.length >= STATS_LIMIT) GAMES.shift();
-  GAMES.push([game.possible, played]);
-}
-
-function correctFocus() {
-  if (TOUCH) return;
-  const board = document.getElementById('board');
-  const settings = document.getElementById('settings');
-
-  if (board && !board.classList.contains('hidden')) {
-    focusContentEditable(document.getElementById('word'))
-  } else if (settings && !settings.classList.contains('hidden')) {
-    focusContentEditable(document.getElementById('seed'))
   }
 }

@@ -3,9 +3,10 @@
 const DEFAULTS = {dice: 'New', min: 3, dict: 'NWL', grade: 'C', display: 'Show'};
 const SETTINGS = JSON.parse(localStorage.getItem('settings')) || DEFAULTS;
 const STORE = new Store('db', 'store');
+const LIMIT = 500;
 
 const fetchJSON = url => fetch(url, {mode: 'no-cors'}).then(j => j.json());
-var DICT, STATS, HISTORY, TRIE, PLAYED, GAMES, SEED;
+var DICT, STATS, HISTORY, TRIE, GAMES, SEED;
 
 SEED = 123456789; // FIXME
 
@@ -240,7 +241,7 @@ class DefineView extends View {
     return div;
   }
 
-  async onKeydown(e) {
+  async onKeyDown(e) {
     focusContentEditable(this.search);
     const key = e.keyCode;
     if (key === 13 || key === 32) {
@@ -272,7 +273,7 @@ class StatsView extends View {
     await Promise.all([LOADED.HISTORY, LOADED.TRIE(), LOADED.DICT, LOADED.STATS()]);
     if (!GAMES) {
       GAMES = [];
-      for (let i = HISTORY.length - 1; i >= 0 && GAMES.length < 500; i--) {
+      for (let i = HISTORY.length - 1; i >= 0 && GAMES.length < LIMIT; i--) {
         const game = Game.fromJSON(HISTORY[i], TRIE, DICT, STATS);
         const played = new Set();
         for (const w in game.played) {
@@ -549,20 +550,110 @@ class TrainingView extends View {
   }
 }
 
-// PLAYED: async () => {
-//   if (PLAYED) return;
-//   await LOADED.HISTORY;
-//   PLAYED = new Set();
-//   for (const h of HISTORY) PLAYED.add(h.seed);
-// },
 class BoardView extends View {
+  constructor(json) {
+    super();
+    // TODO
+  }
+
+  toJSON() {
+    return undefined; // TODO
+  }
+
   async attach() {
+    await Promise.all([LOADED.DICT, LOADED.TRIE, LOADED.STATS(), LOADED.HISTORY]);
+
+    const touch = ('ontouchstart' in window) ||
+    (navigator.maxTouchPoints > 0) ||
+    (navigator.msMaxTouchPoints > 0);
+
+    // PLAYED = new Set();
+    // for (const h of HISTORY) PLAYED.add(h.seed);
+
+    const word = document.getElementById('word');
+    if (!TOUCH) {
+      word.contentEditable = true;
+      permaFocus(word);
+    }
+
+    timer.addEventListener('click', () => STATE.timer.pause());
+    score.addEventListener('long-press', () => this.onLongPress());
+    score.addEventListener('long-press-up', () => this.onLongPressUp());
 
   }
+
   detach() {
 
   }
+
+  play() {
+
+  }
+
+  clear() {
+  }
+
+  updateGames(game) {
+    if (!GAMES) return;
+
+    const played = new Set();
+    for (const w in game.played) {
+      if (game.played[w] > 0) played.add(w);
+    }
+    if (!played.size) return GAMES;
+
+    if (GAMES.length >= LIMIT) GAMES.shift();
+    GAMES.push([game.possible, played]);
+  }
+
+  onLongPress() {
+    const size = STATE.game.size;
+    const weights = [];
+    for (let row = 0; row < size; row++) {
+      const a = [];
+      for (let col = 0; col < size; col++) {
+        a.push(0);
+      }
+      weights.push(a);
+    }
+    let total = 0;
+    for (const word in STATE.game.possible) {
+      if (STATE.game.played[word]) continue;
+      const score = Game.score(word);
+      total += score;
+      for (const p of STATE.game.possible[word]) {
+        weights[p[1]][p[0]] += score;
+      }
+    }
+
+    for (const td of this.tds) {
+      const w = weights[Number(td.dataset.x)][Number(td.dataset.y)] / total;
+      td.style.backgroundColor = `rgba(255,0,0,${w})`;
+    }
+  }
+
+  onLongPressUp() {
+    for (const td of this.tds) {
+      td.style.removeProperty('background-color');
+    }
+  }
+
+  async onKeyDown(e) {
+    // if (kept) clearWord(); // TODO
+    focusContentEditable(this.word);
+    const key = e.keyCode;
+    if (key === 13 || key === 32) {
+      e.preventDefault();
+      this.play(this.word);
+      focusContentEditable(this.word);
+    } else if (key === 27) {
+      await UI.toggleView('Define');
+    } else if ((key < 65 || key > 90) && key !== 8) {
+      e.preventDefault();
+    }
+  }
 }
+
 class ScoreView extends View {
   async attach() {
     await Promise.all([LOADED.DICT, LOADED.TRIE, LOADED.STATS(), LOADED.HISTORY]);
@@ -731,7 +822,7 @@ class SettingsView extends View {
     const seed = createElementWithId('div', 'seed');
     seed.textContent = Game.encodeID(SETTINGS, SEED);
     seed.setAttribute('contenteditable', true);
-    seed.addEventListener('input', () => this.editSeed(seed.textContent));
+    seed.addEventListener('input', () => this.onInput(seed.textContent));
     const back = createBackButton(() => UI.toggleView('Menu'));
     this.settings.appendChild(createTopbar(back, seed, null));
 
@@ -778,7 +869,7 @@ class SettingsView extends View {
     document.getElementById(`theme${SETTINGS.theme || 'Light'}`).checked = true;
   }
 
-  editSeed(id) {
+  onInput(id) {
     const [settings, seed] = Game.decodeID(id);
     if (isNaN(seed) || !(settings.dice && settings.dict && settings.min)) {
       document.getElementById('seed').classList.add('error');
@@ -944,10 +1035,10 @@ const UI = new (class{
     this.BACK.src = '../img/back.svg'; // TODO ../
     this.BACK.height = 20;
 
-    document.addEventListener('keydown', e => this.onKeydown(e));
+    document.addEventListener('keydown', e => this.onKeyDown(e));
     document.addEventListener('swiped-left', () => this.toggleView('Define'));
     document.addEventListener('swiped-right', () => this.toggleView('Define'));
-    window.addEventListener('hashchange',  () => this.onHashchange());
+    window.addEventListener('hashchange',  () => this.onHashChange());
 
     await this.attachView(this.current);
   }
@@ -997,17 +1088,17 @@ const UI = new (class{
     this.persist(true);
   }
 
-  async onKeydown(e) {
+  async onKeyDown(e) {
     const key = e.keyCode;
     if (key === 191 && e.shiftKey) {
       e.preventDefault();
       await this.toggleView('Define');
-    } else if ('onKeydown' in this.Views[this.current]) {
-      await this.Views[this.current].onKeydown(e);
+    } else if ('onKeyDown' in this.Views[this.current]) {
+      await this.Views[this.current].onKeyDown(e);
     }
   }
 
-  async onHashchange() {
+  async onHashChange() {
     if (!document.location.hash) return;
     const [settings, seed] = Game.decodeID(document.location.hash.slice(1));
     if (isNaN(seed) || !(settings.dice && settings.dict && settings.min)) return;
