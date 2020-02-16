@@ -85,7 +85,7 @@ self.addEventListener('activate', e =>
                 if (key !== CACHE && key !== DATA) return caches.delete(key);
             })))));
 
-const writeBack = which =>
+const writeBack = (e, which) =>
     caches.open(which).then(async cache => {
         const cached = await cache.match(e.request);
         if (cached) return cached;
@@ -97,9 +97,9 @@ const writeBack = which =>
 self.addEventListener('fetch', e => {
     if (e.request.url.includes('/data/dict.json') ||
         e.request.url.includes('/data/stats.json')) {
-      e.respondWith(writeBack(DATA));
+      e.respondWith(writeBack(e, DATA));
     } else {
-      e.respondWith(writeBack(CACHE));
+      e.respondWith(writeBack(e, CACHE));
     }
 });
 `);
