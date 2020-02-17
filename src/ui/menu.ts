@@ -1,5 +1,5 @@
-import {global} from './global';
 import {UI, View} from './ui';
+import {BoardView} from './board';
 
 export class MenuView implements View {
   menu!: HTMLElement;
@@ -12,6 +12,7 @@ export class MenuView implements View {
     title.addEventListener('long-press', async () => {
       const key = (await caches.keys()).find(n => n.startsWith('cache'));
       if (key) await caches.delete(key);
+      // tslint:disable-next-line: deprecation
       document.location.reload(true);
     });
     this.menu.appendChild(title);
@@ -25,7 +26,7 @@ export class MenuView implements View {
       return button;
     }
 
-    if (UI.Views.Board.game) {
+    if ((UI.Views.Board as BoardView).game) {
       nav.appendChild(createButton('RESUME', () => UI.toggleView('Board', {resume: true})));
       nav.appendChild(createButton('NEW GAME', () => UI.toggleView('Board')));
     } else {

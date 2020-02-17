@@ -166,6 +166,7 @@ export class DefineView implements View {
 
   async onKeyDown(e: KeyboardEvent) {
     UI.focusContentEditable(this.search);
+    // tslint:disable-next-line: deprecation
     const key = e.keyCode;
     if (key === 13 || key === 32) {
       if (this.word) {

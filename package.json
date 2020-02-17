@@ -11,6 +11,7 @@
   "devDependencies": {
     "gts": "^1.1.2",
     "parcel-bundler": "^1.12.4",
+    "terser": "^4.6.3",
     "typescript": "^3.7.5"
   },
   "scripts": {
@@ -23,7 +24,7 @@
     "pretest": "npm run compile",
     "posttest": "npm run check",
     "start": "parcel index.html",
-    "build": "parcel build index.html"
+    "build": "node build"
   },
   "browserslist": "> 0.25%, IE >= 9, Safari >= 5"
 }

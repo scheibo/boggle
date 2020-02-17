@@ -5,6 +5,7 @@ const child_process = require('child_process');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const Terser = require('terser');
 
 const shell = cmd => child_process.execSync(cmd, {stdio: 'inherit', cwd: __dirname});
 const hash = files => {
@@ -28,38 +29,31 @@ try {
   shell('./tools/dict.js');
 }
 
-shell('npm run compile');
+shell('npx parcel build index.html');
 
-const FILES = [
-  '/index.html',
-  '/favicon.ico',
-  '/style.css',
-  '/manifest.json',
-  '/js/index.js',
-  '/img/back.svg',
-  '/img/android-chrome-192x192.png',
-  '/img/android-chrome-512x512.png',
-  '/img/apple-touch-icon.png',
-  '/fonts/roboto-400-italic.woff',
-  '/fonts/roboto-400.woff',
-  '/fonts/roboto-700.woff',
-  '/fonts/roboto-700-italic.woff',
-  '/fonts/roboto-400.woff2',
-  '/fonts/roboto-400-italic.woff2',
-  '/fonts/roboto-700.woff2',
-  '/fonts/roboto-700-italic.woff2',
-];
+const DATA = ['/data/dict.json', '/data/stats.json'];
 
-fs.writeFileSync(path.join(__dirname, 'sw.js'), `'use strict';
+const dist = path.join(__dirname, 'dist');
+const distdata = path.join(dist, 'data');
 
-const CACHE = 'cache:${hash(FILES)}';
-const DATA = 'data:${hash(['/data/dict.json', '/data/stats.json'])}';
+// All the files parcel created
+const FILES = fs.readdirSync(dist).filter(f => f !== 'data');
+
+// Mirror the data directory to dist
+if (!fs.existsSync(distdata)) fs.mkdirSync(distdata);
+for (const file of DATA) {
+  fs.copyFileSync(path.join(__dirname, file), path.join(dist, file));
+}
+
+const {code, map} = Terser.minify(`'use strict';
+const CACHE = 'cache:${hash(FILES.map(f => path.join('/dist', f)))}';
+const DATA = 'data:${hash(DATA)}';
 
 self.addEventListener('install', e => {
     self.skipWaiting();
     e.waitUntil(
         caches.open(CACHE).then(cache =>
-            cache.addAll(${JSON.stringify(FILES, null, 2)})));
+            cache.addAll(${JSON.stringify(FILES)})));
 });
 
 self.addEventListener('activate', e =>
@@ -86,8 +80,12 @@ self.addEventListener('fetch', e => {
       e.respondWith(writeBack(e, CACHE));
     }
 });
-`);
+`, {
+  sourceMap: {
+    filename: 'sw.js',
+    url: 'sw.js.map',
+  }
+});
 
-
-
-
+fs.writeFileSync(path.join(dist, 'sw.js'), code);
+fs.writeFileSync(path.join(dist, 'sw.js.map'), map);

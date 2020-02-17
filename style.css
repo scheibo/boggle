@@ -98,9 +98,8 @@ body {
   background-color: var(--bg-color);
   color: var(--fg-color);
 }
-.hidden { display: none !important; }
+.hidden, #svg { display: none !important; }
 .underline { text-decoration: underline; }
-
 .word {
   width: 100%;
   height: 68px;
@@ -121,7 +120,6 @@ body {
   margin: 0px auto;
   width: 90%;
 }
-
 /** TOGGLES **/
 .toggle {
   text-align: center;

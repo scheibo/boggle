@@ -20,16 +20,17 @@ export class ScorePane {
 
     const back = UI.createBackButton(async () => {
       UI.root.removeChild(this.detach());
-      UI.root.appendChild(await this.board.attach({resume: true}));
+      UI.root.appendChild(await this.board.attach({resume: 'return'}));
     });
 
-    this.container.appendChild(UI.createTopbar(back, this.board.timerDisplay, this.board.score.cloneNode(true)));
+    this.container.appendChild(UI.createTopbar(back, this.board.timerDisplay, this.board.score!.cloneNode(true) as HTMLElement));
 
-    const state = this.board.game.state();
-    const score = this.board.game.score.regular + this.board.game.score.overtime;
-    const goal = state.totals[global.SETTINGS.grade.toLowerCase()];
+    const game = this.board.game as Game;
+    const state = game.state();
+    const score = game.score.regular + game.score.overtime;
+    const goal = state.totals[global.SETTINGS.grade.toLowerCase() as 'a' | 'b' | 'c' | 'd'];
     const details = `${score}/${goal} (${Math.round(score / goal * 100).toFixed(0)}%)`;
-    const current = makeCollapsible(this.board.game.id, details, 'block');
+    const current = makeCollapsible(game.id, details, 'block');
     const div = document.createElement('div');
     div.classList.add('collapsible-content');
     this.displayPlayed(state, div, true);

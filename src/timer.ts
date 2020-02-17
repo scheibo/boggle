@@ -18,8 +18,8 @@ export class Timer {
     display: HTMLElement,
     duration: number,
     elapsed = 0,
-    expireFn = null,
-    updateFn = null
+    expireFn: (() => void) | null = null,
+    updateFn: (() => void) | null = null
   ) {
     this.duration = duration;
     this.display = display;

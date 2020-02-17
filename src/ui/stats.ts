@@ -103,7 +103,7 @@ export class StatsView implements View {
     } else /* section === 'ANAGRAM' */ {
       for (const group of anagrams) {
         const tr = document.createElement('tr');
-        let td = document.createElement('td');
+        const td = document.createElement('td');
 
         let together = [];
         let wait = false;
@@ -119,7 +119,7 @@ export class StatsView implements View {
 
           together.push(link(w));
 
-          let span = document.createElement('span');
+          const span = document.createElement('span');
           span.textContent = ` ${found}/${all}`;
 
           if (raw.endsWith(')')) {

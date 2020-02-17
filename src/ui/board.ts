@@ -51,7 +51,7 @@ export class BoardView implements View {
     };
   }
 
-  async attach(data: {resume?: boolean, allowDupes?: boolean} = {}) {
+  async attach(data: {resume?: true | 'return', allowDupes?: boolean} = {}) {
     await Promise.all([global.LOADED.DICT, global.LOADED.TRIE(), global.LOADED.STATS(), global.LOADED.HISTORY]);
 
     if (!this.played) {
@@ -102,7 +102,8 @@ export class BoardView implements View {
     this.score = UI.createElementWithId('div', 'score');
     this.score.addEventListener('mouseup', () => {
       const pane = new ScorePane(this);
-      UI.root.removeChild(this.detach());
+      // We don't detach() because switching to score doesn't pause the timer!
+      UI.root.removeChild(this.container);
       UI.root.appendChild(pane.attach());
     });
     this.score.addEventListener('long-press', () => this.onLongPress());
@@ -128,10 +129,10 @@ export class BoardView implements View {
     this.defn.classList.add('definition')
     this.container.appendChild(this.defn);
 
-    this.timer.start(); // FIXME: don't restart when coming back from score if paused!
+    if (data.resume !== 'return') this.timer.start(); // FIXME: don't restart when coming back from score if paused!
     const hash = `#${this.game.id}`;
     if (document.location.hash !== hash) {
-      window.history.replaceState(null, null, hash);
+      window.history.replaceState(null, '', hash);
     }
 
     return this.container;
@@ -211,6 +212,7 @@ export class BoardView implements View {
   }
 
   detach() {
+    this.timer.pause(); // TODO not if going to score or define!!!
     return this.container;
   }
 

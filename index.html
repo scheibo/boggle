@@ -25,9 +25,11 @@
 <body>
   <div id="display">
   </div>
+  <img id='svg' src='img/back.svg'><!-- Parcel mangles the path... -->
   <script>
-    if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
+    const sw = 'sw.js'; // obsfuscate so Parcel doesn't complain about this being missing
+    if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register(sw));
   </script>
-    <script type="application/javascript" src="src/index.ts"></script>
+  <script type="application/javascript" src="src/index.ts"></script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 import {global} from './global';
-import {Game, GameSettings} from '../game';
+import {Game, GameSettings, GameJSON} from '../game';
 import {Random} from '../random';
 import {Settings, Theme} from '../settings';
 import {define} from '../dict';
@@ -56,7 +56,6 @@ export const UI = new (class{
     this.root = document.getElementById('display')!;
 
     const state = JSON.parse(localStorage.getItem('state')!);
-    console.log(state); // DEBUG
     this.current = state ? state.current : 'Menu';
     this.previous = state ? state.previous : 'Menu';
     this.loader = new Loader();
@@ -72,13 +71,14 @@ export const UI = new (class{
     const views = state ? state.views : {};
     this.Views = {};
     for (const [type, view] of Object.entries(VIEWS)) {
+      // @ts-ignore
       this.Views[type] = new view(views[type]);
     }
 
     await this.setup();
 
     this.BACK = document.createElement('img');
-    this.BACK.src = 'img/back.svg';
+    this.BACK.src = (document.getElementById('svg') as HTMLImageElement).src;
     this.BACK.height = 20;
 
     document.addEventListener('keydown', e => this.onKeyDown(e));
@@ -144,6 +144,7 @@ export const UI = new (class{
         rand.seed = global.SEED;
         rand.next();
 
+        console.log('setup from history');
         this.updateSettings(settings, rand.seed);
       }
     };
@@ -152,25 +153,24 @@ export const UI = new (class{
     if (!hash) {
       const existing = (this.Views.Board as BoardView).game;
       if (existing) {
-        const [settings, seed] = Game.decodeID(existing.game.seed);
+        const [settings, seed] = Game.decodeID((existing as GameJSON).seed);
+        console.log('existing');
         this.updateSettings(settings, seed);
       } else {
-        const [settings, seed] = Game.decodeID(hash);
-        if (this.valid(settings, seed)) {
-          return setupFromHistory();
-        }
-        this.updateSettings(settings, seed);
+        return setupFromHistory();
       }
     } else {
       const [settings, seed] = Game.decodeID(hash);
-      if (this.valid(settings, seed)) {
+      if (!this.valid(settings, seed)) {
         return setupFromHistory();
       }
+      console.log('url');
       this.updateSettings(settings, seed);
     }
   }
 
   async onKeyDown(e: KeyboardEvent) {
+    // tslint:disable-next-line: deprecation
     const key = e.keyCode;
     const currentView = this.Views[this.current];
     if (key === 191 && e.shiftKey) {
@@ -196,7 +196,7 @@ export const UI = new (class{
     if (this.current === 'Settings') {
       (this.Views[this.current] as SettingsView).update();
     } else if (refresh && this.current === 'Play') {
-      (this.Views[this.current] as BoardView).refresh({allowDupes: true});
+      return (this.Views[this.current] as BoardView).refresh({allowDupes: true});
     }
   }
 
@@ -205,12 +205,13 @@ export const UI = new (class{
   }
 
   updateSettings(settings: Partial<Settings>, seed?: number, dom = true) {
+    console.log('UPDATE', {settings, seed});
     Object.assign(global.SETTINGS, settings);
     localStorage.setItem('settings', JSON.stringify(global.SETTINGS));
     if (seed) global.SEED = seed;
 
     const id = Game.encodeID(global.SETTINGS, global.SEED);
-    window.history.replaceState(null, null, `#${id}`);
+    window.history.replaceState(null, '', `#${id}`);
 
     if (dom && this.current === 'Settings') {
       const view = this.Views[this.current] as SettingsView;
@@ -242,7 +243,7 @@ export const UI = new (class{
 
   focusContentEditable(element: HTMLElement) {
     element.focus();
-    document.execCommand('selectAll', false, null);
+    document.execCommand('selectAll', false);
     const sel = document.getSelection();
     if (sel && !sel.isCollapsed) sel.collapseToEnd();
   }
