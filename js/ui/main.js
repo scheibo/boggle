@@ -651,7 +651,7 @@ class BoardView extends View {
     this.defn.classList.add('definition')
     this.container.appendChild(this.defn);
 
-    this.timer.start();
+    this.timer.start(); // FIXME: don't restart when coming back from score if paused!
     const hash = `#${this.game.id}`;
     if (document.location.hash !== hash) {
       window.history.replaceState(null, null, hash);
@@ -1167,7 +1167,8 @@ function addAnagramRows(table, group) {
 
     let td = document.createElement('td');
     const b = document.createElement('b');
-    b.textContent = r.endsWith(')') ? `\xa0${r}` : r;
+    const s = r.startsWith('(') ? `${r}\xa0` : r.endsWith(')') ? `\xa0${r}` : `\xa0${r}\xa0`;
+    b.textContent = `\xa0${s}\xa0`;
     td.appendChild(b);
     tr.appendChild(td);
     td = document.createElement('td');
