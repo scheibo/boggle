@@ -9,7 +9,13 @@ export class Timer {
   private expireFn: (() => void) | null;
   private updateFn: (() => void) | null;
 
-  constructor(display: HTMLElement, duration: number, elapsed = 0, expireFn = null, updateFn = null) {
+  constructor(
+    display: HTMLElement,
+    duration: number,
+    elapsed = 0,
+    expireFn = null,
+    updateFn = null
+  ) {
     this.duration = duration;
     this.display = display;
 
@@ -29,11 +35,11 @@ export class Timer {
   }
 
   toJSON() {
-    return {duration: this.duration, elapsed: this.elapsed};
+    return { duration: this.duration, elapsed: this.elapsed };
   }
 
   start() {
-    if (this.interval) throw new Error('Already started');
+    if (this.interval) return;
     this.begin = new Date().getTime();
     this.last = this.begin;
     this.interval = setInterval(() => this.update(), 100);

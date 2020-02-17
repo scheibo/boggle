@@ -137,6 +137,7 @@ class DefineView extends View {
     const val = DICT[this.word];
     if (val) {
       const defn = createElementWithId('div', 'defineDefn');
+      defn.classList.add('definition');
       defn.textContent = define(this.word, DICT);
       if ((val.dict && !val.dict.includes(SETTINGS.dict.charAt(0))) || this.word.length < SETTINGS.min) {
         this.define.classList.add('hard');
@@ -574,7 +575,7 @@ class BoardView extends View {
     };
   }
 
-  async attach(data) { // FIXME allowDupes, resume
+  async attach(data = {} /* TODO */) { // FIXME allowDupes, resume
     await Promise.all([LOADED.DICT, LOADED.TRIE(), LOADED.STATS(), LOADED.HISTORY]);
 
     if (!this.played) {
@@ -586,7 +587,7 @@ class BoardView extends View {
       if (this.game) {
         this.timer.stop();
         this.played.add(this.game.id);
-        if (Object.values(this.game.words).filter(t => t > 0).length) {
+        if (Object.values(this.game.played).filter(t => t > 0).length) {
           updateGames(this.game);
           HISTORY.push(this.game.toJSON());
           await STORE.set('history', HISTORY);
@@ -612,7 +613,7 @@ class BoardView extends View {
 
       this.last = '';
       this.kept = false;
-    } else if ('random' in this.game) {
+    } else if (!('random' in this.game)) {
       this.game = Game.fromJSON(this.game, TRIE, DICT, STATS);
     }
     SEED = this.game.random.seed;
@@ -629,6 +630,7 @@ class BoardView extends View {
     });
     this.score.addEventListener('long-press', () => this.onLongPress());
     this.score.addEventListener('long-press-up', () => this.onLongPressUp());
+    this.displayScore();
 
     this.container.appendChild(createTopbar(back, this.timerDisplay, this.score));
 
@@ -638,6 +640,7 @@ class BoardView extends View {
     this.container.appendChild(this.renderBoard());
 
     this.word = createElementWithId('div', 'word');
+    this.word.classList.add('word');
     if (!(('ontouchstart' in window) ||
       (navigator.maxTouchPoints > 0) ||
       (navigator.msMaxTouchPoints > 0))) {
@@ -645,6 +648,7 @@ class BoardView extends View {
     }
     this.container.appendChild(this.word);
     this.defn = createElementWithId('div', 'defn');
+    this.defn.classList.add('definition')
     this.container.appendChild(this.defn);
 
     this.timer.start();
@@ -657,7 +661,7 @@ class BoardView extends View {
   }
 
   renderBoard() {
-    const content = createElementWithId('div', 'content');
+    const content = createElementWithId('div', 'foo');
     const table = createElementWithId('table', 'board');
     if (this.game.size > 4) table.classList.add('big');
 
@@ -765,13 +769,13 @@ class BoardView extends View {
       return;
     }
 
-    if (this.game.settings.display !== 'Full') {
+    if (this.game.settings.display === 'Full') {
       const state = this.game.state();
       const p = state.progress;
       const details = `(${p.score}) ${Object.keys(p.suffixes).length}/${p.subwords}/${p.anagrams}`;
       const score = this.game.score.regular + this.game.score.overtime;
       const goal = state.totals[SETTINGS.grade.toLowerCase()];
-      this.fulle.textContent = `${details} - ${score}/${goal} (${Math.round(score / goal * 100).toFixed(0)}%)`;
+      this.full.textContent = `${details} - ${score}/${goal} (${Math.round(score / goal * 100).toFixed(0)}%)`;
     }
 
     const s = this.game.score;
@@ -848,7 +852,7 @@ class BoardView extends View {
     const key = e.keyCode;
     if (key === 13 || key === 32) {
       e.preventDefault();
-      this.play(this.word);
+      this.play();
       focusContentEditable(this.word);
     } else if (key === 27) {
       await UI.toggleView('Define');
@@ -869,12 +873,12 @@ class ScorePane {
     const wrapper = createElementWithId('div', 'wrapper');
     wrapper.classList.add('score');
 
-    const back = createBackButton(() => {
+    const back = createBackButton(async () => {
       UI.root.removeChild(this.detach());
-      UI.root.appendChild(this.board.attach());
+      UI.root.appendChild(await this.board.attach({resume: true}));
     });
 
-    this.container.appendChild(createTopbar(back, this.board.timerDisplay, this.board.score));
+    this.container.appendChild(createTopbar(back, this.board.timerDisplay, this.board.score.cloneNode(true)));
 
     const state = this.board.game.state();
     const score = this.board.game.score.regular + this.board.game.score.overtime;
@@ -1190,11 +1194,11 @@ function makeCollapsible(title, details, display, fn) {
   const div = document.createElement('div');
 
   const titleSpan = document.createElement('span');
-  titleSpan.classList.add('title');
+  titleSpan.classList.add('collapsible-title');
   titleSpan.textContent = title;
 
   const detailsSpan = document.createElement('span');
-  detailsSpan.classList.add('details');
+  detailsSpan.classList.add('collapsible-details');
   detailsSpan.textContent = details;
 
   div.appendChild(titleSpan);
@@ -1280,6 +1284,7 @@ const UI = new (class{
     await this.attachView(this.current);
   }
 
+  // FIXME: add a persist call in window.unload?
   persist(previous) {
     const state = JSON.parse(localStorage.getItem('state')) || {};
     state.current = this.current;
