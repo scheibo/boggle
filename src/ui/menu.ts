@@ -1,17 +1,23 @@
-class MenuView extends View {
+import {global} from './global';
+import {UI, View} from './ui';
+
+export class MenuView implements View {
+  menu!: HTMLElement;
+  toJSON() {}
   attach() {
-    this.menu = createElementWithId('div', 'menu');
-    const title = createElementWithId('h1', 'title');
+    this.menu = UI.createElementWithId('div', 'menu');
+    const title = UI.createElementWithId('h1', 'title');
     title.textContent = 'BOGGLE';
     // TODO: needs testing!
     title.addEventListener('long-press', async () => {
-      await caches.delete((await caches.keys()).find(n => n.startsWith('cache')));
+      const key = (await caches.keys()).find(n => n.startsWith('cache'));
+      if (key) await caches.delete(key);
       document.location.reload(true);
     });
     this.menu.appendChild(title);
     const nav = document.createElement('nav');
 
-    const createButton = (name, fn) => {
+    const createButton = (name: string, fn: () => void) => {
       const button = document.createElement('button');
       button.classList.add('toggle');
       button.textContent = name;

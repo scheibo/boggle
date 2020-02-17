@@ -1,13 +1,24 @@
-class TrainingView extends View {
+import {global} from './global';
+import {UI, View} from './ui';
+import { TrainingPool } from '../training';
+import {Store} from '../store';
+
+export class TrainingView implements View {
+  pool!: TrainingPool;
+  train!: HTMLElement;
+  content: HTMLElement | null = null;
+  restore: (() => void) | null = null;
+
+  toJSON() {}
   async attach() {
-    await Promise.all([LOADED.TRAINING, LOADED.DICT, LOADED.STATS()]);
-    if (!this.pool || this.pool.type !== SETTINGS.dict) {
-      const store = new Store('training', SETTINGS.dict);
+    await Promise.all([global.LOADED.TRAINING, global.LOADED.DICT, global.LOADED.STATS()]);
+    if (!this.pool || this.pool.type !== global.SETTINGS.dict) {
+      const store = new Store('training', global.SETTINGS.dict);
       this.pool = await TrainingPool.create(
-        STATS, SETTINGS.dice, SETTINGS.dict, store, SETTINGS.min);
+        global.STATS, global.SETTINGS.dice, global.SETTINGS.dict, store, global.SETTINGS.min);
     }
 
-    this.train = createElementWithId('div', 'train');
+    this.train = UI.createElementWithId('div', 'train');
     this.next();
     return this.train;
   }
@@ -19,9 +30,9 @@ class TrainingView extends View {
   }
 
   next() {
-    const content = createElementWithId('div', 'content');
-    const progress = createElementWithId('div', 'progress');
-    progress.textContent = this.pool.size();
+    const content = UI.createElementWithId('div', 'content');
+    const progress = UI.createElementWithId('div', 'progress');
+    progress.textContent = String(this.pool.size());
 
     const {label, group, update, restore} = this.pool.next();
     this.restore = restore;
@@ -29,14 +40,14 @@ class TrainingView extends View {
     trainWord.classList.add('word');
     trainWord.textContent = label;
 
-    const sizeHint = createElementWithId('div', 'sizeHint');
+    const sizeHint = UI.createElementWithId('div', 'sizeHint');
     sizeHint.classList.add('hidden');
-    sizeHint.textContent = group.length;
+    sizeHint.textContent = String(group.length);
 
     const rating = this.createRatingToggles(update);
     const table = document.createElement('table');
     table.classList.add('results', 'hidden');
-    addAnagramRows(table, group);
+    UI.addAnagramRows(table, group);
 
     progress.addEventListener('mouseup', () => UI.toggleView('Review', progress.textContent));
     progress.addEventListener('long-press', () => {
@@ -45,8 +56,8 @@ class TrainingView extends View {
     });
     progress.addEventListener('long-press-up', () => sizeHint.classList.add('hidden'));
 
-    const back = createBackButton(() => UI.toggleView('Menu'));
-    content.appendChild(createTopbar(back, null, progress));
+    const back = UI.createBackButton(() => UI.toggleView('Menu'));
+    content.appendChild(UI.createTopbar(back, null, progress));
 
     const wrapper = document.createElement('div');
     wrapper.classList.add('wrapper');
@@ -57,8 +68,8 @@ class TrainingView extends View {
     content.appendChild(sizeHint);
     content.appendChild(rating);
 
-    const listener = e => {
-      if (![back, progress].includes(e.target)) {
+    const listener = (e: MouseEvent) => {
+      if (![back, progress].includes(e.target as HTMLElement)) {
         content.removeEventListener('click', listener);
         trainWord.classList.add('hidden');
         table.classList.remove('hidden');
@@ -72,7 +83,7 @@ class TrainingView extends View {
     this.content = content;
   }
 
-  createRatingToggles(update) {
+  createRatingToggles(update: (q: number) => Promise<void>) {
     const toggles = document.createElement('div');
     toggles.setAttribute('id', 'rating');
     toggles.classList.add('toggle-group');
@@ -84,7 +95,7 @@ class TrainingView extends View {
       toggle.setAttribute('id', `rating${i}`);
       toggle.setAttribute('type', 'button');
       toggle.classList.add('toggle');
-      toggle.textContent = i;
+      toggle.textContent = String(i);
 
       toggles.appendChild(toggle);
 

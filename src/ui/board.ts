@@ -1,8 +1,37 @@
+import {global} from './global';
+import {UI, View} from './ui';
+import { Game, GameJSON, SUFFIXES } from '../game';
+import { Timer, TimerJSON} from '../timer';
+import {Random} from '../random';
+import {ScorePane} from './score';
+import {define} from '../dict';
+
 const DURATION = 180 * 1000;
 
-class BoardView extends View {
-  constructor(json) {
-    super();
+interface BoardJSON {
+  last: string;
+  kept: boolean;
+  timer: TimerJSON;
+  game?: GameJSON;
+}
+
+export class BoardView implements View {
+  last: string;
+  kept: boolean;
+  timer: Timer;
+  game: GameJSON | Game | undefined;
+
+  played!: Set<string>;
+
+  timerDisplay: HTMLElement;
+  container!: HTMLElement;
+  score!: HTMLElement;
+  full!: HTMLElement;
+  word!: HTMLElement;
+  defn!: HTMLElement;
+  tds!: Set<HTMLTableCellElement>;
+
+  constructor(json?: BoardJSON) {
     this.last = json ? json.last : '';
     this.kept = json ? json.kept : false;
     this.game = json ? json.game : undefined;
@@ -13,44 +42,44 @@ class BoardView extends View {
     this.timerDisplay = display;
   }
 
-  toJSON() {
+  toJSON(): BoardJSON {
     return {
       last: this.last,
       kept: this.kept,
-      timer: this.timer,
-      game: this.game,
+      timer: this.timer.toJSON(),
+      game: this.game && ('random' in this.game ? this.game.toJSON() : this.game),
     };
   }
 
-  async attach(data) {
-    await Promise.all([LOADED.DICT, LOADED.TRIE(), LOADED.STATS(), LOADED.HISTORY]);
+  async attach(data: {resume?: boolean, allowDupes?: boolean} = {}) {
+    await Promise.all([global.LOADED.DICT, global.LOADED.TRIE(), global.LOADED.STATS(), global.LOADED.HISTORY]);
 
     if (!this.played) {
       this.played = new Set();
-      for (const h of HISTORY) this.played.add(h.seed);
+      for (const h of global.HISTORY) this.played.add(h.seed);
     }
 
     if (!this.game || !data.resume) {
-      if (this.game) {
+      if (this.game) { // TODO may be non serialized!
         this.timer.stop();
         this.played.add(this.game.id);
         if (Object.values(this.game.played).filter(t => t > 0).length) {
           this.updateGames();
-          HISTORY.push(this.game.toJSON());
-          await STORE.set('history', HISTORY);
+          global.HISTORY.push(this.game.toJSON());
+          await global.STORE.set('history', global.HISTORY);
         }
       }
 
       let game;
       const random = new Random();
       while (!game || !Object.keys(game.possible).length) {
-        random.seed = SEED;
-        const id = Game.encodeID(SETTINGS, random.seed);
+        random.seed = global.SEED;
+        const id = Game.encodeID(global.SETTINGS, random.seed);
         if (this.played.has(id) && !data.allowDupes) {
-          SEED++;
+          global.SEED++;
           continue;
         }
-        game = new Game(TRIE, DICT, STATS, random, SETTINGS);
+        game = new Game(global.TRIE, global.DICT, global.STATS, random, global.SETTINGS);
       }
       this.game = game;
 
@@ -61,16 +90,16 @@ class BoardView extends View {
       this.last = '';
       this.kept = false;
     } else if (!('random' in this.game)) {
-      this.game = Game.fromJSON(this.game, TRIE, DICT, STATS);
+      this.game = Game.fromJSON(this.game, global.TRIE, global.DICT, global.STATS);
     }
-    SEED = this.game.random.seed;
+    global.SEED = this.game.random.seed; // FIXME: seed no longer reflect games seed....
 
-    this.container = createElementWithId('div', 'game');
+    this.container = UI.createElementWithId('div', 'game');
 
-    const back = createBackButton(() => UI.toggleView('Menu'));
+    const back = UI.createBackButton(() => UI.toggleView('Menu'));
     back.addEventListener('long-press', () => this.refresh());
 
-    this.score = createElementWithId('div', 'score');
+    this.score = UI.createElementWithId('div', 'score');
     this.score.addEventListener('mouseup', () => {
       const pane = new ScorePane(this);
       UI.root.removeChild(this.detach());
@@ -80,22 +109,22 @@ class BoardView extends View {
     this.score.addEventListener('long-press-up', () => this.onLongPressUp());
     this.displayScore();
 
-    this.container.appendChild(createTopbar(back, this.timerDisplay, this.score));
+    this.container.appendChild(UI.createTopbar(back, this.timerDisplay, this.score));
 
-    this.full = createElementWithId('div', 'full');
+    this.full = UI.createElementWithId('div', 'full');
     this.container.appendChild(this.full);
 
     this.container.appendChild(this.renderBoard());
 
-    this.word = createElementWithId('div', 'word');
+    this.word = UI.createElementWithId('div', 'word');
     this.word.classList.add('word');
     if (!(('ontouchstart' in window) ||
       (navigator.maxTouchPoints > 0) ||
       (navigator.msMaxTouchPoints > 0))) {
-      this.word.contentEditable = true;
+      this.word.contentEditable = 'true';
     }
     this.container.appendChild(this.word);
-    this.defn = createElementWithId('div', 'defn');
+    this.defn = UI.createElementWithId('div', 'defn');
     this.defn.classList.add('definition')
     this.container.appendChild(this.defn);
 
@@ -109,27 +138,28 @@ class BoardView extends View {
   }
 
   renderBoard() {
-    const content = createElementWithId('div', 'foo');
-    const table = createElementWithId('table', 'board');
-    if (this.game.size > 4) table.classList.add('big');
+    const game = this.game as Game;
+    const content = UI.createElementWithId('div', 'foo');
+    const table = UI.createElementWithId('table', 'board');
+    if (game.size > 4) table.classList.add('big');
 
     this.tds = new Set();
-    const random = new Random(this.game.seed);
-    for (let row = 0; row < this.game.size; row++) {
+    const random = new Random(game.seed);
+    for (let row = 0; row < game.size; row++) {
       const tr = document.createElement('tr');
-      for (let col = 0; col < this.game.size; col++) {
+      for (let col = 0; col < game.size; col++) {
         const td = document.createElement('td');
-        td.textContent = this.game.board[row * this.game.size + col];
+        td.textContent = game.board[row * game.size + col];
         if (td.textContent === 'Qu') td.classList.add('qu');
         if (['M', 'W', 'Z'].includes(td.textContent)) td.classList.add('underline');
         td.classList.add(`rotate${90 * random.next(0, 4)}`);
-        td.setAttribute('data-x', row);
-        td.setAttribute('data-y', col);
+        td.setAttribute('data-x', String(row));
+        td.setAttribute('data-y', String(col));
 
         const div = document.createElement('div');
         div.classList.add('target');
-        div.setAttribute('data-x', row);
-        div.setAttribute('data-y', col);
+        div.setAttribute('data-x', String(row));
+        div.setAttribute('data-y', String(col));
 
         td.appendChild(div);
         tr.appendChild(td);
@@ -138,7 +168,7 @@ class BoardView extends View {
       table.appendChild(tr);
     }
 
-    let touched;
+    let touched: Set<HTMLTableCellElement>;
     const deselect = () => {
       if (!touched) return;
       for (const td of touched) {
@@ -146,15 +176,15 @@ class BoardView extends View {
       }
     };
 
-    const registerTouch = e => {
+    const registerTouch = (e: TouchEvent) => {
       const touch = e.touches[0];
       const cell = document.elementFromPoint(touch.clientX, touch.clientY);
       if (cell && cell.matches('.target')) {
-        const td = cell.parentNode;
+        const td = cell.parentNode as HTMLTableCellElement;
         td.classList.add('selected');
         if (!touched.has(td)) {
           touched.add(td);
-          this.word.textContent += td.textContent;
+          this.word.textContent += td.textContent!;
         }
       }
     };
@@ -177,37 +207,38 @@ class BoardView extends View {
   }
 
   afterAttach() {
-    permaFocus(this.word);
+    UI.permaFocus(this.word);
   }
 
   detach() {
     return this.container;
   }
 
-  async refresh(data) {
+  async refresh(data?: {resume?: boolean, allowDupes?: boolean}) {
     UI.persist();
     await UI.detachView('Board');
     await UI.attachView('Board', data);
   }
 
   play() {
-    let w = this.word.textContent.toUpperCase();
+    const game = this.game as Game;
+    let w = (this.word.textContent || '').toUpperCase();
     if (w.length < 3 || SUFFIXES.includes(w)) {
       w = `${this.last}${w}`;
       this.word.textContent = w;
     }
-    const score = this.game.play(w);
+    const score = game.play(w);
     this.last = w;
     UI.persist();
 
-    const hide = this.game.settings.display === 'Hide';
+    const hide = game.settings.display === 'Hide';
     this.kept = true;
     if (!hide && score) {
       this.displayScore();
-      this.defn.textContent = define(w, DICT);
+      this.defn.textContent = define(w, global.DICT);
     } else {
-      const original = this.word.textContent;
-      if (!hide && this.game.played[w] < 0) this.word.classList.add('error');
+      const original = this.word.textContent || undefined;
+      if (!hide && game.played[w] < 0) this.word.classList.add('error');
       this.word.classList.add('fade');
       const listener = () => {
         this.clear(original);
@@ -218,25 +249,26 @@ class BoardView extends View {
   }
 
   displayScore() {
-    if (this.game.settings.display === 'Hide') {
+    const game = this.game as Game;
+    if (game.settings.display === 'Hide') {
       this.score.textContent = '?';
       return;
     }
 
-    if (this.game.settings.display === 'Full') {
-      const state = this.game.state();
+    if (game.settings.display === 'Full') {
+      const state = game.state();
       const p = state.progress;
       const details = `(${p.score}) ${Object.keys(p.suffixes).length}/${p.subwords}/${p.anagrams}`;
-      const score = this.game.score.regular + this.game.score.overtime;
-      const goal = state.totals[SETTINGS.grade.toLowerCase()];
+      const score = game.score.regular + game.score.overtime;
+      const goal = state.totals[global.SETTINGS.grade.toLowerCase() as 'a' | 'b' | 'c' | 'd'];
       this.full.textContent = `${details} - ${score}/${goal} (${Math.round(score / goal * 100).toFixed(0)}%)`;
     }
 
-    const s = this.game.score;
+    const s = game.score;
     this.score.textContent = s.overtime ? `${s.regular} / ${s.overtime}` : `${s.regular}`;
   }
 
-  clear(w) {
+  clear(w?: string) {
     if (w && w !== this.word.textContent) return;
     this.word.textContent = '';
     this.word.classList.remove('error');
@@ -246,7 +278,7 @@ class BoardView extends View {
   }
 
   createTimer(duration = DURATION, elapsed = 0) {
-    const display = createElementWithId('div', 'timer');
+    const display = UI.createElementWithId('div', 'timer');
     display.addEventListener('click', () => this.timer.pause());
     return {display, timer: new Timer(display, duration, elapsed, () => {
       if (this.game && !this.game.expired) {
@@ -256,20 +288,22 @@ class BoardView extends View {
   }
 
   updateGames() {
-    if (!GAMES) return;
+    if (!global.GAMES) return;
 
-    const played = new Set();
-    for (const w in this.game.played) {
-      if (this.game.played[w] > 0) played.add(w);
+    const game = this.game as Game;
+    const played = new Set<string>();
+    for (const w in game.played) {
+      if (game.played[w] > 0) played.add(w);
     }
-    if (!played.size) return GAMES;
+    if (!played.size) return;
 
-    if (GAMES.length >= LIMIT) GAMES.shift();
-    GAMES.push([this.game.possible, played]);
+    if (global.GAMES.length >= global.LIMIT) global.GAMES.shift();
+    global.GAMES.push([game.possible, played]);
   }
 
   onLongPress() {
-    const size = this.game.size;
+    const game = this.game as Game;
+    const size = game.size;
     const weights = [];
     for (let row = 0; row < size; row++) {
       const a = [];
@@ -279,11 +313,11 @@ class BoardView extends View {
       weights.push(a);
     }
     let total = 0;
-    for (const word in this.game.possible) {
-      if (this.game.played[word]) continue;
+    for (const word in game.possible) {
+      if (game.played[word]) continue;
       const score = Game.score(word);
       total += score;
-      for (const p of this.game.possible[word]) {
+      for (const p of game.possible[word]) {
         weights[p[1]][p[0]] += score;
       }
     }
@@ -300,14 +334,14 @@ class BoardView extends View {
     }
   }
 
-  async onKeyDown(e) {
+  async onKeyDown(e: KeyboardEvent) {
     if (this.kept) this.clear();
-    focusContentEditable(this.word);
+    UI.focusContentEditable(this.word);
     const key = e.keyCode;
     if (key === 13 || key === 32) {
       e.preventDefault();
       this.play();
-      focusContentEditable(this.word);
+      UI.focusContentEditable(this.word);
     } else if (key === 27) {
       await UI.toggleView('Define');
     } else if ((key < 65 || key > 90) && key !== 8) {

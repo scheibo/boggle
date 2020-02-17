@@ -1,7 +1,8 @@
-import { Type } from './dict';
+import { Type, order } from './dict';
 import { Stats } from './stats';
 import { Store } from './store';
 import { Dice } from './settings';
+import { Random } from './random';
 
 const PERIOD = 3;
 const DAY = 24 * 60 * 60 * 1000;
@@ -89,7 +90,7 @@ class Queue<T> {
   }
 }
 
-interface TrainingStats {
+export interface TrainingStats {
   k: string; // key
   e: number; // easiness
   c: number; // correct
@@ -193,7 +194,6 @@ export class TrainingPool {
       return this.store.set('data', this.learned.data);
     };
 
-    // @ts-ignore FIXME
     const random = new Random(next.n);
     // try to find a permutation which isn't in the group
     for (let i = 0; i < 10; i++) {
@@ -201,9 +201,7 @@ export class TrainingPool {
       if (!group.includes(key)) break;
     }
 
-    // @ts-ignore FIXME
-    const o = order;
-    return { label: key, group: o(group), update, restore };
+    return { label: key, group: order(group), update, restore };
   }
 }
 

@@ -1,3 +1,8 @@
+export interface TimerJSON {
+  duration: number;
+  elapsed: number;
+}
+
 export class Timer {
   private readonly display: HTMLElement;
   private readonly duration: number;
@@ -34,7 +39,7 @@ export class Timer {
     this.render(remaining);
   }
 
-  toJSON() {
+  toJSON(): TimerJSON {
     return { duration: this.duration, elapsed: this.elapsed };
   }
 

@@ -1,7 +1,7 @@
 import { Dice } from './settings';
 import { Dictionary, Type, isValid, order } from './dict';
 
-interface Data {
+export interface Data {
   New: DiceEntry;
   Old: DiceEntry;
   Big: DiceEntry;

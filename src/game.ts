@@ -1,4 +1,4 @@
-import { Dictionary, Type } from './dict';
+import { Dictionary, Type, define } from './dict';
 import { Random } from './random';
 import { Settings, Dice, MinLength } from './settings';
 import { Trie } from './trie';
@@ -29,12 +29,26 @@ const BIG_DICE = [
   'FIPRSY', 'GORRVW', 'HIPRRY', 'NOOTUW', 'OOOTTU',
 ];
 
-const SUFFIXES = ['S', 'ER', 'ED', 'ING'];
+export const SUFFIXES = ['S', 'ER', 'ED', 'ING'];
 
-interface GameSettings {
+export interface GameSettings {
   dice: Dice;
   dict: Type;
   min?: MinLength;
+}
+
+export interface GameJSON {
+  seed: string;
+  start: number;
+  expired: number | null;
+  words: { [word: string]: number };
+  goal: {
+    S: number;
+    A: number;
+    B: number;
+    C: number;
+    D: number;
+  };
 }
 
 export class Game {
@@ -43,9 +57,9 @@ export class Game {
   private readonly stats: Stats;
 
   private readonly dice: string[];
-  private readonly seed: number;
-  private readonly board: string[];
 
+  readonly seed: number;
+  readonly board: string[];
   readonly random: Random;
   readonly settings: Omit<Settings, 'grade'>;
   readonly size: number;
@@ -121,7 +135,7 @@ export class Game {
     return 0;
   }
 
-  toJSON() {
+  toJSON(): GameJSON {
     return {
       seed: this.id,
       start: this.start,
@@ -155,7 +169,7 @@ export class Game {
     return [{ dice, min, dict }, seed];
   }
 
-  static fromJSON(json: any, trie: Trie, dict: Dictionary, stats: Stats) {
+  static fromJSON(json: GameJSON, trie: Trie, dict: Dictionary, stats: Stats) {
     const [settings, seed] = Game.decodeID(json.seed);
     const random = new Random();
     random.seed = seed;
@@ -293,7 +307,6 @@ export class Game {
     const augment = (w: string) => ({
       word: w,
       grade: gr(w),
-      // @ts-ignore FIXME
       defn: define(w, this.dict),
     });
 

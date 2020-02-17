@@ -1,29 +1,38 @@
-class ReviewView extends View {
-  constructor(json) {
-    super();
+import {global} from './global';
+import {UI, View} from './ui';
+import {order} from '../dict';
+import {Store} from '../store';
+import {TrainingStats} from '../training';
+
+export class ReviewView implements View {
+  size: number;
+
+  review!: HTMLElement;
+
+  constructor(json?: {size: number}) {
     this.size = json ? json.size : 0;
   }
 
-  toJSON() {
+  toJSON(): {size: number} {
     return {size: this.size};
   }
 
-  async attach(size) {
-    await Promise.all([LOADED.DICT, LOADED.STATS()]);
+  async attach(size?: number) {
+    await Promise.all([global.LOADED.DICT, global.LOADED.STATS()]);
 
-    this.review = createElementWithId('div', 'review');
+    this.review = UI.createElementWithId('div', 'review');
     if (size) this.size = size;
 
-    const back = createBackButton(() => UI.toggleView('Training'));
-    const progress = createElementWithId('div', 'progress');
-    progress.textContent = this.size;
-    this.review.appendChild(createTopbar(back, null, progress));
+    const back = UI.createBackButton(() => UI.toggleView('Training'));
+    const progress = UI.createElementWithId('div', 'progress');
+    progress.textContent = String(this.size);
+    this.review.appendChild(UI.createTopbar(back, null, progress));
 
-    const d = SETTINGS.dice.charAt(0).toLowerCase();
-    const score = k => STATS.anagrams(k, SETTINGS.dice)[d] || 0;
+    const d = global.SETTINGS.dice.charAt(0).toLowerCase() as 'n' | 'o' | 'b';
+    const score = (k: string) => global.STATS.anagrams(k, global.SETTINGS.dict)[d] || 0;
 
-    const store = new Store('training', SETTINGS.dict);
-    const data = await store.get('data');
+    const store = new Store('training', global.SETTINGS.dict);
+    const data = await store.get('data') as TrainingStats[];
     const keys = data
       .filter(w => w.e < 2.0) // TODO: !v.c, figure out 2.0 based on average?
       .sort((a, b) => score(b.k) / b.e - score(a.k) / a.e)
@@ -35,7 +44,7 @@ class ReviewView extends View {
     for (const k of keys) {
       const table = document.createElement('table');
       table.classList.add('results');
-      addAnagramRows(table, order(STATS.anagrams(k, SETTINGS.dice).words));
+      UI.addAnagramRows(table, order(global.STATS.anagrams(k, global.SETTINGS.dict).words));
       wrapper.appendChild(table);
     }
     this.review.appendChild(wrapper);

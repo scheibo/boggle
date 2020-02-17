@@ -1,36 +1,48 @@
-class DefineView extends View {
-  constructor(json) {
-    super();
+import {global} from './global';
+import {UI, View} from './ui';
+import {define} from '../dict';
+
+export class DefineView implements View {
+  private word: string;
+
+  private define!: HTMLElement;
+  private search!: HTMLElement;
+
+  private defn: HTMLElement | null = null;
+  private stats: HTMLElement | null = null;
+  private anagrams: HTMLElement | null = null;
+
+  constructor(json?: {word: string}) {
     this.word = json ? json.word : '';
   }
 
-  toJSON() {
+  toJSON(): {word: string} {
     return {word: this.word};
   }
 
-  async attach(word) {
-    await Promise.all([LOADED.DICT, LOADED.STATS()]);
+  async attach(word?: string) {
+    await Promise.all([global.LOADED.DICT, global.LOADED.STATS()]);
 
     if (word) this.word = word;
 
-    this.define = createElementWithId('div', 'define');
-    this.search = createElementWithId('div', 'search');
+    this.define = UI.createElementWithId('div', 'define');
+    this.search = UI.createElementWithId('div', 'search');
     this.search.classList.add('word');
-    this.search.contentEditable = true;
+    this.search.contentEditable = 'true';
     this.search.textContent = this.word;
     this.define.appendChild(this.search);
 
-    this.define.addEventListener('input', () => this.query(this.search.textContent));
+    this.define.addEventListener('input', () => this.query(this.search.textContent || ''));
     this.update();
 
     return this.define;
   }
 
   afterAttach() {
-    permaFocus(this.search);
+    UI.permaFocus(this.search);
   }
 
-  query(w) {
+  query(w: string) {
     this.search.textContent = w;
     this.word = w.toUpperCase();
     this.update();
@@ -45,20 +57,20 @@ class DefineView extends View {
   }
 
   update() {
-    const val = DICT[this.word];
+    const val = global.DICT[this.word];
     if (val) {
-      const defn = createElementWithId('div', 'defineDefn');
+      const defn = UI.createElementWithId('div', 'defineDefn');
       defn.classList.add('definition');
-      defn.textContent = define(this.word, DICT);
-      if ((val.dict && !val.dict.includes(SETTINGS.dict.charAt(0))) || this.word.length < SETTINGS.min) {
+      defn.textContent = define(this.word, global.DICT);
+      if ((val.dict && !val.dict.includes(global.SETTINGS.dict.charAt(0))) || this.word.length < global.SETTINGS.min) {
         this.define.classList.add('hard');
       } else {
         this.define.classList.remove('hard');
       }
 
-      const addCells = (tr, label, data) => {
+      const addCells = (tr: HTMLTableRowElement, label: string, data: string) => {
         let td = document.createElement('td');
-        let b = document.createElement('b');
+        const b = document.createElement('b');
         b.textContent = label;
         td.appendChild(b);
         tr.appendChild(td);
@@ -69,19 +81,19 @@ class DefineView extends View {
         tr.appendChild(td);
       };
 
-      const s = STATS.stats(this.word, SETTINGS.dice, SETTINGS.type);
+      const s = global.STATS.stats(this.word, global.SETTINGS.dice, global.SETTINGS.dict);
 
       const stats = document.createElement('table');
       stats.classList.add('roundedTable');
 
       let tr = document.createElement('tr');
       addCells(tr, 'Grade', s.grade === ' ' ? 'S' : s.grade);
-      addCells(tr, 'Score', s.word ? s.word.p : '-');
+      addCells(tr, 'Score', s.word ? String(s.word.p) : '-');
       stats.appendChild(tr);
 
       tr = document.createElement('tr');
-      addCells(tr, 'Frequency', s.freq ? s.freq : '-');
-      addCells(tr, 'Anagram',  s.anagram ? s.anagram.p : '-');
+      addCells(tr, 'Frequency', s.freq ? String(s.freq) : '-');
+      addCells(tr, 'Anagram',  s.anagram ? String(s.anagram.p) : '-');
       stats.appendChild(tr);
 
       stats.appendChild(tr);
@@ -111,14 +123,13 @@ class DefineView extends View {
   }
 
    renderAnagrams() {
-    const div = createElementWithId('div', 'defineAnagrams');
-    while (div.firstChild) div.removeChild(stats.firstChild);
+    const div = UI.createElementWithId('div', 'defineAnagrams');
 
-    const words = STATS.anagrams(this.word, SETTINGS.dict).words;
+    const words = global.STATS.anagrams(this.word, global.SETTINGS.dict).words;
     if (words.length <= 1) return div;
 
     const solo = [];
-    const anadromes = new Set();
+    const anadromes = new Set<string>();
 
     for (const w of words) {
       const r = w.split('').reverse().join('');
@@ -129,7 +140,7 @@ class DefineView extends View {
       }
     }
 
-    const format = w => {
+    const format = (w: string) => {
       const e = document.createElement(w === this.word ? 'b' : 'span');
       e.textContent = w;
       e.addEventListener('click', () => this.query(w));
@@ -153,8 +164,8 @@ class DefineView extends View {
     return div;
   }
 
-  async onKeyDown(e) {
-    focusContentEditable(this.search);
+  async onKeyDown(e: KeyboardEvent) {
+    UI.focusContentEditable(this.search);
     const key = e.keyCode;
     if (key === 13 || key === 32) {
       if (this.word) {

@@ -1,24 +1,33 @@
-class ScorePane {
-  constructor(board) {
+import {global} from './global';
+import {UI} from './ui';
+import { BoardView } from './board';
+import {Game} from '../game';
+
+export class ScorePane {
+  readonly board: BoardView;
+
+  container!: HTMLElement;
+
+  constructor(board: BoardView) {
     this.board = board;
   }
 
   attach() {
-    this.container = createElementWithId('div', 'game');
+    this.container = UI.createElementWithId('div', 'game');
 
-    const wrapper = createElementWithId('div', 'wrapper');
+    const wrapper = UI.createElementWithId('div', 'wrapper');
     wrapper.classList.add('score');
 
-    const back = createBackButton(async () => {
+    const back = UI.createBackButton(async () => {
       UI.root.removeChild(this.detach());
       UI.root.appendChild(await this.board.attach({resume: true}));
     });
 
-    this.container.appendChild(createTopbar(back, this.board.timerDisplay, this.board.score.cloneNode(true)));
+    this.container.appendChild(UI.createTopbar(back, this.board.timerDisplay, this.board.score.cloneNode(true)));
 
     const state = this.board.game.state();
     const score = this.board.game.score.regular + this.board.game.score.overtime;
-    const goal = state.totals[SETTINGS.grade.toLowerCase()];
+    const goal = state.totals[global.SETTINGS.grade.toLowerCase()];
     const details = `${score}/${goal} (${Math.round(score / goal * 100).toFixed(0)}%)`;
     const current = makeCollapsible(this.board.game.id, details, 'block');
     const div = document.createElement('div');
@@ -31,22 +40,22 @@ class ScorePane {
     current.classList.add('active');
     div.style.display = 'block';
 
-    for (let i = HISTORY.length - 1; i >= 0; i--) {
-      const state = HISTORY[i];
+    for (let i = global.HISTORY.length - 1; i >= 0; i--) {
+      const state = global.HISTORY[i];
       let score = 0;
       for (const [w, t] of Object.entries(state.words)) {
         if (t > 0) score += Game.score(w);
       }
       if (!score) continue;
 
-      const details = `${score}/${state.goal[SETTINGS.grade]} (${Math.round(score / state.goal[SETTINGS.grade] * 100).toFixed(0)}%)`;
+      const details = `${score}/${state.goal[global.SETTINGS.grade]} (${Math.round(score / state.goal[global.SETTINGS.grade] * 100).toFixed(0)}%)`;
       const div = document.createElement('div');
       div.classList.add('collapsible-content');
       div.classList.add('lazy');
       const button = makeCollapsible(state.seed, details, 'block', () => {
         if (div.classList.contains('lazy')) {
           div.classList.remove('lazy');
-          const game = Game.fromJSON(state, TRIE, DICT, STATS);
+          const game = Game.fromJSON(state, global.TRIE, global.DICT, global.STATS);
           const s = game.state();
           this.displayPlayed(s, div);
           this.displayPossible(s, div);
@@ -65,7 +74,7 @@ class ScorePane {
     return this.container;
   }
 
-  displayPlayed(state, div, expanded) {
+  displayPlayed(state: ReturnType<Game['state']>, div: HTMLElement, expanded = false) {
     const p = state.progress;
     const details = `(${p.score}) ${Object.keys(p.suffixes).length}/${p.subwords}/${p.anagrams} (${p.invalid}/${p.total})`;
 
@@ -78,7 +87,7 @@ class ScorePane {
 
     for (const {word, grade, overtime, defn, invalid} of state.played) {
       const tr = document.createElement('tr');
-      if (grade < SETTINGS.grade) tr.classList.add('hard');
+      if (grade < global.SETTINGS.grade) tr.classList.add('hard');
       if (invalid) tr.classList.add('error');
       if (overtime) tr.classList.add('overtime');
 
@@ -104,7 +113,7 @@ class ScorePane {
     div.appendChild(table);
   }
 
-  displayPossible(state, div, expanded) {
+  displayPossible(state: ReturnType<Game['state']>, div: HTMLElement, expanded = false) {
     const tot = state.totals;
     const details = `${tot.d}/${tot.c}/${tot.b}/${tot.a} (${tot.s})`;
 
@@ -114,10 +123,9 @@ class ScorePane {
     table.classList.add('results');
     table.classList.add('possible');
 
-    for (const {word, grade, overtime, root, missing, defn} of state.remaining) {
+    for (const {word, grade, root, missing, defn} of state.remaining) {
       const tr = document.createElement('tr');
-      if (grade < SETTINGS.grade) tr.classList.add('hard');
-      if (overtime) tr.classList.add('overtime');
+      if (grade < global.SETTINGS.grade) tr.classList.add('hard');
 
       let td = document.createElement('td');
       const b = document.createElement('b');
@@ -153,7 +161,7 @@ class ScorePane {
   }
 }
 
-function makeCollapsible(title, details, display, fn) {
+function makeCollapsible(title: string, details: string, display: string, fn?: () => void) {
   const button = document.createElement('button');
   button.setAttribute('type', 'button');
   button.classList.add('collapsible');
@@ -174,7 +182,7 @@ function makeCollapsible(title, details, display, fn) {
 
   button.addEventListener('click', () => {
     button.classList.toggle('active');
-    const content = button.nextElementSibling;
+    const content = button.nextElementSibling as HTMLElement;
     if (content.style.display === display) {
       content.style.display = 'none';
     } else {
