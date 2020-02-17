@@ -10,7 +10,8 @@
   "license": "MIT",
   "devDependencies": {
     "gts": "^1.1.2",
-    "typescript": "^3.7.4"
+    "parcel-bundler": "^1.12.4",
+    "typescript": "^3.7.5"
   },
   "scripts": {
     "check": "gts check",
@@ -20,6 +21,9 @@
     "test": "true",
     "prepare": "npm run compile",
     "pretest": "npm run compile",
-    "posttest": "npm run check"
-  }
+    "posttest": "npm run check",
+    "start": "parcel index.html",
+    "build": "parcel build index.html"
+  },
+  "browserslist": "> 0.25%, IE >= 9, Safari >= 5"
 }

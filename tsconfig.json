@@ -2,19 +2,20 @@
   "extends": "./node_modules/gts/tsconfig-google.json",
   "compilerOptions": {
     "rootDir": "./src",
-    "outDir": "./js",
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "noEmit": true,
     "incremental": true,
-    "target": "es6",
     "tsBuildInfoFile": ".tsbuildinfo",
-    "noEmitOnError": false,
     "target": "es2015",
-    "lib": ["es2017", "dom"]
+    "removeComments": true,
+    "lib": [
+      "dom",
+      "es6",
+      "es2018"
+    ]
   },
-  "include": [
-    "**/*.ts"
-  ],
   "exclude": [
-    "js",
-    "wip"
+    "dist"
   ]
 }
