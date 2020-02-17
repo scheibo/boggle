@@ -72,7 +72,7 @@ class MenuView extends View {
       return button;
     }
 
-    nav.appendChild(createButton('PLAY', () => {}));
+    nav.appendChild(createButton('PLAY', () => UI.toggleView('Board')));
     nav.appendChild(createButton('TRAIN', () => UI.toggleView('Training')));
     nav.appendChild(createButton('DEFINE', () => UI.toggleView('Define')));
     nav.appendChild(createButton('STATS', () => UI.toggleView('Stats')));
@@ -555,10 +555,10 @@ const DURATION = 180 * 1000;
 class BoardView extends View {
   constructor(json) {
     super();
-    this.last = json.last || '';
-    this.kept = json.kept || false;
-    this.game = json.game || undefined;
-    const {display, timer} = json.timer ?
+    this.last = json ? json.last : '';
+    this.kept = json ? json.kept : false;
+    this.game = json ? json.game : undefined;
+    const {display, timer} = json ?
       this.createTimer(json.timer.duration, json.timer.elapsed) :
       this.createTimer();
     this.timer = timer;
@@ -575,7 +575,12 @@ class BoardView extends View {
   }
 
   async attach(data) { // FIXME allowDupes, resume
-    await Promise.all([LOADED.DICT, LOADED.TRIE, LOADED.STATS(), LOADED.HISTORY]);
+    await Promise.all([LOADED.DICT, LOADED.TRIE(), LOADED.STATS(), LOADED.HISTORY]);
+
+    if (!this.played) {
+      this.played = new Set();
+      for (const h of HISTORY) this.played.add(h.seed);
+    }
 
     if (!this.game || !data.resume) {
       if (this.game) {
@@ -612,11 +617,6 @@ class BoardView extends View {
     }
     SEED = this.game.random.seed;
 
-    if (!this.played) {
-      this.played = new Set();
-      for (const h of HISTORY) this.played.add(h.seed);
-    }
-
     this.container = createElementWithId('div', 'game');
 
     const back = createBackButton(() => UI.toggleView('Menu'));
@@ -648,8 +648,9 @@ class BoardView extends View {
     this.container.appendChild(this.defn);
 
     this.timer.start();
-    if (document.location.hash !== `#${game.id}`) {
-      window.history.replaceState(null, null, `#${game.id}`);
+    const hash = `#${this.game.id}`;
+    if (document.location.hash !== hash) {
+      window.history.replaceState(null, null, hash);
     }
 
     return this.container;
@@ -661,7 +662,7 @@ class BoardView extends View {
     if (this.game.size > 4) table.classList.add('big');
 
     this.tds = new Set();
-    const random = new Random(game.seed);
+    const random = new Random(this.game.seed);
     for (let row = 0; row < this.game.size; row++) {
       const tr = document.createElement('tr');
       for (let col = 0; col < this.game.size; col++) {
@@ -793,7 +794,7 @@ class BoardView extends View {
       if (this.game && !this.game.expired) {
         this.game.expired = +new Date();
       }
-    }, UI.persist)};
+    }, () => UI.persist())};
   }
 
   updateGames(game) {
