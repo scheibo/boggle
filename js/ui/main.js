@@ -13,7 +13,7 @@ SEED = 123456789; // FIXME
 // TODO: TRIE, STATS, GAMES, and the TrainingPool creation
 // need to be moved to a background worker and transferred in.
 const LOADED = {
-  DICT: fetchJSON('../data/dict.json').then(d => { DICT = d; }), // TODO ../,
+  DICT: fetchJSON('data/dict.json').then(d => { DICT = d; }),
   TRIE: async () => {
     if (TRIE) return;
     await LOADED.DICT;
@@ -24,7 +24,7 @@ const LOADED = {
     let stats;
     await Promise.all([
       LOADED.DICT,
-      fetchJSON('../data/stats.json').then(s => { stats = s; }) // TODO ../
+      fetchJSON('data/stats.json').then(s => { stats = s; }),
     ]);
     STATS = new Stats(stats, DICT);
   },
@@ -282,7 +282,7 @@ class StatsView extends View {
         GAMES.push([game.possible, played]);
       }
     }
-    // FIXME: cache this, invalidate if GAMES/dice/dict/min changes
+    // TODO: cache this, invalidate if GAMES/dice/dict/min changes?
     const data = STATS.history(GAMES, SETTINGS.dice, SETTINGS.dict);
 
     this.stats = createElementWithId('div', 'stats');
@@ -1268,7 +1268,7 @@ const UI = new (class{
     }
 
     this.BACK = document.createElement('img');
-    this.BACK.src = '../img/back.svg'; // TODO ../
+    this.BACK.src = 'img/back.svg';
     this.BACK.height = 20;
 
     document.addEventListener('keydown', e => this.onKeyDown(e));
@@ -1349,7 +1349,7 @@ const UI = new (class{
     if (this.current === 'Settings') {
       this.Views[this.current].update();
     } else if (refresh && this.current === 'Play') {
-      // TODO: REFRESH
+      // TODO FIXME: REFRESH
       // - requirement => hash reflects current SETTINGS and SEED value
       // - if on board, the seed and settings applied must reflect hash (and thus SETTINGS and SEED.
       // BoardView MAY have out of date game/game settings (until user switches back)

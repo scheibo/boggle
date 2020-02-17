@@ -10,92 +10,18 @@
   <meta name="apple-mobile-web-app-title" content="Boggle">
   <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
   <link rel="icon" href="favicon.ico">
-  <link rel="manifest" href="manifest.json">
-  <link href="https://fonts.googleapis.com/css?family=Roboto:400,400i,700,700i&display=swap" rel="stylesheet">
+  <!-- <link rel="manifest" href="manifest.json"> -->
   <link rel="stylesheet" type="text/css" href="style.css">
   <title>Boggle</title>
 </head>
 <body>
   <div id="display">
-    <div id="menu">
-      <h1>BOGGLE</h1>
-      <nav>
-        <button id="menuPlay" class="toggle">PLAY</button>
-        <button id="menuTrain" class="toggle">TRAIN</button>
-        <button id="menuDefine" class="toggle">DEFINE</button>
-        <button id="menuStats" class="toggle">STATS</button>
-        <button id="menuSettings" class="toggle">SETTINGS</button>
-      </nav>
-    </div>
-    <div id="game" class="hidden">
-      <header id="topbar">
-        <div id="refresh"><img height="20" src="img/refresh.svg" /></div>
-        <div id="back" class="hidden"><img height="20" src="img/back.svg" /></div>
-        <div id="timer">3:00</div>
-        <div id="score">0</div>
-        <div id="epoch" class="hidden">0</div>
-        <div id="practice" class="hidden"><img height="20" src="img/practice.svg" /></div>
-        <div id="play" class="hidden"><img height="20" src="img/play.svg" /></div>
-      </header>
-      <div id="full" class="hidden">0/0/0 (0): 0/0 (0%)</div>
-      <div id="content">
-      </div>
-      <div id="word"></div>
-      <div id="defn"></div>
-      <div id="settings" class="hidden">
-        <div class="row">
-          <div id="seed" contenteditable="true"></div> <!-- TODO handle updating the UI if the setting info changes! -->
-        </div>
-        <div class="row">
-          <span id="dice" class="toggle-group horizontal" role="radiogroup">
-            <input class="hide" type="radio" name="dice" value="New" id="diceNew" checked="checked" /><label class="toggle" for="diceNew">NEW</label>
-            <input class="hide" type="radio" name="dice" value="Old" id="diceOld" /><label class="toggle" for="diceOld">OLD</label>
-            <input class="hide" type="radio" name="dice" value="Big" id="diceBig" /><label class="toggle" for="diceBig">BIG</label>
-          </span>
-        </div>
-        <div class="row">
-          <span id="min" class="toggle-group horizontal" role="radiogroup">
-            <input class="hide" type="radio" name="min" value="3" id="min3" checked="checked" /><label class="toggle" for="min3">3</label>
-            <input class="hide" type="radio" name="min" value="4" id="min4" /><label class="toggle" for="min4">4</label>
-            <input class="hide" type="radio" name="min" value="5" id="min5" /><label class="toggle" for="min5">5</label>
-          </span>
-        </div>
-        <div class="row">
-          <span id="dict" class="toggle-group horizontal" role="radiogroup">
-            <input class="hide" type="radio" name="dict" value="NWL" id="dictNWL" checked="checked" /><label class="toggle" for="dictNWL">NWL</label>
-            <input class="hide" type="radio" name="dict" value="ENABLE" id="dictENABLE" checked="checked" /><label class="toggle" for="dictENABLE">ENABLE</label>
-            <input class="hide" type="radio" name="dict" value="CSW" id="dictCSW" /><label class="toggle" for="dictCSW">CSW</label>
-          </span>
-        </div>
-         <div class="row">
-          <span id="grade" class="toggle-group horizontal" role="radiogroup">
-            <input class="hide" type="radio" name="grade" value="A" id="gradeA" /><label class="toggle" for="gradeA">A</label>
-            <input class="hide" type="radio" name="grade" value="B" id="gradeB" /><label class="toggle" for="gradeB">B</label>
-            <input class="hide" type="radio" name="grade" value="C" id="gradeC" checked="checked" /><label class="toggle" for="gradeC">C</label>
-            <input class="hide" type="radio" name="grade" value="D" id="gradeD" /><label class="toggle" for="gradeD">D</label>
-          </span>
-        </div>
-        <div class="row">
-          <span id="scoreDisplay" class="toggle-group horizontal" role="radiogroup">
-            <input class="hide" type="radio" name="scoreDisplay" value="Hide" id="scoreDisplayHide" /><label class="toggle" for="scoreDisplayHide">HIDE</label>
-            <input class="hide" type="radio" name="scoreDisplay" value="Show" id="scoreDisplayShow" checked="checked" /><label class="toggle" for="scoreDisplayShow">SHOW</label>
-            <input class="hide" type="radio" name="scoreDisplay" value="Full" id="scoreDisplayFull" /><label class="toggle" for="scoreDisplayFull">FULL</label>
-          </span>
-        </div>
-        <div class="row">
-          <span id="theme" class="toggle-group horizontal" role="radiogroup">
-            <input class="hide" type="radio" name="theme" value="Light" id="themeLight" checked="checked" /><label class="toggle" for="themeLight">LIGHT</label>
-            <input class="hide" type="radio" name="theme" value="Dark" id="themeDark" /><label class="toggle" for="themeDark">DARK</label>
-          </span>
-        </div>
-      </div>
-    </div>
   </div>
   <script>
     var exports = window;
     function require() { return exports };
   </script>
-  <script type="application/javascript" src="js/random.js"></script>
+  <script type="application/javascript" src="/js/random.js"></script>
   <script type="application/javascript" src="js/dict.js"></script>
   <script type="application/javascript" src="js/trie.js"></script>
   <script type="application/javascript" src="js/stats.js"></script>
@@ -105,12 +31,11 @@
   <script type="application/javascript" src="js/timer.js"></script>
   <script type="application/javascript" src="js/store.js"></script>
   <script type="application/javascript" src="js/training.js"></script>
-  <script type="application/javascript" src="js/ui/view.js"></script>
-  <script type="application/javascript" src="js/ui/score.js"></script>
-  <script type="application/javascript" src="js/ui/settings.js"></script>
   <script type="application/javascript" src="js/ui/debug.js"></script>
+  <script type="application/javascript" src="js/ui/main.js"></script>
   <script>
     if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
+    (() => UI.create())();
   </script>
 </body>
 </html>
