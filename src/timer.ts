@@ -9,9 +9,9 @@ export class Timer {
   private expireFn: (() => void) | null;
   private updateFn: (() => void) | null;
 
-  constructor(duration: number, expireFn = null, updateFn = null) {
+  constructor(duration: number, display: HTMLElement, expireFn = null, updateFn = null) {
     this.duration = duration;
-    this.display = document.getElementById('timer')!;
+    this.display = display;
     this.display.classList.remove('expired');
 
     this.elapsed = 0;
@@ -20,6 +20,10 @@ export class Timer {
     this.updateFn = updateFn;
 
     this.render(this.duration - this.elapsed);
+  }
+
+  toJSON() {
+    return this.duration - this.elapsed;
   }
 
   start() {

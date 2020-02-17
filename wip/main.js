@@ -10,7 +10,7 @@ var DICT, STATS, HISTORY, TRIE, GAMES, SEED;
 
 SEED = 123456789; // FIXME
 
-// TODO: TRIE, STATS, PLAYED, GAMES, and the TrainingPool creation
+// TODO: TRIE, STATS, GAMES, and the TrainingPool creation
 // need to be moved to a background worker and transferred in.
 const LOADED = {
   DICT: fetchJSON('../data/dict.json').then(d => { DICT = d; }), // TODO ../,
@@ -293,7 +293,7 @@ class StatsView extends View {
       UI.persist();
     });
 
-    this.stats.append(createTopbar(back, radios, null));
+    this.stats.appendChild(createTopbar(back, radios, null));
     this.display(this.section, data);
 
     return this.stats;
@@ -550,47 +550,239 @@ class TrainingView extends View {
   }
 }
 
+const DURATION = 180 * 1000;
+
 class BoardView extends View {
   constructor(json) {
     super();
-    // TODO
+    this.last = json.last || '';
+    this.kept = json.kept || false;
+    this.game = json.game || undefined;
+    const {display, timer} = this.createTimer(json.timer || DURATION);
+    this.timer = timer;
+    this.timerDisplay = display;
   }
 
   toJSON() {
-    return undefined; // TODO
+    return {
+      last: this.last,
+      kept: this.kept,
+      timer: this.timer,
+      game: this.game,
+    };
   }
 
-  async attach() {
+  async attach(data) { // FIXME allowDupes, resume
     await Promise.all([LOADED.DICT, LOADED.TRIE, LOADED.STATS(), LOADED.HISTORY]);
 
-    const touch = ('ontouchstart' in window) ||
-    (navigator.maxTouchPoints > 0) ||
-    (navigator.msMaxTouchPoints > 0);
+    if (!this.game || !data.resume) {
 
-    // PLAYED = new Set();
-    // for (const h of HISTORY) PLAYED.add(h.seed);
+      let game;
+      const random = new Random();
+      while (!game || !Object.keys(game.possible).length) {
+        random.seed = SEED;
+        const id = Game.encodeID(SETTINGS, random.seed);
+        if (this.played.has(id) && !data.allowDupes) {
+          SEED++;
+          continue;
+        }
+        game = new Game(TRIE, DICT, STATS, random, SETTINGS);
+      }
+      this.game = game;
 
-    const word = document.getElementById('word');
-    if (!TOUCH) {
-      word.contentEditable = true;
-      permaFocus(word);
+      const {display, timer} = this.createTimer(DURATION);
+      this.timer = timer;
+      this.timerDisplay = display;
+
+      this.last = '';
+      this.kept = false;
+    } else if ('random' in this.game) {
+      this.game = Game.fromJSON(this.game, TRIE, DICT, STATS);
+    }
+    SEED = this.game.random.seed;
+
+    if (!this.played) {
+      this.played = new Set();
+      for (const h of HISTORY) this.played.add(h.seed);
     }
 
-    timer.addEventListener('click', () => STATE.timer.pause());
-    score.addEventListener('long-press', () => this.onLongPress());
-    score.addEventListener('long-press-up', () => this.onLongPressUp());
+    this.container = createElementWithId('div', 'game');
 
+    const back = createBackButton(() => UI.toggleView('Menu'));
+
+    this.score = createElementWithId('div', 'score');
+    this.score.addEventListener('mouseup', () => {
+      const pane = new ScorePane(this);
+      UI.root.removeChild(this.detach());
+      UI.root.appendChild(pane.attach());
+    });
+    this.score.addEventListener('long-press', () => this.onLongPress());
+    this.score.addEventListener('long-press-up', () => this.onLongPressUp());
+
+    this.container.appendChild(createTopbar(back, this.timerDisplay, this.score));
+
+    this.full = createElementWithId('div', 'full');
+    this.container.appendChild(this.full);
+
+    this.container.appendChild(this.renderBoard());
+
+    this.word = createElementWithId('div', 'word');
+    if (!(('ontouchstart' in window) ||
+      (navigator.maxTouchPoints > 0) ||
+      (navigator.msMaxTouchPoints > 0))) {
+      this.word.contentEditable = true;
+    }
+    this.container.appendChild(this.word);
+    this.defn = createElementWithId('div', 'defn');
+    this.container.appendChild(this.defn);
+
+    this.timer.start();
+    if (document.location.hash !== `#${game.id}`) {
+      window.history.replaceState(null, null, `#${game.id}`);
+    }
+
+    return this.container;
+  }
+
+  renderBoard() {
+    const content = createElementWithId('div', 'content');
+    const table = createElementWithId('table', 'board');
+    if (this.game.size > 4) table.classList.add('big');
+
+    this.tds = new Set();
+    const random = new Random(game.seed);
+    for (let row = 0; row < this.game.size; row++) {
+      const tr = document.createElement('tr');
+      for (let col = 0; col < this.game.size; col++) {
+        const td = document.createElement('td');
+        td.textContent = this.game.board[row * this.game.size + col];
+        if (td.textContent === 'Qu') td.classList.add('qu');
+        if (['M', 'W', 'Z'].includes(td.textContent)) td.classList.add('underline');
+        td.classList.add(`rotate${90 * random.next(0, 4)}`);
+        td.setAttribute('data-x', row);
+        td.setAttribute('data-y', col);
+
+        const div = document.createElement('div');
+        div.classList.add('target');
+        div.setAttribute('data-x', row);
+        div.setAttribute('data-y', col);
+
+        td.appendChild(div);
+        tr.appendChild(td);
+        this.tds.add(td);
+      }
+      table.appendChild(tr);
+    }
+
+    let touched;
+    const deselect = () => {
+      if (!touched) return;
+      for (const td of touched) {
+        td.classList.remove('selected');
+      }
+    };
+
+    const registerTouch = e => {
+      const touch = e.touches[0];
+      const cell = document.elementFromPoint(touch.clientX, touch.clientY);
+      if (cell && cell.matches('.target')) {
+        const td = cell.parentNode;
+        td.classList.add('selected');
+        if (!touched.has(td)) {
+          touched.add(td);
+          this.word.textContent += td.textContent;
+        }
+      }
+    };
+
+    table.addEventListener('touchstart', e => {
+      this.clear();
+      deselect();
+      touched = new Set();
+
+      registerTouch(e);
+    });
+    table.addEventListener('touchend', () => {
+      deselect();
+      this.play();
+    });
+    table.addEventListener('touchmove', registerTouch);
+
+    content.appendChild(table);
+    return content;
+  }
+
+  afterAttach() {
+    permaFocus(this.word);
   }
 
   detach() {
-
+    return this.container;
   }
 
   play() {
+    let w = this.word.textContent.toUpperCase();
+    if (w.length < 3 || SUFFIXES.includes(w)) {
+      w = `${this.last}${w}`;
+      this.word.textContent = w;
+    }
+    const score = this.game.play(w);
+    this.last = w;
+    UI.persist();
 
+    const hide = this.game.settings.display === 'Hide';
+    this.kept = true;
+    if (!hide && score) {
+      this.displayScore();
+      this.defn.textContent = define(w, DICT);
+    } else {
+      const original = this.word.textContent;
+      if (!hide && this.game.played[w] < 0) this.word.classList.add('error');
+      this.word.classList.add('fade');
+      const listener = () => {
+        this.clear(original);
+        this.word.removeEventListener('animationend', listener);
+      }
+      this.word.addEventListener('animationend', listener);
+    }
   }
 
-  clear() {
+  displayScore() {
+    if (this.game.settings.display === 'Hide') {
+      this.score.textContent = '?';
+      return;
+    }
+
+    if (this.game.settings.display !== 'Full') {
+      const state = this.game.state();
+      const p = state.progress;
+      const details = `(${p.score}) ${Object.keys(p.suffixes).length}/${p.subwords}/${p.anagrams}`;
+      const score = this.game.score.regular + this.game.score.overtime;
+      const goal = state.totals[SETTINGS.grade.toLowerCase()];
+      this.fulle.textContent = `${details} - ${score}/${goal} (${Math.round(score / goal * 100).toFixed(0)}%)`;
+    }
+
+    const s = this.game.score;
+    this.score.textContent = s.overtime ? `${s.regular} / ${s.overtime}` : `${s.regular}`;
+  }
+
+  clear(w) {
+    if (w && w !== this.word.textContent) return;
+    this.word.textContent = '';
+    this.word.classList.remove('error');
+    this.word.classList.remove('fade');
+    this.defn.textContent = '';
+    this.kept = false;
+  }
+
+  createTimer(duration) {
+    const display = createElementWithId('div', 'timer');
+    display.addEventListener('click', () => this.timer.pause());
+    return {display, timer: new Timer(duration, display, () => {
+      if (this.game && !this.game.expired) {
+        this.game.expired = +new Date();
+      }
+    }, UI.persist)};
   }
 
   updateGames(game) {
@@ -607,7 +799,7 @@ class BoardView extends View {
   }
 
   onLongPress() {
-    const size = STATE.game.size;
+    const size = this.game.size;
     const weights = [];
     for (let row = 0; row < size; row++) {
       const a = [];
@@ -617,11 +809,11 @@ class BoardView extends View {
       weights.push(a);
     }
     let total = 0;
-    for (const word in STATE.game.possible) {
-      if (STATE.game.played[word]) continue;
+    for (const word in this.game.possible) {
+      if (this.game.played[word]) continue;
       const score = Game.score(word);
       total += score;
-      for (const p of STATE.game.possible[word]) {
+      for (const p of this.game.possible[word]) {
         weights[p[1]][p[0]] += score;
       }
     }
@@ -639,7 +831,7 @@ class BoardView extends View {
   }
 
   async onKeyDown(e) {
-    // if (kept) clearWord(); // TODO
+    if (this.kept) this.clear();
     focusContentEditable(this.word);
     const key = e.keyCode;
     if (key === 13 || key === 32) {
@@ -654,33 +846,33 @@ class BoardView extends View {
   }
 }
 
-class ScoreView extends View {
-  async attach() {
-    await Promise.all([LOADED.DICT, LOADED.TRIE, LOADED.STATS(), LOADED.HISTORY]);
+class ScorePane {
+  constructor(board) {
+    this.board = board;
+  }
 
-    // TODO FIXME
-    const game = document.getElementById('game');
-    const board = document.getElementById('board');
-    board.classList.add('hidden');
-    word.classList.add('hidden');
-    defn.classList.add('hidden');
+  attach() {
+    this.container = createElementWithId('div', 'game');
 
-    updateVisibility({show: ['back'], hide: ['refresh']});
-    document.getElementById('full').classList.add('hidden');
-
-    const wrapper = document.createElement('div');
-    wrapper.setAttribute('id', 'wrapper');
+    const wrapper = createElementWithId('div', 'wrapper');
     wrapper.classList.add('score');
 
-    const state = STATE.game.state();
-    const score = STATE.game.score.regular + STATE.game.score.overtime;
+    const back = createBackButton(() => {
+      UI.root.removeChild(this.detach());
+      UI.root.appendChild(this.board.attach());
+    });
+
+    this.container.appendChild(createTopbar(back, this.board.timerDisplay, this.board.score));
+
+    const state = this.board.game.state();
+    const score = this.board.game.score.regular + this.board.game.score.overtime;
     const goal = state.totals[SETTINGS.grade.toLowerCase()];
     const details = `${score}/${goal} (${Math.round(score / goal * 100).toFixed(0)}%)`;
-    const current = makeCollapsible(STATE.game.toJSON().seed, details, 'block');
+    const current = makeCollapsible(this.board.game.id, details, 'block');
     const div = document.createElement('div');
     div.classList.add('collapsible-content');
-    displayPlayed(state, div, true);
-    displayPossible(state, div);
+    this.displayPlayed(state, div, true);
+    this.displayPossible(state, div);
     wrapper.appendChild(current);
     wrapper.appendChild(div);
     // Start off with played expanded
@@ -704,20 +896,21 @@ class ScoreView extends View {
           div.classList.remove('lazy');
           const game = Game.fromJSON(state, TRIE, DICT, STATS);
           const s = game.state();
-          displayPlayed(s, div);
-          displayPossible(s, div);
+          this.displayPlayed(s, div);
+          this.displayPossible(s, div);
         }
       });
       wrapper.appendChild(button);
       wrapper.appendChild(div);
     }
 
-    // TODO FIXME
-    // game.appendChild(wrapper);
+    this.container.appendChild(wrapper);
+
+    return this.container;
   }
 
   detach() {
-
+    return this.container;
   }
 
   displayPlayed(state, div, expanded) {
@@ -977,6 +1170,39 @@ function createTopbar(left, center, right) {
   return topbar;
 }
 
+function makeCollapsible(title, details, display, fn) {
+  const button = document.createElement('button');
+  button.setAttribute('type', 'button');
+  button.classList.add('collapsible');
+
+  const div = document.createElement('div');
+
+  const titleSpan = document.createElement('span');
+  titleSpan.classList.add('title');
+  titleSpan.textContent = title;
+
+  const detailsSpan = document.createElement('span');
+  detailsSpan.classList.add('details');
+  detailsSpan.textContent = details;
+
+  div.appendChild(titleSpan);
+  div.appendChild(detailsSpan);
+  button.appendChild(div);
+
+  button.addEventListener('click', () => {
+    button.classList.toggle('active');
+    const content = button.nextElementSibling;
+    if (content.style.display === display) {
+      content.style.display = 'none';
+    } else {
+      if (fn) fn();
+      content.style.display = display;
+    }
+  });
+
+  return button;
+}
+
 function updateGames(game) {
   if (!GAMES) return;
 
@@ -1018,7 +1244,6 @@ const UI = new (class{
       Menu: MenuView,
       Loading: LoadingView,
       Board: BoardView,
-      Score: ScoreView,
       Training: TrainingView,
       Review: ReviewView,
       Define: DefineView,
@@ -1112,7 +1337,7 @@ const UI = new (class{
 
     if (this.current === 'Settings') {
       this.Views[this.current].update();
-    } else if (refresh && this.current === 'Play' || this.current === 'Score') {
+    } else if (refresh && this.current === 'Play') {
       // TODO: REFRESH
       // - requirement => hash reflects current SETTINGS and SEED value
       // - if on board, the seed and settings applied must reflect hash (and thus SETTINGS and SEED.
