@@ -1230,19 +1230,6 @@ function makeCollapsible(title, details, display, fn) {
   return button;
 }
 
-function updateGames(game) {
-  if (!GAMES) return;
-
-  const played = new Set();
-  for (const w in game.played) {
-    if (game.played[w] > 0) played.add(w);
-  }
-  if (!played.size) return GAMES;
-
-  if (GAMES.length >= STATS_LIMIT) GAMES.shift();
-  GAMES.push([game.possible, played]);
-}
-
 function createBackButton(fn) {
   const back = createElementWithId('div', 'back');
   back.appendChild(UI.BACK);
