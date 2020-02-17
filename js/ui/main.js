@@ -72,7 +72,12 @@ class MenuView extends View {
       return button;
     }
 
-    nav.appendChild(createButton('PLAY', () => UI.toggleView('Board')));
+    if (UI.Views.Board.game) {
+      nav.appendChild(createButton('RESUME', () => UI.toggleView('Board', {resume: true})));
+      nav.appendChild(createButton('NEW GAME', () => UI.toggleView('Board')));
+    } else {
+      nav.appendChild(createButton('PLAY', () => UI.toggleView('Board')));
+    }
     nav.appendChild(createButton('TRAIN', () => UI.toggleView('Training')));
     nav.appendChild(createButton('DEFINE', () => UI.toggleView('Define')));
     nav.appendChild(createButton('STATS', () => UI.toggleView('Stats')));
@@ -575,7 +580,7 @@ class BoardView extends View {
     };
   }
 
-  async attach(data = {} /* TODO */) { // FIXME allowDupes, resume
+  async attach(data) {
     await Promise.all([LOADED.DICT, LOADED.TRIE(), LOADED.STATS(), LOADED.HISTORY]);
 
     if (!this.played) {
@@ -621,6 +626,7 @@ class BoardView extends View {
     this.container = createElementWithId('div', 'game');
 
     const back = createBackButton(() => UI.toggleView('Menu'));
+    back.addEventListener('long-press', () => this.refresh());
 
     this.score = createElementWithId('div', 'score');
     this.score.addEventListener('mouseup', () => {
@@ -734,6 +740,12 @@ class BoardView extends View {
 
   detach() {
     return this.container;
+  }
+
+  async refresh(data) {
+    UI.persist();
+    await UI.detachView('Board');
+    await UI.attachView('Board', data);
   }
 
   play() {
@@ -1236,7 +1248,7 @@ function updateGames(game) {
 function createBackButton(fn) {
   const back = createElementWithId('div', 'back');
   back.appendChild(UI.BACK);
-  back.addEventListener('click', fn);
+  back.addEventListener('mouseup', fn);
   return back;
 }
 
@@ -1356,10 +1368,7 @@ const UI = new (class{
     if (this.current === 'Settings') {
       this.Views[this.current].update();
     } else if (refresh && this.current === 'Play') {
-      // TODO FIXME: REFRESH
-      // - requirement => hash reflects current SETTINGS and SEED value
-      // - if on board, the seed and settings applied must reflect hash (and thus SETTINGS and SEED.
-      // BoardView MAY have out of date game/game settings (until user switches back)
+      this.Views[this.current].refresh({allowDupes: true});
     }
   }
 })();

@@ -1,3 +1,9 @@
+  // - requirement => hash reflects current SETTINGS and SEED value
+  // - if on board, the seed and settings applied must reflect hash (and thus SETTINGS and SEED.
+  // BoardView MAY have out of date game/game settings (until user switches back)
+
+
+
 let existing = JSON.parse(localStorage.getItem('current'));
 if (existing && existing.timer > 0 &&
   (!document.location.hash || document.location.hash.slice(1) === existing.game.seed) &&
