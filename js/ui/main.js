@@ -6,9 +6,7 @@ const STORE = new Store('db', 'store');
 const LIMIT = 500;
 
 const fetchJSON = url => fetch(url, {mode: 'no-cors'}).then(j => j.json());
-var DICT, STATS, HISTORY, TRIE, GAMES, SEED;
-
-SEED = 123456789; // FIXME
+var DICT, STATS, HISTORY, TRIE, GAMES, SEED = 0;
 
 // TODO: TRIE, STATS, GAMES, and the TrainingPool creation
 // need to be moved to a background worker and transferred in.
@@ -1285,6 +1283,8 @@ const UI = new (class{
       this.Views[type] = new view(views[type]);
     }
 
+    await this.setup();
+
     this.BACK = document.createElement('img');
     this.BACK.src = 'img/back.svg';
     this.BACK.height = 20;
@@ -1293,11 +1293,11 @@ const UI = new (class{
     document.addEventListener('swiped-left', () => this.toggleView('Define'));
     document.addEventListener('swiped-right', () => this.toggleView('Define'));
     window.addEventListener('hashchange',  () => this.onHashChange());
+    window.addEventListener('beforeunload', () => this.persist())
 
     await this.attachView(this.current);
   }
 
-  // FIXME: add a persist call in window.unload?
   persist(previous) {
     const state = JSON.parse(localStorage.getItem('state')) || {};
     state.current = this.current;
@@ -1343,6 +1343,43 @@ const UI = new (class{
     this.persist(true);
   }
 
+  async setup() {
+    const setupFromHistory = async () => {
+      await LOADED.HISTORY;
+      if (HISTORY.length) {
+        const id = HISTORY[HISTORY.length - 1].seed;
+        const [settings] = Game.decodeID(id);
+
+        const rand = new Random();
+        rand.seed = SEED;
+        rand.next();
+
+        updateSettings(settings, seed);
+      }
+    };
+
+    const hash = document.location.hash && document.location.hash.slice(1);
+    if (!hash) {
+      const existing = this.Views.Board.game;
+      if (existing) {
+        const [settings, seed] = Game.decodeId(existing.game.seed);
+        updateSettings(settings, seed);
+      } else {
+        const [settings, seed] = Game.decodeID(hash);
+        if (this.valid(settings, seed)) {
+          return setupFromHistory();
+        }
+        updateSettings(settings, seed);
+      }
+    } else {
+      const [settings, seed] = Game.decodeID(hash);
+      if (this.valid(settings, seed)) {
+        return setupFromHistory();
+      }
+      updateSettings(settings, seed);
+    }
+  }
+
   async onKeyDown(e) {
     const key = e.keyCode;
     if (key === 191 && e.shiftKey) {
@@ -1356,7 +1393,7 @@ const UI = new (class{
   async onHashChange() {
     if (!document.location.hash) return;
     const [settings, seed] = Game.decodeID(document.location.hash.slice(1));
-    if (isNaN(seed) || !(settings.dice && settings.dict && settings.min)) return;
+    if (!this.valid(settings, seed)) return;
 
     let refresh = seed !== SEED;
     if (!refresh) {
@@ -1370,5 +1407,9 @@ const UI = new (class{
     } else if (refresh && this.current === 'Play') {
       this.Views[this.current].refresh({allowDupes: true});
     }
+  }
+
+  valid(settings, seed) {
+    return !isNaN(seed) && !(settings.dice && settings.dict && settings.min);
   }
 })();
