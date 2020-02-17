@@ -1,6 +1,6 @@
 export class Timer {
-  private readonly duration: number;
   private readonly display: HTMLElement;
+  private readonly duration: number;
 
   private elapsed: number;
   private interval: number | null;
@@ -9,29 +9,34 @@ export class Timer {
   private expireFn: (() => void) | null;
   private updateFn: (() => void) | null;
 
-  constructor(duration: number, display: HTMLElement, expireFn = null, updateFn = null) {
+  constructor(display: HTMLElement, duration: number, elapsed = 0, expireFn = null, updateFn = null) {
     this.duration = duration;
     this.display = display;
-    this.display.classList.remove('expired');
 
-    this.elapsed = 0;
+    this.elapsed = elapsed;
     this.interval = null;
     this.expireFn = expireFn;
     this.updateFn = updateFn;
 
-    this.render(this.duration - this.elapsed);
+    const remaining = this.duration - this.elapsed;
+    if (remaining < 0) {
+      this.display.classList.add('expired');
+    } else {
+      this.display.classList.remove('expired');
+    }
+
+    this.render(remaining);
   }
 
   toJSON() {
-    return this.duration - this.elapsed;
+    return {duration: this.duration, elapsed: this.elapsed};
   }
 
   start() {
-    if (!this.elapsed) {
-      this.begin = new Date().getTime();
-      this.last = this.begin;
-      this.interval = setInterval(() => this.update(), 100);
-    }
+    if (this.interval) throw new Error('Already started');
+    this.begin = new Date().getTime();
+    this.last = this.begin;
+    this.interval = setInterval(() => this.update(), 100);
   }
 
   stop() {
@@ -48,9 +53,7 @@ export class Timer {
       this.elapsed += this.begin - this.last!;
       this.last = this.begin;
     } else {
-      this.begin = new Date().getTime();
-      this.last = this.begin;
-      this.interval = setInterval(() => this.update(), 100);
+      this.start();
     }
   }
 

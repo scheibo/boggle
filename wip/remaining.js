@@ -1,12 +1,3 @@
-var LAST = '';
-var LAST_DEFINITION = '';
-
-let kept = false;
-
-const TOUCH = ('ontouchstart' in window) ||
-    (navigator.maxTouchPoints > 0) ||
-    (navigator.msMaxTouchPoints > 0);
-
 let existing = JSON.parse(localStorage.getItem('current'));
 if (existing && existing.timer > 0 &&
   (!document.location.hash || document.location.hash.slice(1) === existing.game.seed) &&
@@ -23,19 +14,6 @@ if (existing && existing.timer > 0 &&
   Object.assign(SETTINGS, initial.settings);
   localStorage.setItem('settings', JSON.stringify(SETTINGS));
 }
-fn(existing);
-
-document.getElementById('menuPlay').addEventListener('click', () => init(async (existing) => {
-  if (existing) {
-    const timer = new Timer(existing.timer, () => {
-      if (!game.expired) game.expired = +new Date();
-    }, saveGame);
-    STATE = await refresh(false, timer, game);
-    LAST = existing.last;
-  } else {
-    STATE = await refresh();
-  }
-}));
 
 function setup() {
   if (document.location.hash && document.location.hash.length > 1) {
@@ -54,18 +32,4 @@ function setup() {
   }
 
   return {settings: SETTINGS, seed: SEED};
-}
-
-async function refresh(allowDupes, timer, game) {
-
-  if (STATE) {
-    const last = HISTORY[HISTORY.length];
-    if (last && !Object.keys(last.words).length) HISTORY.pop();
-    updateGames(STATE.game);
-    HISTORY.push(STATE.game.toJSON());
-    PLAYED.add(STATE.game.id);
-    await STORE.set('history', HISTORY);
-    STATE.timer.stop();
-  }
-
 }

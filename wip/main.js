@@ -558,7 +558,9 @@ class BoardView extends View {
     this.last = json.last || '';
     this.kept = json.kept || false;
     this.game = json.game || undefined;
-    const {display, timer} = this.createTimer(json.timer || DURATION);
+    const {display, timer} = json.timer ?
+      this.createTimer(json.timer.duration, json.timer.elapsed) :
+      this.createTimer();
     this.timer = timer;
     this.timerDisplay = display;
   }
@@ -576,6 +578,15 @@ class BoardView extends View {
     await Promise.all([LOADED.DICT, LOADED.TRIE, LOADED.STATS(), LOADED.HISTORY]);
 
     if (!this.game || !data.resume) {
+      if (this.game) {
+        this.timer.stop();
+        this.played.add(this.game.id);
+        if (Object.values(this.game.words).filter(t => t > 0).length) {
+          updateGames(this.game);
+          HISTORY.push(this.game.toJSON());
+          await STORE.set('history', HISTORY);
+        }
+      }
 
       let game;
       const random = new Random();
@@ -590,7 +601,7 @@ class BoardView extends View {
       }
       this.game = game;
 
-      const {display, timer} = this.createTimer(DURATION);
+      const {display, timer} = this.createTimer();
       this.timer = timer;
       this.timerDisplay = display;
 
@@ -775,10 +786,10 @@ class BoardView extends View {
     this.kept = false;
   }
 
-  createTimer(duration) {
+  createTimer(duration = DURATION, elapsed = 0) {
     const display = createElementWithId('div', 'timer');
     display.addEventListener('click', () => this.timer.pause());
-    return {display, timer: new Timer(duration, display, () => {
+    return {display, timer: new Timer(display, duration, elapsed, () => {
       if (this.game && !this.game.expired) {
         this.game.expired = +new Date();
       }
