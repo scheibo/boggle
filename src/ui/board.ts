@@ -60,8 +60,11 @@ export class BoardView implements View {
     }
 
     if (!this.game || !data.resume) {
-      if (this.game) { // TODO may be non serialized!
+      if (this.game) {
         this.timer.stop();
+        if (!('random' in this.game)) {
+          this.game = Game.fromJSON(this.game, global.TRIE, global.DICT, global.STATS);
+        }
         this.played.add(this.game.id);
         if (Object.values(this.game.played).filter(t => t > 0).length) {
           this.updateGames();
@@ -92,7 +95,6 @@ export class BoardView implements View {
     } else if (!('random' in this.game)) {
       this.game = Game.fromJSON(this.game, global.TRIE, global.DICT, global.STATS);
     }
-    global.SEED = this.game.random.seed; // FIXME: seed no longer reflect games seed....
 
     this.container = UI.createElementWithId('div', 'game');
 
@@ -102,8 +104,7 @@ export class BoardView implements View {
     this.score = UI.createElementWithId('div', 'score');
     this.score.addEventListener('mouseup', () => {
       const pane = new ScorePane(this);
-      // We don't detach() because switching to score doesn't pause the timer!
-      UI.root.removeChild(this.container);
+      UI.root.removeChild(this.detach('Score'));
       UI.root.appendChild(pane.attach());
     });
     this.score.addEventListener('long-press', () => this.onLongPress());
@@ -129,7 +130,7 @@ export class BoardView implements View {
     this.defn.classList.add('definition')
     this.container.appendChild(this.defn);
 
-    if (data.resume !== 'return') this.timer.start(); // FIXME: don't restart when coming back from score if paused!
+    if (data.resume !== 'return') this.timer.start();
     const hash = `#${this.game.id}`;
     if (document.location.hash !== hash) {
       window.history.replaceState(null, '', hash);
@@ -211,14 +212,14 @@ export class BoardView implements View {
     UI.permaFocus(this.word);
   }
 
-  detach() {
-    this.timer.pause(); // TODO not if going to score or define!!!
+  detach(next: string) {
+    if (next !== 'Score' && next !== 'Define') this.timer.pause();
     return this.container;
   }
 
   async refresh(data?: {resume?: boolean, allowDupes?: boolean}) {
     UI.persist();
-    await UI.detachView('Board');
+    await UI.detachView('Board', 'Board');
     await UI.attachView('Board', data);
   }
 

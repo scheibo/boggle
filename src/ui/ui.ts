@@ -30,7 +30,7 @@ class Loader {
 export interface View {
   toJSON(): any;
   attach(data?: any): HTMLElement | Promise<HTMLElement>;
-  detach(): HTMLElement | Promise<HTMLElement>;
+  detach(next: string): HTMLElement | Promise<HTMLElement>;
   afterAttach?: () => void;
   onKeyDown?: (e: KeyboardEvent) => Promise<void>;
 }
@@ -111,21 +111,21 @@ export const UI = new (class{
     // console.log(+new Date(), 'ATTACHED', view, data, this.Views[view]);
   }
 
-  async detachView(view: string) {
+  async detachView(view: string, next: string) {
     // console.log(+new Date(), 'DETACHING', view, this.Views[view]);
-    this.root.removeChild(await this.Views[view].detach());
+    this.root.removeChild(await this.Views[view].detach(next));
     // console.log(+new Date(), 'DETACHED', view, this.Views[view]);
   }
 
   async toggleView(view: string, data?: any) {
     // console.log('TOGGLE', view, {current: this.current, previous: this.previous});
     if (this.current === view) {
-      await this.detachView(view);
+      await this.detachView(view, this.previous);
       this.current = this.previous;
       this.previous = view;
       await this.attachView(this.current, data);
     } else {
-      await this.detachView(this.current);
+      await this.detachView(this.current, view);
       this.previous = this.current;
       this.current = view;
       await this.attachView(view, data);
