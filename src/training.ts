@@ -155,6 +155,19 @@ export class TrainingPool {
     return this.learned.length;
   }
 
+  overdue() {
+    const now = +new Date();
+    const popped  = [];
+    let overdue = 0;
+    for (let next = this.learned.pop(); next; next = this.learned.pop()) {
+      popped.push(next);
+      if (next.d > now) break;
+      overdue++;
+    }
+    for (const p of popped) this.learned.push(p);
+    return overdue;
+  }
+
   next() {
     const now = +new Date();
     const backfill = () => {

@@ -3,11 +3,14 @@ import { UI, View } from './ui';
 import { TrainingPool } from '../training';
 import { Store } from '../store';
 
+const INTERVAL = 1000;
+
 export class TrainingView implements View {
   pool!: TrainingPool;
   train!: HTMLElement;
   content: HTMLElement | null = null;
   restore: (() => void) | null = null;
+  interval: number | null = null;
 
   toJSON() {}
   async attach() {
@@ -30,6 +33,7 @@ export class TrainingView implements View {
 
   async detach() {
     if (this.restore) await this.restore();
+    if (this.interval) clearInterval(this.interval);
     this.content = null;
     return this.train;
   }
@@ -37,7 +41,8 @@ export class TrainingView implements View {
   next() {
     const content = UI.createElementWithId('div', 'content');
     const progress = UI.createElementWithId('div', 'progress');
-    progress.textContent = String(this.pool.size());
+    this.updateProgress(progress);
+    this.interval = setInterval(() => this.updateProgress(progress), INTERVAL);
 
     const { label, group, update, restore } = this.pool.next();
     this.restore = restore;
@@ -49,7 +54,7 @@ export class TrainingView implements View {
     sizeHint.classList.add('hidden');
     sizeHint.textContent = String(group.length);
 
-    const rating = this.createRatingToggles(update);
+    const rating = this.createRatingToggles(progress, update);
     const table = document.createElement('table');
     table.classList.add('results', 'hidden');
     UI.addAnagramRows(table, group);
@@ -88,7 +93,7 @@ export class TrainingView implements View {
     this.content = content;
   }
 
-  createRatingToggles(update: (q: number) => Promise<void>) {
+  createRatingToggles(progress: HTMLElement, update: (q: number) => Promise<void>) {
     const toggles = document.createElement('div');
     toggles.setAttribute('id', 'rating');
     toggles.classList.add('toggle-group');
@@ -106,11 +111,17 @@ export class TrainingView implements View {
 
       toggle.addEventListener('click', async () => {
         await update(Number(toggle.textContent));
+        // Update progress before its scheduled interval to ensure there's no perceived lag
+        this.updateProgress(progress);
         this.restore = null;
         this.next();
       });
     }
 
     return toggles;
+  }
+
+  updateProgress(progress: HTMLElement) {
+    progress.textContent = `${this.pool.overdue()} / ${this.pool.size()}`;
   }
 }
