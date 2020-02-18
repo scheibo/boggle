@@ -4,6 +4,7 @@ rev=$(git rev-parse --short HEAD |  tr -d "\n")
 node build https://scheibo.github.io/boggle/ /boggle/
 cp -a dist /tmp
 git checkout gh-pages
+find . -maxdepth 1 -type f -not -path './.gitignore' -delete
 cp -a /tmp/dist/* .
 git add .
 git commit -m "Publish: '${rev}'"
