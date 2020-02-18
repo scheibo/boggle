@@ -344,6 +344,7 @@ export class BoardView implements View {
   }
 
   async onKeyDown(e: KeyboardEvent) {
+    if (!this.word) return; // not attached
     if (this.kept) this.clear();
     UI.focusContentEditable(this.word);
     // tslint:disable-next-line: deprecation
