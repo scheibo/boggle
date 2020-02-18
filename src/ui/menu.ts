@@ -14,7 +14,7 @@ export class MenuView implements View {
     title.textContent = 'BOGGLE';
     // TODO: needs testing!
     title.addEventListener('long-press', async () => {
-      const key = (await caches.keys()).find(n => n.startsWith('cache'));
+      const key = (await caches.keys()).find(n => n.includes(':cache:'));
       if (key) await caches.delete(key);
       // tslint:disable-next-line: deprecation
       document.location.reload(true);

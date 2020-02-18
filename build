@@ -60,7 +60,7 @@ for (const file of DATA) {
 const NAMESPACE = 'boggle';
 const {code, map} = Terser.minify(`'use strict';
 const CACHE = '${NAMESPACE}:cache:${hash(FILES.map(f => path.join('/dist', f)))}';
-const DATA = '${NAMESPACE}::data:${hash(DATA)}';
+const DATA = '${NAMESPACE}:data:${hash(DATA)}';
 
 self.addEventListener('install', e => {
     self.skipWaiting();
@@ -73,7 +73,7 @@ self.addEventListener('activate', e =>
     e.waitUntil(
         caches.keys().then(keys =>
             Promise.all(keys.map(key => {
-                if (key.startsWith('${NAMESPACE}') && key !== CACHE && key !== DATA) return caches.delete(key);
+                if (key.startsWith('${NAMESPACE}') && ![CACHE, DATA].includes(key)) return caches.delete(key);
             })))));
 
 const writeBack = (e, which) =>
