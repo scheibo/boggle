@@ -40,4 +40,4 @@ var t=function(t){"use strict";var r,e=Object.prototype,n=e.hasOwnProperty,o="fu
 },{"./global":"VlPw","../game":"dgAm","../random":"Mkcc","../dict":"qafh","./board":"mx3t","./define":"GDz3","./menu":"qI3H","./review":"AOXD","./settings":"UoCm","./stats":"PRMN","./training":"vUQU"}],"B6dB":[function(require,module,exports) {
 "use strict";Object.defineProperty(exports,"__esModule",{value:!0}),require("regenerator-runtime/runtime");var e=require("./ui/ui");e.UI.create();
 },{"regenerator-runtime/runtime":"KA2S","./ui/ui":"ePHQ"}]},{},["B6dB"], null)
-//# sourceMappingURL=/src.09d314a5.js.map
+//# sourceMappingURL=src.09d314a5.js.map
