@@ -8,7 +8,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="Boggle">
-  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+  <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
   <link rel="icon" href="favicon.ico">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" type="text/css" href="style.css">
@@ -25,11 +25,7 @@
 <body>
   <div id="display">
   </div>
-  <img id='svg' src='img/back.svg'><!-- Parcel mangles the path... -->
-  <script>
-    const sw = 'sw.js'; // obsfuscate so Parcel doesn't complain about this being missing
-    if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register(sw));
-  </script>
+  <img id='svg' src='img/back.svg'>
   <script type="application/javascript" src="src/index.ts"></script>
 </body>
 </html>

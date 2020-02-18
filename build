@@ -7,6 +7,9 @@ const fs = require('fs');
 const path = require('path');
 const Terser = require('terser');
 
+const canonical = process.argv[2]; // https://scheibo.github.io/boggle/
+const root = process.argv[3] || '/'; // /boggle/
+
 const shell = cmd => child_process.execSync(cmd, {stdio: 'inherit', cwd: __dirname});
 const hash = files => {
   const h = crypto.createHash('md5');
@@ -29,12 +32,21 @@ try {
   shell('./tools/dict.js');
 }
 
-shell('npx parcel build index.html');
+shell('npx parcel build --public-url ./ index.html');
 
 const DATA = ['/data/dict.json', '/data/stats.json'];
 
 const dist = path.join(__dirname, 'dist');
 const distdata = path.join(dist, 'data');
+
+// Rewrite the compiled index.html to fix the sw.js location
+const META = '<meta name="description" content="Boggle">';
+const SCRIPT = '<script type="application/javascript"';
+const index = path.join(dist, 'index.html');
+let contents = fs.readFileSync(index, 'utf8');
+if (canonical) contents = contents.replace(META, `${META}<link rel="canonical" href="${canonical}" />`);
+contents = contents.replace(SCRIPT, `<script>"serviceWorker"in navigator&&window.addEventListener("load",function(){return navigator.serviceWorker.register("${root}sw.js",{scope: "${root}"})});</script> ${SCRIPT}`)
+fs.writeFileSync(index, contents);
 
 // All the files parcel created
 const FILES = fs.readdirSync(dist).filter(f => f !== 'data');
@@ -45,9 +57,10 @@ for (const file of DATA) {
   fs.copyFileSync(path.join(__dirname, file), path.join(dist, file));
 }
 
+const NAMESPACE = 'boggle';
 const {code, map} = Terser.minify(`'use strict';
-const CACHE = 'cache:${hash(FILES.map(f => path.join('/dist', f)))}';
-const DATA = 'data:${hash(DATA)}';
+const CACHE = '${NAMESPACE}:cache:${hash(FILES.map(f => path.join('/dist', f)))}';
+const DATA = '${NAMESPACE}::data:${hash(DATA)}';
 
 self.addEventListener('install', e => {
     self.skipWaiting();
@@ -60,7 +73,7 @@ self.addEventListener('activate', e =>
     e.waitUntil(
         caches.keys().then(keys =>
             Promise.all(keys.map(key => {
-                if (key !== CACHE && key !== DATA) return caches.delete(key);
+                if (key.startsWith('${NAMESPACE}') && key !== CACHE && key !== DATA) return caches.delete(key);
             })))));
 
 const writeBack = (e, which) =>

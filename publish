@@ -1,7 +1,7 @@
 #!/bin/bash
 
 rev=$(git rev-parse --short HEAD |  tr -d "\n")
-node build
+node build https://scheibo.github.io/boggle/ /boggle/
 cp -a dist /tmp
 git checkout gh-pages
 cp -a /tmp/dist/* .
