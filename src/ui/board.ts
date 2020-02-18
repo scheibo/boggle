@@ -3,7 +3,6 @@ import { UI, View } from './ui';
 import { Game, GameJSON, SUFFIXES } from '../game';
 import { Timer, TimerJSON } from '../timer';
 import { Random } from '../random';
-import { ScorePane } from './score';
 import { define } from '../dict';
 
 const DURATION = 180 * 1000;
@@ -11,6 +10,7 @@ const DURATION = 180 * 1000;
 interface BoardJSON {
   last: string;
   kept: boolean;
+  paused: boolean;
   timer: TimerJSON;
   game?: GameJSON;
 }
@@ -18,6 +18,7 @@ interface BoardJSON {
 export class BoardView implements View {
   last: string;
   kept: boolean;
+  paused: boolean;
   timer: Timer;
   game: GameJSON | Game | undefined;
 
@@ -35,9 +36,8 @@ export class BoardView implements View {
     this.last = json ? json.last : '';
     this.kept = json ? json.kept : false;
     this.game = json ? json.game : undefined;
-    const { display, timer } = json
-      ? this.createTimer(json.timer.duration, json.timer.elapsed)
-      : this.createTimer();
+    this.paused = json ? json.paused : false;
+    const { display, timer } = this.createTimer(json && json.timer);
     this.timer = timer;
     this.timerDisplay = display;
   }
@@ -46,12 +46,13 @@ export class BoardView implements View {
     return {
       last: this.last,
       kept: this.kept,
+      paused: this.paused,
       timer: this.timer.toJSON(),
       game: this.game && ('random' in this.game ? this.game.toJSON() : this.game),
     };
   }
 
-  async attach(data: { resume?: true | 'return'; allowDupes?: boolean } = {}) {
+  async init(data: { resume?: true; allowDupes?: boolean } = {}) {
     await Promise.all([
       global.LOADED.DICT,
       global.LOADED.TRIE(),
@@ -97,24 +98,30 @@ export class BoardView implements View {
 
       this.last = '';
       this.kept = false;
+      this.paused = false;
     } else if (!('random' in this.game)) {
       this.game = Game.fromJSON(this.game, global.TRIE, global.DICT, global.STATS);
     }
+
+    if (!this.score) {
+      this.score = UI.createElementWithId('div', 'score');
+      this.displayScore();
+    }
+  }
+
+  async attach(data: { resume?: true; allowDupes?: boolean } = {}) {
+    await this.init(data);
 
     this.container = UI.createElementWithId('div', 'game');
 
     const back = UI.createBackButton(() => UI.toggleView('Menu'));
     back.addEventListener('long-press', () => this.refresh());
 
-    this.score = UI.createElementWithId('div', 'score');
-    this.score.addEventListener('mouseup', () => {
-      const pane = new ScorePane(this);
-      UI.root.removeChild(this.detach('Score'));
-      UI.root.appendChild(pane.attach());
-    });
-    this.score.addEventListener('long-press', () => this.onLongPress());
-    this.score.addEventListener('long-press-up', () => this.onLongPressUp());
-    this.displayScore();
+    const score = UI.createElementWithId('div', 'score-wrapper');
+    score.appendChild(this.score);
+    score.addEventListener('mouseup', () => UI.toggleView('Score'));
+    score.addEventListener('long-press', () => this.onLongPress());
+    score.addEventListener('long-press-up', () => this.onLongPressUp());
 
     this.container.appendChild(UI.createTopbar(back, this.timerDisplay, this.score));
 
@@ -133,8 +140,8 @@ export class BoardView implements View {
     this.defn.classList.add('definition');
     this.container.appendChild(this.defn);
 
-    if (data.resume !== 'return') this.timer.start();
-    const hash = `#${this.game.id}`;
+    if (!this.paused) this.timer.start();
+    const hash = `#${(this.game as Game).id}`;
     if (document.location.hash !== hash) {
       window.history.replaceState(null, '', hash);
     }
@@ -216,7 +223,7 @@ export class BoardView implements View {
   }
 
   detach(next: string) {
-    if (next !== 'Score' && next !== 'Define') this.timer.pause();
+    if (!['Score', 'Define'].includes(next)) this.timer.stop();
     return this.container;
   }
 
@@ -284,14 +291,19 @@ export class BoardView implements View {
     this.kept = false;
   }
 
-  createTimer(duration = DURATION, elapsed = 0) {
+  createTimer(json?: TimerJSON) {
     const display = UI.createElementWithId('div', 'timer');
-    display.addEventListener('click', () => this.timer.pause());
+    display.addEventListener('click', () => {
+      this.timer.toggle();
+      this.paused = !!this.paused;
+    });
     const expire = () => {
       if (this.game && !this.game.expired) {
         this.game.expired = +new Date();
       }
     };
+    const duration = json ? json.duration : DURATION;
+    const elapsed = json ? json.elapsed : 0;
     const timer = new Timer(display, duration, elapsed, expire, () => UI.persist());
     return { display, timer };
   }

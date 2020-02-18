@@ -3,8 +3,8 @@ import { UI } from './ui';
 import { BoardView } from './board';
 import { Game } from '../game';
 
-export class ScorePane {
-  readonly board: BoardView;
+export class ScoreView {
+  private readonly board: BoardView;
 
   container!: HTMLElement;
 
@@ -12,24 +12,18 @@ export class ScorePane {
     this.board = board;
   }
 
-  attach() {
+  toJSON() {}
+
+  async attach() {
+    await this.board.init();
+
     this.container = UI.createElementWithId('div', 'game');
 
     const wrapper = UI.createElementWithId('div', 'wrapper');
     wrapper.classList.add('score');
 
-    const back = UI.createBackButton(async () => {
-      UI.root.removeChild(this.detach());
-      UI.root.appendChild(await this.board.attach({ resume: 'return' }));
-    });
-
-    this.container.appendChild(
-      UI.createTopbar(
-        back,
-        this.board.timerDisplay,
-        this.board.score!.cloneNode(true) as HTMLElement
-      )
-    );
+    const back = UI.createBackButton(() => UI.toggleView('Board', { resume: true }));
+    this.container.appendChild(UI.createTopbar(back, this.board.timerDisplay, this.board.score));
 
     const game = this.board.game as Game;
     const state = game.state();

@@ -5,6 +5,7 @@ import { Settings, Theme } from '../settings';
 import { define } from '../dict';
 
 import { BoardView } from './board';
+import { ScoreView } from './score';
 import { DefineView } from './define';
 import { MenuView } from './menu';
 import { ReviewView } from './review';
@@ -63,7 +64,6 @@ export const UI = new (class {
       Menu: MenuView,
       Board: BoardView,
       Training: TrainingView,
-      Review: ReviewView,
       Define: DefineView,
       Stats: StatsView,
       Settings: SettingsView,
@@ -74,6 +74,8 @@ export const UI = new (class {
       // @ts-ignore
       this.Views[type] = new view(views[type]);
     }
+    this.Views.Review = new ReviewView(this.Views.Training as TrainingView);
+    this.Views.Score = new ScoreView(this.Views.Board as BoardView);
 
     await this.setup();
 

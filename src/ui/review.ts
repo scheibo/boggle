@@ -3,30 +3,26 @@ import { UI, View } from './ui';
 import { order } from '../dict';
 import { Store } from '../store';
 import { TrainingStats } from '../training';
+import { TrainingView } from './training';
 
 export class ReviewView implements View {
-  size: number;
+  private readonly training: TrainingView;
 
   review!: HTMLElement;
 
-  constructor(json?: { size: number }) {
-    this.size = json ? json.size : 0;
+  constructor(training: TrainingView) {
+    this.training = training;
   }
 
-  toJSON(): { size: number } {
-    return { size: this.size };
-  }
+  toJSON() {}
 
-  async attach(size?: number) {
-    await Promise.all([global.LOADED.DICT, global.LOADED.STATS()]);
+  async attach() {
+    await this.training.init();
 
     this.review = UI.createElementWithId('div', 'review');
-    if (size) this.size = size;
 
     const back = UI.createBackButton(() => UI.toggleView('Training'));
-    const progress = UI.createElementWithId('div', 'progress');
-    progress.textContent = String(this.size);
-    this.review.appendChild(UI.createTopbar(back, null, progress));
+    this.review.appendChild(UI.createTopbar(back, null, this.training.progress));
 
     const d = global.SETTINGS.dice.charAt(0).toLowerCase() as 'n' | 'o' | 'b';
     const score = (k: string) => global.STATS.anagrams(k, global.SETTINGS.dict)[d] || 0;

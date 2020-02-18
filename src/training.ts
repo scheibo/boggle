@@ -157,7 +157,7 @@ export class TrainingPool {
 
   overdue() {
     const now = +new Date();
-    const popped  = [];
+    const popped = [];
     let overdue = 0;
     for (let next = this.learned.pop(); next; next = this.learned.pop()) {
       popped.push(next);
