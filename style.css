@@ -1,9 +1,11 @@
 @import './src/ui/global.css';
 @import './src/ui/ui.css';
+@import './src/ui/menu.css';
 @import './src/ui/board.css';
 @import './src/ui/score.css';
 @import './src/ui/review.css';
 @import './src/ui/training.css';
 @import './src/ui/define.css';
+@import './src/ui/stats.css';
 @import './src/ui/settings.css';
 @import './src/ui/todo.css'; /* TODO */
