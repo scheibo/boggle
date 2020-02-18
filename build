@@ -58,30 +58,46 @@ for (const file of DATA) {
 }
 
 const NAMESPACE = 'boggle';
-const {code, map} = Terser.minify(`'use strict';
-  const CACHE = '${NAMESPACE}:cache:${hash(FILES.map(f => path.join('/dist', f)))}';
+const {error, code, map} = Terser.minify(`'use strict';
+  const version = '${hash(FILES.map(f => path.join('/dist', f)))}';
+  const CACHE = '${NAMESPACE}:cache:' + version;
   const DATA = '${NAMESPACE}:data:${hash(DATA)}';
 
   self.addEventListener('install', e => {
+    console.log('[ServiceWorker:'+version+'] installed');
     self.skipWaiting();
     e.waitUntil(
-      caches.open(CACHE).then(cache =>
-        cache.addAll(${JSON.stringify(FILES)})));
+      caches.open(CACHE).then(cache => {
+        console.log('[ServiceWorker:'+version+'] cache.addAll', ${JSON.stringify(FILES)});
+        return cache.addAll(${JSON.stringify(FILES)});
+      }));
   });
 
-  self.addEventListener('activate', e =>
+  self.addEventListener('activate', e => {
+    console.log('[ServiceWorker:'+version+'] activate');
     e.waitUntil(
       caches.keys().then(keys =>
         Promise.all(keys.map(key => {
-          if (key.startsWith('${NAMESPACE}') && ![CACHE, DATA].includes(key)) return caches.delete(key);
-        })))));
+          if (key.startsWith('${NAMESPACE}') && ![CACHE, DATA].includes(key)) {
+            console.log('[ServiceWorker:'+version+'] deleting', key);
+            return caches.delete(key);
+          }
+        }))))
+  });
 
   const writeBack = (e, which) =>
     caches.open(which).then(async cache => {
       const cached = await cache.match(e.request);
-      if (cached) return cached;
+      if (cached) {
+        console.log('[ServiceWorker:'+version+'] returning cached result for', e.request.url);
+        return cached;
+      }
+      console.log('[ServiceWorker:'+version+'] fetching', e.request.url);
       const response = await fetch(e.request);
-      if (response.status === 200) cache.put(e.request.url, response.clone());
+      if (response.status === 200) {
+        console.log('[ServiceWorker:'+version+'] caching', e.request.url, 'to', which);
+        cache.put(e.request.url, response.clone());
+      }
       return response;
     });
 
@@ -100,5 +116,9 @@ const {code, map} = Terser.minify(`'use strict';
   }
 });
 
+if (error) {
+  console.error(error);
+  process.exit(1);
+}
 fs.writeFileSync(path.join(dist, 'sw.js'), code);
 fs.writeFileSync(path.join(dist, 'sw.js.map'), map);
