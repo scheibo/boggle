@@ -6,7 +6,7 @@ cp -a dist /tmp
 git checkout gh-pages
 find . -maxdepth 1 -type f -not -path './.gitignore' -delete
 cp -a /tmp/dist/* .
-git add .
+git add -u .
 git commit -m "Publish: '${rev}'"
 git push origin gh-pages
 git checkout -
