@@ -1,0 +1,11 @@
+#!/bin/bash
+
+rev = $(git rev-parse --short HEAD |  tr -d "\n")
+node build
+cp -a dist /tmp
+git checkout gh-pages1
+cp -a /tmp/dist/* .
+git add *
+git commit -m "Publish: '${rev}'"
+git push origin gh-pages1
+git checkout -
