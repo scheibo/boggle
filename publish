@@ -1,7 +1,8 @@
 #!/bin/bash
 
-rev=$(git rev-parse --short HEAD |  tr -d "\n")
+rev=$(git rev-parse --short HEAD | tr -d "\n")
 node build https://scheibo.github.io/boggle/ /boggle/
+rm -r /tmp/dist
 cp -a dist /tmp
 git checkout gh-pages
 find . -maxdepth 1 -type f -not -path './.gitignore' -delete
