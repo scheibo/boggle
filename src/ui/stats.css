@@ -1,0 +1,24 @@
+#stats {
+  height: 100%;
+  overflow: scroll;
+}
+#stats td {
+  padding: 8px 10px;
+}
+#stats table {
+  min-width: 75%;
+  margin: 25px auto 0;
+  text-align: center;
+}
+#statsSelect {
+  font-size: 16px;
+  line-height: 16px;
+  margin-top: 10px;
+}
+#statsSelect .toggle {
+  margin: -1px -2px 0;
+  width: 3em;
+}
+#statsSelect label:nth-of-type(2)  {
+  width: 5em;
+}

@@ -1,0 +1,163 @@
+/** GENERAL **/
+body {
+  font-family: "Roboto", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+  margin: 0px;
+  touch-action: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+
+  background-color: var(--bg-color);
+  color: var(--fg-color);
+}
+.hidden, #svg { display: none !important; }
+.underline { text-decoration: underline; }
+.error { color: red; }
+.word {
+  width: 100%;
+  height: 68px;
+  line-height: 68px;
+  vertical-align: middle;
+  text-align: center;
+  font-size: 40px;
+  font-weight: bold;
+  text-transform: uppercase;
+  -webkit-user-select: text;
+  user-select: text;
+}
+.word:focus {
+  outline: none;
+}
+.definition {
+  text-align: center;
+  margin: 0px auto;
+  width: 90%;
+}
+/** TOGGLES **/
+.toggle {
+  text-align: center;
+  border: 3px solid var(--fg-color);
+  padding: 14px 8px;
+  position: relative;
+  cursor: pointer;
+  background: var(--bg-color);
+  margin: -1px -3px 0;
+  display: inline-block;
+  border-radius: 8px;
+  width: 4em;
+}
+.toggle-group label, .toggle-group button {
+  border-radius: 0;
+}
+.toggle-group.horizontal label:first-of-type,
+.toggle-group.horizontal button:first-of-type {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+.toggle-group.horizontal label:last-of-type,
+.toggle-group.horizontal button:last-of-type {
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+/* Hide element visually, but not from screen readers.
+   See http://adrianroselli.com/2017/05/under-engineered-custom-radio-buttons-and-checkboxen.html */
+.hide:focus + .toggle,
+.toggle:hover {
+  background: var(--toggle-hover-color);
+}
+.hide:checked + .toggle, button.checked {
+  font-weight: bold;
+  background: var(--toggle-checked-color);
+}
+.hide[type="radio"]:checked + .toggle {
+  cursor: default;
+}
+.hide {
+  clip: rect(1px, 1px, 1px, 1px);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  top: auto;
+}
+.hide:disabled + .toggle {
+  color: #999999;
+}
+
+/** ROUNDED TABLES **/
+.roundedTable {
+  line-height: 1.15em;
+  border-collapse: separate;
+  border-left: 0;
+  border-spacing: 0px;
+}
+.roundedTable {
+  min-width: 90%;
+  margin: 34px auto 0;
+  text-align: left;
+}
+.roundedTable td {
+  border-top: 3px solid var(--fg-color);
+  border-left: 3px solid var(--fg-color);
+  padding: 4px 10px;
+}
+.roundedTable td.value {
+  text-align: right;
+}
+.roundedTable tr:last-of-type td {
+  border-bottom: 3px solid var(--fg-color);
+}
+.roundedTable tr td:last-of-type {
+  border-right: 3px solid var(--fg-color);
+}
+.roundedTable tr:first-of-type td:first-of-type {
+  border-top-left-radius: 8px;
+}
+.roundedTable tr:first-of-type td:last-of-type {
+  border-top-right-radius: 8px;
+}
+.roundedTable tr:last-of-type td:first-of-type {
+  border-bottom-left-radius: 8px;
+}
+.roundedTable tr:last-of-type td:last-of-type {
+  border-bottom-right-radius: 8px;
+}
+
+/** TOPBAR **/
+#topbar {
+  height: 68px;
+  line-height: 68px;
+  vertical-align: middle;
+  font-size: 20px;
+  display: flex;
+  flex-direction: row;
+  text-align: center;
+  font-weight: bold;
+}
+#topbar div:nth-child(1), #topbar div:nth-child(3)  {
+  width: 20%;
+}
+#topbar div:nth-child(2) {
+  width: 60%;
+}
+
+/** LOADING VIEW **/
+#loader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 60%;
+}
+@keyframes spinner { to { transform: rotate(360deg); } }
+#spinner {
+  display: inline-block;
+  width: 2rem;
+  height: 2rem;
+  vertical-align: text-bottom;
+  border: .25em solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  -webkit-animation: spinner .75s linear infinite;
+  animation: spinner .75s linear infinite;
+}

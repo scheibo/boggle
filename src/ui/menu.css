@@ -1,0 +1,16 @@
+#men h1 {
+  font-size: 64px;
+  text-align: center;
+}
+#men button {
+  display: block;
+  width: 60%;
+  font-weight: bold;
+  font-size: 32px;
+  margin: 5px 0;
+}
+#men nav {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}

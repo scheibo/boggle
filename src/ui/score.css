@@ -1,0 +1,66 @@
+.overtime { font-style: italic; }
+.hard { color: var(--hard-color); }
+#wrapper.score {
+  height: 100%;
+  overflow: scroll;
+}
+#wrapper.score .results {
+  width: 100%;
+  padding: 5px;
+  z-index: -1;
+}
+/** COLLAPSIBLES **/
+.collapsible {
+  cursor: pointer;
+  padding: 18px;
+  width: 95%;
+  display: block;
+  margin: 3px auto;
+  border: 3px solid var(--fg-color);
+  color: var(--fg-color);
+  border-radius: 8px;
+  text-align: left;
+  outline: none;
+  font-family: "Roboto", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+  background-color: var(--collapsible-bg-color);
+}
+.collapsible-title {
+  font-weight: bold;
+}
+.collapsible-content {
+  padding: 5px 18px;
+  display: none;
+  overflow: hidden;
+}
+.collapsible-content .collapsible-content {
+  border: 3px solid var(--fg-color);
+  border-top: none;
+  border-radius: 0px 0px 8px 8px;
+  margin-bottom: 5px;
+  min-height: 3em;
+}
+.collapsible-content .collapsible {
+  width: 100%;
+  margin-bottom: 5px;
+}
+.collapsible-content .collapsible.active {
+  margin-bottom: 0px;
+  border-radius: 8px 8px 0px 0px;
+}
+.collapsible:after {
+  content: '\02795';
+  color: transparent;
+  text-shadow: 0 0 0 var(--fg-color);
+  float: right;
+  margin-left: 5px;
+}
+.collapsible.active:after {
+  content: '\02796';
+}
+.collapsible div {
+  width: 90%;
+  display: inline-block;
+}
+.collapsible-details {
+  float: right;
+}

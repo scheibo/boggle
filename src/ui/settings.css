@@ -1,0 +1,13 @@
+#seed {
+  text-align: center;
+  font-size: 25px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+#seed:focus {
+  outline: none;
+}
+.row {
+  text-align: center;
+  padding: 14px;
+}

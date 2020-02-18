@@ -1,0 +1,78 @@
+/** TODO **/
+#review .wrapper, #content, #train {
+  height: 100%;
+  overflow: scroll;
+}
+#display, #content, #review, #game {
+  width: 360px;
+  height: 588px;
+  margin: 0px auto;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+#display { border: 1px solid red; }
+
+/** MEDIA QUERIES **/
+/** FIXME: separate out min height vs. min-width requirements! **/
+/** FIXME: should be setting max-height and max-width! */
+
+/* iPhone = '414 x 736' */
+@media(min-height: 600px) {
+  #full {
+    top: 0px;
+  }
+  #board {
+    margin: 30px 0;
+  }
+  #settings .row {
+    padding: 12px;
+  }
+}
+
+/* Pixel = 393 x 714 */
+@media(min-height: 650px) {
+  #full {
+    top: 3px;
+  }
+  #board {
+    margin: 40px 0;
+  }
+  #settings .row {
+    padding: 14px;
+  }
+}
+
+@media(min-width: 393px) {
+  #display, #content, #review, #game {
+    width: 393px;
+    height: 714px;
+  }
+}
+
+/* Tablet */
+@media(min-width: 768px) {
+  body {
+    margin-top: 20px;
+  }
+}
+
+/* Installed (no URL bar) */
+@media all and (display-mode: standalone) {
+  body {
+    margin-top: 20px;
+  }
+  /* TODO */
+  /* #settings {
+    position: relative;
+    top: -10px;
+  }
+  #content {
+    margin: 10px 0px;
+  }
+  #review .wrapper, #content, #train {
+    position: relative;
+    top: -20px;
+  } */
+}

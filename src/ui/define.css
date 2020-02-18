@@ -1,0 +1,9 @@
+#search {
+  margin: 20px 0;
+}
+#defineAnagrams {
+  font-style: italic;
+  text-align: center;
+  margin: 20px auto 0;
+  min-width: 90%;
+}
