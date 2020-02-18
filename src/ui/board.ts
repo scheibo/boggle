@@ -1,10 +1,10 @@
-import {global} from './global';
-import {UI, View} from './ui';
+import { global } from './global';
+import { UI, View } from './ui';
 import { Game, GameJSON, SUFFIXES } from '../game';
-import { Timer, TimerJSON} from '../timer';
-import {Random} from '../random';
-import {ScorePane} from './score';
-import {define} from '../dict';
+import { Timer, TimerJSON } from '../timer';
+import { Random } from '../random';
+import { ScorePane } from './score';
+import { define } from '../dict';
 
 const DURATION = 180 * 1000;
 
@@ -35,9 +35,9 @@ export class BoardView implements View {
     this.last = json ? json.last : '';
     this.kept = json ? json.kept : false;
     this.game = json ? json.game : undefined;
-    const {display, timer} = json ?
-      this.createTimer(json.timer.duration, json.timer.elapsed) :
-      this.createTimer();
+    const { display, timer } = json
+      ? this.createTimer(json.timer.duration, json.timer.elapsed)
+      : this.createTimer();
     this.timer = timer;
     this.timerDisplay = display;
   }
@@ -51,8 +51,13 @@ export class BoardView implements View {
     };
   }
 
-  async attach(data: {resume?: true | 'return', allowDupes?: boolean} = {}) {
-    await Promise.all([global.LOADED.DICT, global.LOADED.TRIE(), global.LOADED.STATS(), global.LOADED.HISTORY]);
+  async attach(data: { resume?: true | 'return'; allowDupes?: boolean } = {}) {
+    await Promise.all([
+      global.LOADED.DICT,
+      global.LOADED.TRIE(),
+      global.LOADED.STATS(),
+      global.LOADED.HISTORY,
+    ]);
 
     if (!this.played) {
       this.played = new Set();
@@ -86,7 +91,7 @@ export class BoardView implements View {
       }
       this.game = game;
 
-      const {display, timer} = this.createTimer();
+      const { display, timer } = this.createTimer();
       this.timer = timer;
       this.timerDisplay = display;
 
@@ -120,14 +125,12 @@ export class BoardView implements View {
 
     this.word = UI.createElementWithId('div', 'word');
     this.word.classList.add('word');
-    if (!(('ontouchstart' in window) ||
-      (navigator.maxTouchPoints > 0) ||
-      (navigator.msMaxTouchPoints > 0))) {
-      this.word.contentEditable = 'true';
-    }
+    const touch =
+      'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
+    if (!touch) this.word.contentEditable = 'true';
     this.container.appendChild(this.word);
     this.defn = UI.createElementWithId('div', 'defn');
-    this.defn.classList.add('definition')
+    this.defn.classList.add('definition');
     this.container.appendChild(this.defn);
 
     if (data.resume !== 'return') this.timer.start();
@@ -217,7 +220,7 @@ export class BoardView implements View {
     return this.container;
   }
 
-  async refresh(data?: {resume?: boolean, allowDupes?: boolean}) {
+  async refresh(data: { allowDupes?: boolean } = {}) {
     UI.persist();
     await UI.detachView('Board', 'Board');
     await UI.attachView('Board', data);
@@ -246,7 +249,7 @@ export class BoardView implements View {
       const listener = () => {
         this.clear(original);
         this.word.removeEventListener('animationend', listener);
-      }
+      };
       this.word.addEventListener('animationend', listener);
     }
   }
@@ -264,7 +267,8 @@ export class BoardView implements View {
       const details = `(${p.score}) ${Object.keys(p.suffixes).length}/${p.subwords}/${p.anagrams}`;
       const score = game.score.regular + game.score.overtime;
       const goal = state.totals[global.SETTINGS.grade.toLowerCase() as 'a' | 'b' | 'c' | 'd'];
-      this.full.textContent = `${details} - ${score}/${goal} (${Math.round(score / goal * 100).toFixed(0)}%)`;
+      const pct = Math.round((score / goal) * 100).toFixed(0);
+      this.full.textContent = `${details} - ${score}/${goal} (${pct}%)`;
     }
 
     const s = game.score;
@@ -283,11 +287,13 @@ export class BoardView implements View {
   createTimer(duration = DURATION, elapsed = 0) {
     const display = UI.createElementWithId('div', 'timer');
     display.addEventListener('click', () => this.timer.pause());
-    return {display, timer: new Timer(display, duration, elapsed, () => {
+    const expire = () => {
       if (this.game && !this.game.expired) {
         this.game.expired = +new Date();
       }
-    }, () => UI.persist())};
+    };
+    const timer = new Timer(display, duration, elapsed, expire, () => UI.persist());
+    return { display, timer };
   }
 
   updateGames() {
@@ -340,6 +346,7 @@ export class BoardView implements View {
   async onKeyDown(e: KeyboardEvent) {
     if (this.kept) this.clear();
     UI.focusContentEditable(this.word);
+    // tslint:disable-next-line: deprecation
     const key = e.keyCode;
     if (key === 13 || key === 32) {
       e.preventDefault();

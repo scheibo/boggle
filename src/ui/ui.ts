@@ -1,16 +1,16 @@
-import {global} from './global';
-import {Game, GameSettings, GameJSON} from '../game';
-import {Random} from '../random';
-import {Settings, Theme} from '../settings';
-import {define} from '../dict';
+import { global } from './global';
+import { Game, GameSettings, GameJSON } from '../game';
+import { Random } from '../random';
+import { Settings, Theme } from '../settings';
+import { define } from '../dict';
 
-import {BoardView} from './board';
-import {DefineView} from './define';
-import {MenuView} from './menu';
-import {ReviewView} from './review';
-import {SettingsView} from './settings';
-import {StatsView} from './stats';
-import {TrainingView} from './training';
+import { BoardView } from './board';
+import { DefineView } from './define';
+import { MenuView } from './menu';
+import { ReviewView } from './review';
+import { SettingsView } from './settings';
+import { StatsView } from './stats';
+import { TrainingView } from './training';
 
 class Loader {
   private loader!: HTMLElement;
@@ -35,12 +35,12 @@ export interface View {
   onKeyDown?: (e: KeyboardEvent) => Promise<void>;
 }
 
-export const UI = new (class{
+export const UI = new (class {
   root!: HTMLElement;
   BACK!: HTMLImageElement;
   current!: string;
   previous!: string;
-  Views!: {[view: string]: View};
+  Views!: { [view: string]: View };
   loader!: Loader;
 
   async create() {
@@ -84,8 +84,8 @@ export const UI = new (class{
     document.addEventListener('keydown', e => this.onKeyDown(e));
     document.addEventListener('swiped-left', () => this.toggleView('Define'));
     document.addEventListener('swiped-right', () => this.toggleView('Define'));
-    window.addEventListener('hashchange',  () => this.onHashChange());
-    window.addEventListener('beforeunload', () => this.persist())
+    window.addEventListener('hashchange', () => this.onHashChange());
+    window.addEventListener('beforeunload', () => this.persist());
 
     await this.attachView(this.current);
   }
@@ -144,7 +144,6 @@ export const UI = new (class{
         rand.seed = global.SEED;
         rand.next();
 
-        console.log('setup from history');
         this.updateSettings(settings, rand.seed);
       }
     };
@@ -154,7 +153,6 @@ export const UI = new (class{
       const existing = (this.Views.Board as BoardView).game;
       if (existing) {
         const [settings, seed] = Game.decodeID((existing as GameJSON).seed);
-        console.log('existing');
         this.updateSettings(settings, seed);
       } else {
         return setupFromHistory();
@@ -164,7 +162,6 @@ export const UI = new (class{
       if (!this.valid(settings, seed)) {
         return setupFromHistory();
       }
-      console.log('url');
       this.updateSettings(settings, seed);
     }
   }
@@ -196,7 +193,7 @@ export const UI = new (class{
     if (this.current === 'Settings') {
       (this.Views[this.current] as SettingsView).update();
     } else if (refresh && this.current === 'Play') {
-      return (this.Views[this.current] as BoardView).refresh({allowDupes: true});
+      return (this.Views[this.current] as BoardView).refresh({ allowDupes: true });
     }
   }
 
@@ -205,7 +202,6 @@ export const UI = new (class{
   }
 
   updateSettings(settings: Partial<Settings>, seed?: number, dom = true) {
-    console.log('UPDATE', {settings, seed});
     Object.assign(global.SETTINGS, settings);
     localStorage.setItem('settings', JSON.stringify(global.SETTINGS));
     if (seed) global.SEED = seed;
@@ -249,7 +245,9 @@ export const UI = new (class{
   }
 
   permaFocus(element: HTMLElement) {
-    element.addEventListener('blur', () => setTimeout(() => this.focusContentEditable(element), 20));
+    element.addEventListener('blur', () =>
+      setTimeout(() => this.focusContentEditable(element), 20)
+    );
     this.focusContentEditable(element);
   }
 

@@ -1,7 +1,7 @@
-import {global} from './global';
-import {UI, View} from './ui';
+import { global } from './global';
+import { UI, View } from './ui';
 import { TrainingPool } from '../training';
-import {Store} from '../store';
+import { Store } from '../store';
 
 export class TrainingView implements View {
   pool!: TrainingPool;
@@ -15,7 +15,12 @@ export class TrainingView implements View {
     if (!this.pool || this.pool.type !== global.SETTINGS.dict) {
       const store = new Store('training', global.SETTINGS.dict);
       this.pool = await TrainingPool.create(
-        global.STATS, global.SETTINGS.dice, global.SETTINGS.dict, store, global.SETTINGS.min);
+        global.STATS,
+        global.SETTINGS.dice,
+        global.SETTINGS.dict,
+        store,
+        global.SETTINGS.min
+      );
     }
 
     this.train = UI.createElementWithId('div', 'train');
@@ -34,7 +39,7 @@ export class TrainingView implements View {
     const progress = UI.createElementWithId('div', 'progress');
     progress.textContent = String(this.pool.size());
 
-    const {label, group, update, restore} = this.pool.next();
+    const { label, group, update, restore } = this.pool.next();
     this.restore = restore;
     const trainWord = document.createElement('div');
     trainWord.classList.add('word');
@@ -52,7 +57,7 @@ export class TrainingView implements View {
     progress.addEventListener('mouseup', () => UI.toggleView('Review', progress.textContent));
     progress.addEventListener('long-press', () => {
       if (!rating.classList.contains('hidden')) return;
-      sizeHint.classList.remove('hidden')
+      sizeHint.classList.remove('hidden');
     });
     progress.addEventListener('long-press-up', () => sizeHint.classList.add('hidden'));
 

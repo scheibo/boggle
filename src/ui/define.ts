@@ -1,6 +1,6 @@
-import {global} from './global';
-import {UI, View} from './ui';
-import {define} from '../dict';
+import { global } from './global';
+import { UI, View } from './ui';
+import { define } from '../dict';
 
 export class DefineView implements View {
   private word: string;
@@ -12,12 +12,12 @@ export class DefineView implements View {
   private stats: HTMLElement | null = null;
   private anagrams: HTMLElement | null = null;
 
-  constructor(json?: {word: string}) {
+  constructor(json?: { word: string }) {
     this.word = json ? json.word : '';
   }
 
-  toJSON(): {word: string} {
-    return {word: this.word};
+  toJSON(): { word: string } {
+    return { word: this.word };
   }
 
   async attach(word?: string) {
@@ -62,7 +62,10 @@ export class DefineView implements View {
       const defn = UI.createElementWithId('div', 'defineDefn');
       defn.classList.add('definition');
       defn.textContent = define(this.word, global.DICT);
-      if ((val.dict && !val.dict.includes(global.SETTINGS.dict.charAt(0))) || this.word.length < global.SETTINGS.min) {
+      const hard =
+        (val.dict && !val.dict.includes(global.SETTINGS.dict.charAt(0))) ||
+        this.word.length < global.SETTINGS.min;
+      if (hard) {
         this.define.classList.add('hard');
       } else {
         this.define.classList.remove('hard');
@@ -93,7 +96,7 @@ export class DefineView implements View {
 
       tr = document.createElement('tr');
       addCells(tr, 'Frequency', s.freq ? String(s.freq) : '-');
-      addCells(tr, 'Anagram',  s.anagram ? String(s.anagram.p) : '-');
+      addCells(tr, 'Anagram', s.anagram ? String(s.anagram.p) : '-');
       stats.appendChild(tr);
 
       stats.appendChild(tr);
@@ -122,7 +125,7 @@ export class DefineView implements View {
     this.anagrams = anagrams;
   }
 
-   renderAnagrams() {
+  renderAnagrams() {
     const div = UI.createElementWithId('div', 'defineAnagrams');
 
     const words = global.STATS.anagrams(this.word, global.SETTINGS.dict).words;
@@ -132,6 +135,7 @@ export class DefineView implements View {
     const anadromes = new Set<string>();
 
     for (const w of words) {
+      // prettier-ignore
       const r = w.split('').reverse().join('');
       if (r !== w && words.includes(r)) {
         anadromes.add(`${[w, r].sort().join(' ')}`);

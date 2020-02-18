@@ -1,11 +1,15 @@
-import {UI, View} from './ui';
-import {BoardView} from './board';
+import { UI, View } from './ui';
+import { BoardView } from './board';
 
 export class MenuView implements View {
   menu!: HTMLElement;
+
   toJSON() {}
+
   attach() {
-    this.menu = UI.createElementWithId('div', 'menu');
+    // NOTE: The id here would make more sense as '#menu', but uBlock's "Web Annoyances Ultralist" has:
+    // 'github.io###menu, .fixedHeaderContainer, .menu-btn:style(position: absolute !important;)'
+    this.menu = UI.createElementWithId('div', 'men');
     const title = UI.createElementWithId('h1', 'title');
     title.textContent = 'BOGGLE';
     // TODO: needs testing!
@@ -24,10 +28,10 @@ export class MenuView implements View {
       button.textContent = name;
       button.addEventListener('click', fn);
       return button;
-    }
+    };
 
     if ((UI.Views.Board as BoardView).game) {
-      nav.appendChild(createButton('RESUME', () => UI.toggleView('Board', {resume: true})));
+      nav.appendChild(createButton('RESUME', () => UI.toggleView('Board', { resume: true })));
       nav.appendChild(createButton('NEW GAME', () => UI.toggleView('Board')));
     } else {
       nav.appendChild(createButton('PLAY', () => UI.toggleView('Board')));

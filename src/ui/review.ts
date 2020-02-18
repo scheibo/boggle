@@ -1,20 +1,20 @@
-import {global} from './global';
-import {UI, View} from './ui';
-import {order} from '../dict';
-import {Store} from '../store';
-import {TrainingStats} from '../training';
+import { global } from './global';
+import { UI, View } from './ui';
+import { order } from '../dict';
+import { Store } from '../store';
+import { TrainingStats } from '../training';
 
 export class ReviewView implements View {
   size: number;
 
   review!: HTMLElement;
 
-  constructor(json?: {size: number}) {
+  constructor(json?: { size: number }) {
     this.size = json ? json.size : 0;
   }
 
-  toJSON(): {size: number} {
-    return {size: this.size};
+  toJSON(): { size: number } {
+    return { size: this.size };
   }
 
   async attach(size?: number) {
@@ -32,7 +32,7 @@ export class ReviewView implements View {
     const score = (k: string) => global.STATS.anagrams(k, global.SETTINGS.dict)[d] || 0;
 
     const store = new Store('training', global.SETTINGS.dict);
-    const data = await store.get('data') as TrainingStats[];
+    const data = (await store.get('data')) as TrainingStats[];
     const keys = data
       .filter(w => w.e < 2.0) // TODO: !v.c, figure out 2.0 based on average?
       .sort((a, b) => score(b.k) / b.e - score(a.k) / a.e)

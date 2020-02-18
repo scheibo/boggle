@@ -1,7 +1,7 @@
-import {global} from './global';
-import {Store} from '../store';
-import {TrainingPool, TrainingStats} from '../training';
-import {Stats} from '../stats';
+import { global } from './global';
+import { Store } from '../store';
+import { TrainingPool, TrainingStats } from '../training';
+import { Stats } from '../stats';
 
 export const Debug = new (class {
   async backup() {
@@ -25,7 +25,13 @@ export const Debug = new (class {
 
   async modify(w: string, fn: (s: TrainingStats) => TrainingStats) {
     const store = new Store('training', global.SETTINGS.dict);
-    const pool = await TrainingPool.create(global.STATS, global.SETTINGS.dice, global.SETTINGS.dict, store, global.SETTINGS.min);
+    const pool = await TrainingPool.create(
+      global.STATS,
+      global.SETTINGS.dice,
+      global.SETTINGS.dict,
+      store,
+      global.SETTINGS.min
+    );
     const k = Stats.toAnagram(w);
 
     let found;

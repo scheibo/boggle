@@ -1,7 +1,7 @@
-import {global} from './global';
-import {UI, View} from './ui';
-import {Game} from '../game';
-import {Stats} from '../stats';
+import { global } from './global';
+import { UI, View } from './ui';
+import { Game } from '../game';
+import { Stats } from '../stats';
 
 type Section = 'WORD' | 'ANAGRAM' | 'PAIR';
 
@@ -11,17 +11,22 @@ export class StatsView implements View {
   stats!: HTMLElement;
   table: HTMLElement | null = null;
 
-  constructor(json?: {section: Section}) {
+  constructor(json?: { section: Section }) {
     this.section = json ? json.section : 'WORD';
   }
 
-  toJSON(): {section: Section} {
-    return {section: this.section};
+  toJSON(): { section: Section } {
+    return { section: this.section };
   }
 
   // TODO: why is there no spinner?
   async attach() {
-    await Promise.all([global.LOADED.HISTORY, global.LOADED.TRIE(), global.LOADED.DICT, global.LOADED.STATS()]);
+    await Promise.all([
+      global.LOADED.HISTORY,
+      global.LOADED.TRIE(),
+      global.LOADED.DICT,
+      global.LOADED.STATS(),
+    ]);
     if (!global.GAMES) {
       global.GAMES = [];
       for (let i = global.HISTORY.length - 1; i >= 0 && global.GAMES.length < global.LIMIT; i--) {
@@ -39,10 +44,14 @@ export class StatsView implements View {
     this.stats = UI.createElementWithId('div', 'stats');
     const back = UI.createBackButton(() => UI.toggleView('Menu'));
     const display = (s: Section) => this.display(s, data);
-    const radios = UI.createRadios('statsSelect', ['WORD', 'ANAGRAM', 'PAIR'].map(s => s === this.section ? [s] : s), function(this: HTMLInputElement) {
-      display(this.value as Section);
-      UI.persist();
-    });
+    const radios = UI.createRadios(
+      'statsSelect',
+      ['WORD', 'ANAGRAM', 'PAIR'].map(s => (s === this.section ? [s] : s)),
+      function(this: HTMLInputElement) {
+        display(this.value as Section);
+        UI.persist();
+      }
+    );
 
     this.stats.appendChild(UI.createTopbar(back, radios, null));
     this.display(this.section, data);
@@ -57,7 +66,7 @@ export class StatsView implements View {
 
   display(section: Section, data: ReturnType<Stats['history']>) {
     this.section = section;
-    const {words, anadromes, anagrams} = data;
+    const { words, anadromes, anagrams } = data;
 
     const link = (w: string) => {
       const b = document.createElement('b');
@@ -69,7 +78,7 @@ export class StatsView implements View {
     const table = document.createElement('table');
     table.classList.add('roundedTable');
     if (section === 'PAIR') {
-      for (const {n, fn, d, fd, e} of anadromes) {
+      for (const { n, fn, d, fd, e } of anadromes) {
         const tr = document.createElement('tr');
 
         let td = document.createElement('td');
@@ -87,7 +96,7 @@ export class StatsView implements View {
         table.appendChild(tr);
       }
     } else if (section === 'WORD') {
-      for (const {w, found, all} of words) {
+      for (const { w, found, all } of words) {
         const tr = document.createElement('tr');
 
         let td = document.createElement('td');
@@ -100,14 +109,14 @@ export class StatsView implements View {
 
         table.appendChild(tr);
       }
-    } else /* section === 'ANAGRAM' */ {
+    } else {
       for (const group of anagrams) {
         const tr = document.createElement('tr');
         const td = document.createElement('td');
 
         let together = [];
         let wait = false;
-        for (const {raw, found, all} of group) {
+        for (const { raw, found, all } of group) {
           const w = raw.replace(/[^A-Z]/, '');
 
           if (raw.startsWith('(')) {
