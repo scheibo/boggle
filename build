@@ -59,40 +59,40 @@ for (const file of DATA) {
 
 const NAMESPACE = 'boggle';
 const {code, map} = Terser.minify(`'use strict';
-const CACHE = '${NAMESPACE}:cache:${hash(FILES.map(f => path.join('/dist', f)))}';
-const DATA = '${NAMESPACE}:data:${hash(DATA)}';
+  const CACHE = '${NAMESPACE}:cache:${hash(FILES.map(f => path.join('/dist', f)))}';
+  const DATA = '${NAMESPACE}:data:${hash(DATA)}';
 
-self.addEventListener('install', e => {
+  self.addEventListener('install', e => {
     self.skipWaiting();
     e.waitUntil(
-        caches.open(CACHE).then(cache =>
-            cache.addAll(${JSON.stringify(FILES)})));
-});
+      caches.open(CACHE).then(cache =>
+        cache.addAll(${JSON.stringify(FILES)})));
+  });
 
-self.addEventListener('activate', e =>
+  self.addEventListener('activate', e =>
     e.waitUntil(
-        caches.keys().then(keys =>
-            Promise.all(keys.map(key => {
-                if (key.startsWith('${NAMESPACE}') && ![CACHE, DATA].includes(key)) return caches.delete(key);
-            })))));
+      caches.keys().then(keys =>
+        Promise.all(keys.map(key => {
+          if (key.startsWith('${NAMESPACE}') && ![CACHE, DATA].includes(key)) return caches.delete(key);
+        })))));
 
-const writeBack = (e, which) =>
+  const writeBack = (e, which) =>
     caches.open(which).then(async cache => {
-        const cached = await cache.match(e.request);
-        if (cached) return cached;
-        const response = await fetch(e.request);
-        if (response.status === 200) cache.put(e.request.url, response.clone());
-        return response;
+      const cached = await cache.match(e.request);
+      if (cached) return cached;
+      const response = await fetch(e.request);
+      if (response.status === 200) cache.put(e.request.url, response.clone());
+      return response;
     });
 
-self.addEventListener('fetch', e => {
+  self.addEventListener('fetch', e => {
     if (e.request.url.includes('/data/dict.json') ||
-        e.request.url.includes('/data/stats.json')) {
+      e.request.url.includes('/data/stats.json')) {
       e.respondWith(writeBack(e, DATA));
     } else {
       e.respondWith(writeBack(e, CACHE));
     }
-});
+  });
 `, {
   sourceMap: {
     filename: 'sw.js',
