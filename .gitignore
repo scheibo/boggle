@@ -1,15 +1,6 @@
-node_modules
-package-lock.json
-.tsbuildinfo
-
-data/dict.json
-data/stats.json
-data/clean_1w.txt
-# fuckers want your money
-data/nwl.2018.txt
-
-sw.js
-dist
 .cache
-
-tools/results
+data/*
+!data/dict.json
+!data/stats.json
+dist
+node_modules
