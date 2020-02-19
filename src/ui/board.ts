@@ -52,7 +52,7 @@ export class BoardView implements View {
     };
   }
 
-  async init(data: { resume?: true; allowDupes?: boolean } = {}) {
+  async init(data: { new?: boolean; allowDupes?: boolean } = {}) {
     await Promise.all([
       global.LOADED.DICT,
       global.LOADED.TRIE(),
@@ -65,7 +65,7 @@ export class BoardView implements View {
       for (const h of global.HISTORY) this.played.add(h.seed);
     }
 
-    if (!this.game || !data.resume) {
+    if (!this.game || data.new) {
       if (this.game) {
         this.timer.stop();
         if (!('random' in this.game)) {
@@ -103,19 +103,20 @@ export class BoardView implements View {
       this.game = Game.fromJSON(this.game, global.TRIE, global.DICT, global.STATS);
     }
 
+    if (!this.full) this.full = UI.createElementWithId('div', 'full');
     if (!this.score) {
       this.score = UI.createElementWithId('div', 'score');
       this.displayScore();
     }
   }
 
-  async attach(data: { resume?: true; allowDupes?: boolean } = {}) {
+  async attach(data: { new?: boolean; allowDupes?: boolean } = {}) {
     await this.init(data);
 
     this.container = UI.createElementWithId('div', 'game');
 
     const back = UI.createBackButton(() => UI.toggleView('Menu'));
-    back.addEventListener('long-press', () => this.refresh());
+    back.addEventListener('long-press', () => return this.refresh());
 
     const score = UI.createElementWithId('div', 'score-wrapper');
     score.appendChild(this.score);
@@ -124,11 +125,9 @@ export class BoardView implements View {
     score.addEventListener('long-press-up', () => this.onLongPressUp());
 
     this.container.appendChild(UI.createTopbar(back, this.timerDisplay, this.score));
-
-    this.full = UI.createElementWithId('div', 'full');
     this.container.appendChild(this.full);
-
     this.container.appendChild(this.renderBoard());
+    this.displayScore();
 
     this.word = UI.createElementWithId('div', 'word');
     this.word.classList.add('word');
@@ -223,7 +222,10 @@ export class BoardView implements View {
   }
 
   detach(next: string) {
-    if (!['Score', 'Define'].includes(next)) this.timer.stop();
+    if (!['Score', 'Define'].includes(next)) {
+      this.timer.stop();
+      this.paused = true;
+    }
     return this.container;
   }
 
@@ -295,7 +297,7 @@ export class BoardView implements View {
     const display = UI.createElementWithId('div', 'timer');
     display.addEventListener('click', () => {
       this.timer.toggle();
-      this.paused = !!this.paused;
+      this.paused = !this.paused;
     });
     const expire = () => {
       if (this.game && !this.game.expired) {
