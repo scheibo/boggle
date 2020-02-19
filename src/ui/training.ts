@@ -59,7 +59,7 @@ export class TrainingView implements View {
     trainWord.textContent = label;
 
     const sizeHint = UI.createElementWithId('div', 'sizeHint');
-    sizeHint.classList.add('hidden');
+    sizeHint.style.visibility = 'hidden';
     sizeHint.textContent = String(group.length);
 
     const rating = this.createRatingToggles(update);
@@ -72,9 +72,11 @@ export class TrainingView implements View {
     progress.addEventListener('mouseup', () => UI.toggleView('Review'));
     progress.addEventListener('long-press', () => {
       if (!rating.classList.contains('hidden')) return;
-      sizeHint.classList.remove('hidden');
+      sizeHint.style.visibility = 'visible';
     });
-    progress.addEventListener('long-press-up', () => sizeHint.classList.add('hidden'));
+    progress.addEventListener('long-press-up', () => {
+      sizeHint.style.visibility = 'hidden';
+    });
 
     const back = UI.createBackButton(() => UI.toggleView('Menu'));
     content.appendChild(UI.createTopbar(back, null, progress));
@@ -92,6 +94,7 @@ export class TrainingView implements View {
       if (![back, progress, this.progress].includes(e.target as HTMLElement)) {
         content.removeEventListener('click', listener);
         trainWord.classList.add('hidden');
+        sizeHint.classList.add('hidden');
         table.classList.remove('hidden');
         rating.classList.remove('hidden');
       }

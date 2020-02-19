@@ -7,6 +7,9 @@
   justify-content: center;
   align-items: center;
 }
+#score-wrapper #score {
+  width: 100%;
+}
 #board {
   font-size: 68px;
   font-weight: bold;

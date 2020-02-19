@@ -1,4 +1,5 @@
 import { global } from './global';
+import { UI } from './ui';
 import { Store } from '../store';
 import { TrainingPool, TrainingStats } from '../training';
 import { Stats } from '../stats';
@@ -49,3 +50,10 @@ export const Debug = new (class {
     return store.set('data', learned.data);
   }
 })();
+
+// @ts-ignore
+window.global = global;
+// @ts-ignore
+window.UI = UI;
+// @ts-ignore
+window.Debug = Debug;

@@ -9,6 +9,9 @@
 #rating .toggle:active {
   font-weight: bold;
 }
+#progress-wrapper #progress {
+  width: 100%;
+}
 #progress { font-weight: bold; }
 #rating0 { background-color: rgba(255,0,0,0.6); }
 #rating0:focus, #rating0:hover { background-color: rgba(255,0,0,0.65); }
@@ -45,8 +48,9 @@
   font-size: 20px;
   font-weight: bold;
   color: red;
-  margin: 61px auto 0 auto;
   text-align: center;
+  line-height: 68px;
+  height: 68px;
 }
 #rating .toggle:last-of-type {
   border-right: 3px solid var(--fg-color);

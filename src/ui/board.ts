@@ -116,7 +116,7 @@ export class BoardView implements View {
     this.container = UI.createElementWithId('div', 'game');
 
     const back = UI.createBackButton(() => UI.toggleView('Menu'));
-    back.addEventListener('long-press', () => return this.refresh());
+    back.addEventListener('long-press', () => this.refresh({ new: true }));
 
     const score = UI.createElementWithId('div', 'score-wrapper');
     score.appendChild(this.score);
@@ -124,7 +124,7 @@ export class BoardView implements View {
     score.addEventListener('long-press', () => this.onLongPress());
     score.addEventListener('long-press-up', () => this.onLongPressUp());
 
-    this.container.appendChild(UI.createTopbar(back, this.timerDisplay, this.score));
+    this.container.appendChild(UI.createTopbar(back, this.timerDisplay, score));
     this.container.appendChild(this.full);
     this.container.appendChild(this.renderBoard());
     this.displayScore();
@@ -222,14 +222,11 @@ export class BoardView implements View {
   }
 
   detach(next: string) {
-    if (!['Score', 'Define'].includes(next)) {
-      this.timer.stop();
-      this.paused = true;
-    }
+    if (!['Score', 'Define'].includes(next)) this.timer.stop();
     return this.container;
   }
 
-  async refresh(data: { allowDupes?: boolean } = {}) {
+  async refresh(data: { new?: boolean; allowDupes?: boolean } = {}) {
     UI.persist();
     await UI.detachView('Board', 'Board');
     await UI.attachView('Board', data);
@@ -246,7 +243,7 @@ export class BoardView implements View {
     this.last = w;
     UI.persist();
 
-    const hide = game.settings.display === 'Hide';
+    const hide = global.SETTINGS.display === 'Hide';
     this.kept = true;
     if (!hide && score) {
       this.displayScore();
@@ -265,19 +262,22 @@ export class BoardView implements View {
 
   displayScore() {
     const game = this.game as Game;
-    if (game.settings.display === 'Hide') {
+    if (global.SETTINGS.display === 'Hide') {
       this.score.textContent = '?';
       return;
     }
 
-    if (game.settings.display === 'Full') {
+    if (global.SETTINGS.display === 'Full') {
       const state = game.state();
       const p = state.progress;
       const details = `(${p.score}) ${Object.keys(p.suffixes).length}/${p.subwords}/${p.anagrams}`;
       const score = game.score.regular + game.score.overtime;
       const goal = state.totals[global.SETTINGS.grade.toLowerCase() as 'a' | 'b' | 'c' | 'd'];
       const pct = Math.round((score / goal) * 100).toFixed(0);
+      this.full.classList.remove('hidden');
       this.full.textContent = `${details} - ${score}/${goal} (${pct}%)`;
+    } else {
+      this.full.classList.add('hidden');
     }
 
     const s = game.score;
@@ -299,13 +299,13 @@ export class BoardView implements View {
       this.timer.toggle();
       this.paused = !this.paused;
     });
+    const duration = json ? json.duration : DURATION;
+    const elapsed = json ? json.elapsed : 0;
     const expire = () => {
       if (this.game && !this.game.expired) {
         this.game.expired = +new Date();
       }
     };
-    const duration = json ? json.duration : DURATION;
-    const elapsed = json ? json.elapsed : 0;
     const timer = new Timer(display, duration, elapsed, expire, () => UI.persist());
     return { display, timer };
   }
@@ -367,8 +367,6 @@ export class BoardView implements View {
       e.preventDefault();
       this.play();
       UI.focusContentEditable(this.word);
-    } else if (key === 27) {
-      await UI.toggleView('Define');
     } else if ((key < 65 || key > 90) && key !== 8) {
       e.preventDefault();
     }

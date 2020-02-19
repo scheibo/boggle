@@ -54,10 +54,10 @@ export class Timer {
     if (this.interval) {
       clearInterval(this.interval);
       this.interval = null;
+      this.begin = new Date().getTime();
+      this.elapsed += this.begin - this.last!;
+      this.last = this.begin;
     }
-    this.begin = new Date().getTime();
-    this.elapsed += this.begin - this.last!;
-    this.last = this.begin;
   }
 
   toggle() {

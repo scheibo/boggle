@@ -64,6 +64,3 @@ export const global: {
     TRAINING: Store.setup('training', ['NWL', 'ENABLE', 'CSW']) as Promise<void>,
   },
 };
-
-// @ts-ignore
-window.global = global;

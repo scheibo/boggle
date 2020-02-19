@@ -32,7 +32,7 @@ export class MenuView implements View {
 
     if ((UI.Views.Board as BoardView).game) {
       nav.appendChild(createButton('RESUME', () => UI.toggleView('Board')));
-      nav.appendChild(createButton('NEW GAME', () => UI.toggleView('Board', {new: true})));
+      nav.appendChild(createButton('NEW GAME', () => UI.toggleView('Board', { new: true })));
     } else {
       nav.appendChild(createButton('PLAY', () => UI.toggleView('Board')));
     }

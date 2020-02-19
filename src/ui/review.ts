@@ -36,7 +36,7 @@ export class ReviewView implements View {
 
     const wrapper = UI.createElementWithId('div', 'review-results-wrapper');
     for (const k of keys) {
-      const table = UI.createElementWithId('table', 'review-results');
+      const table = UI.createElementWithId('table', 'review-results') as HTMLTableElement;
       UI.addAnagramRows(table, order(global.STATS.anagrams(k, global.SETTINGS.dict).words));
       wrapper.appendChild(table);
     }
