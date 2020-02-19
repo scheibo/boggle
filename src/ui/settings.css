@@ -1,13 +1,35 @@
 #seed {
   text-align: center;
-  font-size: 25px;
+  font-size: 20px;
   font-weight: bold;
   text-transform: uppercase;
+}
+#settings .toggle {
+  padding: 12px 6px;
 }
 #seed:focus {
   outline: none;
 }
-.row {
+#settings .row {
   text-align: center;
-  padding: 14px;
+  padding: 7px 0;
+}
+
+@media(min-height: 550px) and (min-width: 375px) {
+  #seed {
+    font-size: 25px;
+  }
+  #settings .toggle {
+    padding: 14px 8px;
+  }
+}
+@media(min-height: 550px) {
+  #settings .row {
+    padding: 12px 0;
+  }
+}
+@media(min-height: 650px) {
+  #settings .row {
+    padding: 14px 0;
+  }
 }
