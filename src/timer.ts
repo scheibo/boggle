@@ -29,14 +29,7 @@ export class Timer {
     this.expireFn = expireFn;
     this.updateFn = updateFn;
 
-    const remaining = this.duration - this.elapsed;
-    if (remaining < 0) {
-      this.display.classList.add('expired');
-    } else {
-      this.display.classList.remove('expired');
-    }
-
-    this.render(remaining);
+    this.render();
   }
 
   toJSON(): TimerJSON {
@@ -77,6 +70,14 @@ export class Timer {
     this.elapsed += now - this.last!;
     this.last = now;
 
+    const before = this.display.textContent;
+    this.render(distance);
+    if (before !== this.display.textContent && this.updateFn) {
+      this.updateFn();
+    }
+  }
+
+  private render() {
     let distance;
     if (this.expired()) {
       this.display.classList.add('expired');
@@ -86,17 +87,10 @@ export class Timer {
         this.expireFn = null;
       }
     } else {
+      this.display.classList.remove('expired');
       distance = this.duration - this.elapsed;
     }
 
-    const before = this.display.textContent;
-    this.render(distance);
-    if (before !== this.display.textContent && this.updateFn) {
-      this.updateFn();
-    }
-  }
-
-  private render(distance: number) {
     const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = `${Math.floor((distance % (1000 * 60)) / 1000)}`.padStart(2, '0');
     this.display.textContent = `${minutes}:${seconds}`;
