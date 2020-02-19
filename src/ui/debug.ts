@@ -49,6 +49,10 @@ export const Debug = new (class {
 
     return store.set('data', learned.data);
   }
+
+  get state() {
+    return JSON.parse(localStorage.getItem('state'));
+  }
 })();
 
 // @ts-ignore

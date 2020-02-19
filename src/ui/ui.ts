@@ -194,19 +194,19 @@ export const UI = new (class {
 
     if (this.current === 'Settings') {
       (this.Views[this.current] as SettingsView).update();
-    } else if (refresh && this.current === 'Play') {
-      return (this.Views[this.current] as BoardView).refresh({ allowDupes: true });
+    } else if (refresh && ['Board', 'Score'].includes(this.current)) {
+      return (this.Views.Board as BoardView).refresh({ new: true, allowDupes: true });
     }
   }
 
   valid(settings: Partial<GameSettings>, seed: number) {
-    return !isNaN(seed) && !(settings.dice && settings.dict && settings.min);
+    return !!(!isNaN(seed) && settings.dice && settings.dict && settings.min);
   }
 
   updateSettings(settings: Partial<Settings>, seed?: number, dom = true) {
     Object.assign(global.SETTINGS, settings);
     localStorage.setItem('settings', JSON.stringify(global.SETTINGS));
-    if (seed) global.SEED = seed;
+    if (typeof seed === 'number') global.SEED = seed;
 
     const id = Game.encodeID(global.SETTINGS, global.SEED);
     window.history.replaceState(null, '', `#${id}`);

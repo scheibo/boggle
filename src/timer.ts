@@ -71,7 +71,7 @@ export class Timer {
     this.last = now;
 
     const before = this.display.textContent;
-    this.render(distance);
+    this.render();
     if (before !== this.display.textContent && this.updateFn) {
       this.updateFn();
     }

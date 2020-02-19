@@ -66,11 +66,13 @@ export class BoardView implements View {
     }
 
     if (!this.game || data.new) {
+      let seed = global.SEED;
       if (this.game) {
         this.timer.stop();
         if (!('random' in this.game)) {
           this.game = Game.fromJSON(this.game, global.TRIE, global.DICT, global.STATS);
         }
+        if (this.game.seed === seed) seed = this.game.random.seed;
         this.played.add(this.game.id);
         if (Object.values(this.game.played).filter(t => t > 0).length) {
           this.updateGames();
@@ -82,15 +84,16 @@ export class BoardView implements View {
       let game;
       const random = new Random();
       while (!game || !Object.keys(game.possible).length) {
-        random.seed = global.SEED;
+        random.seed = seed;
         const id = Game.encodeID(global.SETTINGS, random.seed);
         if (this.played.has(id) && !data.allowDupes) {
-          global.SEED++;
+          seed++;
           continue;
         }
         game = new Game(global.TRIE, global.DICT, global.STATS, random, global.SETTINGS);
       }
       this.game = game;
+      global.SEED = seed;
 
       const { display, timer } = this.createTimer();
       this.timer = timer;
@@ -101,6 +104,11 @@ export class BoardView implements View {
       this.paused = false;
     } else if (!('random' in this.game)) {
       this.game = Game.fromJSON(this.game, global.TRIE, global.DICT, global.STATS);
+    }
+
+    const hash = `#${(this.game as Game).id}`;
+    if (document.location.hash !== hash) {
+      window.history.replaceState(null, '', hash);
     }
 
     if (!this.full) this.full = UI.createElementWithId('div', 'full');
@@ -140,11 +148,6 @@ export class BoardView implements View {
     this.container.appendChild(this.defn);
 
     if (!this.paused) this.timer.start();
-    const hash = `#${(this.game as Game).id}`;
-    if (document.location.hash !== hash) {
-      window.history.replaceState(null, '', hash);
-    }
-
     return this.container;
   }
 
