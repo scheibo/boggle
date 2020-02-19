@@ -26,5 +26,5 @@
     "start": "parcel index.html",
     "build": "node build"
   },
-  "browserslist": "> 0.25%, IE >= 9, Safari >= 5"
+  "browserslist": "last 1 Chrome version"
 }

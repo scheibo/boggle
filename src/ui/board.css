@@ -8,7 +8,12 @@
 }
 #timer {
   width: 60%;
-  font-size: 40px;
+  font-size: 32px;
+}
+@media(min-height: 550px) {
+  #timer {
+    font-size: 40px;
+  }
 }
 #timer.expired {
   color: red;
@@ -26,7 +31,7 @@
   font-size: 55px;
   font-weight: bold;
   touch-action: auto;
-  margin: 5px 0;
+  margin: 15px 0;
 }
 #board td {
   text-align: center;
@@ -38,7 +43,6 @@
 .target {
   height: 60px;
   width: 60px;
-  background-color: rgba(0, 0, 255, 0.5); /* DEBUG */
   position: absolute;
   margin: -62px 2px;
   z-index: 100;
@@ -55,9 +59,9 @@
   width: 46px;
   margin: -49px 3px;
 }
-#board .qu .target { margin-top: -71px; } /* TODO */
-#board.big .qu .target { margin-top: -56px; } /* TODO */
-@media(min-width: 1393px) {
+#board .qu .target { margin-top: -59px; }
+#board.big .qu .target { margin-top: -46px; }
+@media(min-width: 393px) {
   #board {
     font-size: 68px;
   }
@@ -92,28 +96,26 @@
 #full {
   text-align: center;
   color: var(--hard-color);
-  font-size: 13px;
   margin-bottom: -15px;
   position: relative;
-  top: -14px;
+  font-size: 11px;
+  top: -2px;
 }
-@media(min-height: 1600px) {
-  #full { top: 0px; }
+@media(min-height: 550px) {
+  #full {
+    top: -14px;
+    font-size: 13px;
+  }
 }
-@media(min-height: 1650px) {
-  #full { top: 3px; }
-}
-
-
-/** TODO **/
 @media(min-height: 600px) {
+  #full { top: 0px; }
   #board {
     margin: 30px 0;
   }
 }
 @media(min-height: 650px) {
+  #full { top: 3px; }
   #board {
     margin: 40px 0;
   }
 }
-
