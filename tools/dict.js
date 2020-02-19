@@ -89,14 +89,14 @@ async function addWordList(dict, list, id) {
 
 async function buildDictionary() { 
   let lines = readline.createInterface({
-    input: fs.createReadStream(path.join(DATA, 'clean_1w.txt')),
+    input: fs.createReadStream(path.join(DATA, 'freqs.txt')),
     crlfDelay: Infinity
   });
 
   const freqs = {};
   let total = 0;
   for await (const line of lines) {
-    const [word, freq] = splitFirst(line, '\t');
+    const [word, freq] = splitFirst(line, ' ');
     const f = Number(freq);
     total += f;
     freqs[word.toUpperCase()] = f;

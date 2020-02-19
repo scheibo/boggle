@@ -20,7 +20,7 @@ const hash = files => {
 }
 
 try {
-  require.resolve('./data/clean_1w.txt');
+  require.resolve('./data/freqs.txt');
 } catch (e) {
   shell('./tools/fix.js');
 }

@@ -35,25 +35,58 @@ async function addWordList(dict, f, fn) {
 }
 
 (async () => {
-  let lines = readline.createInterface({
-    input: fs.createReadStream(path.join(DATA, 'csw.2019.txt')),
-    crlfDelay: Infinity
-  });
-
   const dict = new Set();
   await addWordList(dict, 'nwl.2018.txt', line => line.toUpperCase());
   await addWordList(dict, 'enable.txt', line => line.toUpperCase());
   await addWordList(dict, 'csw.2019.txt', line => splitFirst(line, '\t')[0]);
 
-  lines = readline.createInterface({
-    input: fs.createReadStream(path.join(DATA, 'count_1w.txt')),
+  let lines = readline.createInterface({
+    input: fs.createReadStream(path.join(DATA, 'freq.ngram.txt')),
     crlfDelay: Infinity
   });
 
-  const out = fs.createWriteStream(path.join(DATA, 'clean_1w.txt'));
+  const ngram = {words: {}, total: 0};
   for await (const line of lines) {
     const [word, freq] = splitFirst(line, '\t');
-    if (dict.has(word.toUpperCase())) out.write(line + '\n');
+    const w = word.toUpperCase();
+    const f = Number(freq)
+    if (dict.has(w) && !isNaN(f)) {
+      ngram.words[w] = f;
+      ngram.total += f;
+    }
+  }
+
+  lines = readline.createInterface({
+    input: fs.createReadStream(path.join(DATA, 'freq.bnc.txt')),
+    crlfDelay: Infinity
+  });
+
+  const bnc = {words: {}, total: 0};
+  for await (const line of lines) {
+    const [freq, word] = splitFirst(line, ' ', 2);
+    const w = word.toUpperCase();
+    const f = Number(freq)
+    if (dict.has(w) && !isNaN(f) && !bnc.words[w]) {
+      bnc.words[w] = f;
+      bnc.total += f;
+    }
+  }
+
+  const freqs = {};
+  for (const w in ngram.words) {
+    freqs[w] = (ngram.words[w] / ngram.total) + ((bnc.words[w] || 0) / bnc.total) * 1e20;
+  }
+
+  for (const w in bnc.words) {
+    if (freqs[w]) continue;
+    freqs[w] = (bnc.words[w] / bnc.total) * 1e20;
+  }
+
+  const entries = Object.entries(freqs);
+  const len = entries.length;
+  const out = fs.createWriteStream(path.join(DATA, 'freqs.txt'));
+  for (const [i, [word]] of entries.sort((a, b) => b[1] - a[1]).entries()) {
+    out.write(`${word} ${len - i}\n`);
   }
   out.end();
 })();
