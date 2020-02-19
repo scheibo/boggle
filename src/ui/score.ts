@@ -19,8 +19,8 @@ export class ScoreView {
 
     this.container = UI.createElementWithId('div', 'game');
 
-    const wrapper = UI.createElementWithId('div', 'wrapper');
-    wrapper.classList.add('score');
+    // TODO: wrapper should really be container, not game
+    const wrapper = UI.createElementWithId('div', 'score-history');
 
     const back = UI.createBackButton(() => UI.toggleView('Board', { resume: true }));
     this.container.appendChild(UI.createTopbar(back, this.board.timerDisplay, this.board.score));

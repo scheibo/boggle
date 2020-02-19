@@ -34,12 +34,9 @@ export class ReviewView implements View {
       .sort((a, b) => score(b.k) / b.e - score(a.k) / a.e)
       .map(w => w.k);
 
-    const wrapper = document.createElement('div');
-    wrapper.classList.add('wrapper');
-
+    const wrapper = UI.createElementWithId('div', 'review-results-wrapper');
     for (const k of keys) {
-      const table = document.createElement('table');
-      table.classList.add('results');
+      const table = UI.createElementWithId('table', 'review-results');
       UI.addAnagramRows(table, order(global.STATS.anagrams(k, global.SETTINGS.dict).words));
       wrapper.appendChild(table);
     }

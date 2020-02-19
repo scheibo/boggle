@@ -1,5 +1,5 @@
 /** TODO **/
-#review .wrapper, #content, #train {
+#review-results-wrapper, #content, #train {
   height: 100%;
   overflow: scroll;
 }

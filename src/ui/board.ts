@@ -151,7 +151,7 @@ export class BoardView implements View {
 
   renderBoard() {
     const game = this.game as Game;
-    const content = UI.createElementWithId('div', 'foo');
+    const content = UI.createElementWithId('div', 'board-wrapper');
     const table = UI.createElementWithId('table', 'board');
     if (game.size > 4) table.classList.add('big');
 
