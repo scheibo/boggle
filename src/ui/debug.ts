@@ -51,7 +51,7 @@ export const Debug = new (class {
   }
 
   get state() {
-    return JSON.parse(localStorage.getItem('state'));
+    return JSON.parse(localStorage.getItem('state')!);
   }
 })();
 

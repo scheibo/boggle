@@ -146,7 +146,7 @@ export const UI = new (class {
         rand.seed = global.SEED;
         rand.next();
 
-        this.updateSettings(settings, rand.seed);
+        this.updateSettings(settings, rand.seed % global.MAX_SEED);
       }
     };
 
@@ -200,7 +200,13 @@ export const UI = new (class {
   }
 
   valid(settings: Partial<GameSettings>, seed: number) {
-    return !!(!isNaN(seed) && settings.dice && settings.dict && settings.min);
+    return !!(
+      !isNaN(seed) &&
+      seed < global.MAX_SEED &&
+      settings.dice &&
+      settings.dict &&
+      settings.min
+    );
   }
 
   updateSettings(settings: Partial<Settings>, seed?: number, dom = true) {

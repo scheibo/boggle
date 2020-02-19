@@ -15,6 +15,7 @@ export const global: {
   SETTINGS: Settings;
   STORE: Store;
   LIMIT: number;
+  MAX_SEED: number;
   DICT: Dictionary;
   STATS: Stats;
   HISTORY: GameJSON[];
@@ -32,6 +33,7 @@ export const global: {
   SETTINGS: (JSON.parse(localStorage.getItem('settings')!) as Settings) || DEFAULTS,
   STORE,
   LIMIT: 500,
+  MAX_SEED: 1e12,
   DICT: (undefined as unknown) as Dictionary,
   STATS: (undefined as unknown) as Stats,
   HISTORY: (undefined as unknown) as GameJSON[],
