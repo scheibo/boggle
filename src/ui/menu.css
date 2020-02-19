@@ -1,16 +1,35 @@
+#men nav {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
 #men h1 {
-  font-size: 64px;
+  font-size: 40px;
   text-align: center;
+  margin: 15px 0;
 }
 #men button {
   display: block;
   width: 60%;
   font-weight: bold;
-  font-size: 32px;
-  margin: 5px 0;
+  font-size: 18px;
+  margin: 2px 0;
 }
-#men nav {
-  display: flex;
-  align-items: center;
-  flex-direction: column;
+@media(min-height: 550px) {
+  #men h1 {
+    font-size: 50px;
+    margin: 0.67em;
+  }
+  #men button {
+    font-size: 22px;
+    margin: 5px 0;
+  }
+}
+@media(min-height: 680px) {
+  #men h1 {
+    font-size: 64px;
+  }
+  #men button {
+    font-size: 32px;
+  }
 }
