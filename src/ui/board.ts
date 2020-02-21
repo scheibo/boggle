@@ -6,6 +6,7 @@ import { Random } from '../random';
 import { define } from '../dict';
 
 const DURATION = 180 * 1000;
+const VALID = (c: string) => (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
 
 interface BoardJSON {
   last: string;
@@ -139,6 +140,7 @@ export class BoardView implements View {
 
     this.word = UI.createElementWithId('div', 'word');
     this.word.classList.add('word');
+    this.word.addEventListener('beforeinput', e => this.onBeforeInput(e));
     const touch =
       'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
     if (!touch) this.word.contentEditable = 'true';
@@ -360,6 +362,18 @@ export class BoardView implements View {
     }
   }
 
+  async onBeforeInput(e: any) {
+    if (e.inputType.startsWith('delete') || (e.data && VALID(e.data))) return;
+    const enter = ['insertLineBreak', 'insertParagraph'].includes(e.inputType);
+    if (enter || (e.data && e.data === ' ')) {
+      e.preventDefault();
+      this.play();
+      UI.focusContentEditable(this.word);
+      return;
+    }
+    e.preventDefault();
+  }
+
   async onKeyDown(e: KeyboardEvent) {
     if (!this.word) return; // not attached
     if (this.kept) this.clear();
@@ -370,7 +384,7 @@ export class BoardView implements View {
       e.preventDefault();
       this.play();
       UI.focusContentEditable(this.word);
-    } else if ((key < 65 || key > 90) && key !== 8) {
+    } else if (![0, 37, 39, 8, 46].includes(key) || !VALID(String.fromCharCode(key))) {
       e.preventDefault();
     }
   }

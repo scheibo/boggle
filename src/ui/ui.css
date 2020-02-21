@@ -11,6 +11,13 @@ body {
 
   background-color: var(--bg-color);
   color: var(--fg-color);
+
+  font-size: 13px;
+}
+@media(min-height: 550px) {
+  body {
+    font-size: 16px;
+  }
 }
 .hidden, #svg { display: none !important; }
 .underline { text-decoration: underline; }
@@ -41,12 +48,6 @@ body {
   text-align: center;
   margin: 0px auto;
   width: 90%;
-  font-size: 13px;
-}
-@media(min-height: 550px) {
-  .definition {
-    font-size: 16px;
-  }
 }
 #back {
   filter: var(--filter);
@@ -119,7 +120,7 @@ body {
 }
 .roundedTable {
   min-width: 90%;
-  margin: 34px auto 0;
+  margin: 2em auto 0;
   text-align: left;
 }
 .roundedTable td {
@@ -179,7 +180,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 60%;
+  height: 60vh;
 }
 @keyframes spinner { to { transform: rotate(360deg); } }
 #spinner {
@@ -210,7 +211,6 @@ body {
   position: relative;
   overflow: hidden;
 }
-#display { border: 1px solid red; } /** TODO FIXME DEBUG */
 @media all and (display-mode: standalone), (min-height: 800px) {
   body { margin-top: 20px; }
 }

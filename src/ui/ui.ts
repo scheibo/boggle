@@ -146,7 +146,7 @@ export const UI = new (class {
         rand.seed = global.SEED;
         rand.next();
 
-        this.updateSettings(settings, rand.seed % global.MAX_SEED);
+        this.updateSettings(settings, rand.seed % global.MAX_SEED, false);
       }
     };
 
@@ -155,7 +155,7 @@ export const UI = new (class {
       const existing = (this.Views.Board as BoardView).game;
       if (existing) {
         const [settings, seed] = Game.decodeID((existing as GameJSON).seed);
-        this.updateSettings(settings, seed);
+        this.updateSettings(settings, seed, false);
       } else {
         return setupFromHistory();
       }
@@ -164,7 +164,7 @@ export const UI = new (class {
       if (!this.valid(settings, seed)) {
         return setupFromHistory();
       }
-      this.updateSettings(settings, seed);
+      this.updateSettings(settings, seed, false);
     }
   }
 
@@ -202,6 +202,7 @@ export const UI = new (class {
   valid(settings: Partial<GameSettings>, seed: number) {
     return !!(
       !isNaN(seed) &&
+      Number.isInteger(seed) &&
       seed < global.MAX_SEED &&
       settings.dice &&
       settings.dict &&
@@ -249,7 +250,7 @@ export const UI = new (class {
     element.focus();
     document.execCommand('selectAll', false);
     const sel = document.getSelection();
-    if (sel && !sel.isCollapsed) sel.collapseToEnd();
+    if (sel && sel.rangeCount) sel.collapseToEnd();
   }
 
   permaFocus(element: HTMLElement) {

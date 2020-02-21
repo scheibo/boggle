@@ -5,6 +5,12 @@ import { Type } from '../dict';
 import { Grade } from '../stats';
 import { Settings, Dice, MinLength, ScoreDisplay, Theme } from '../settings';
 
+// prettier-ignore
+const VALID = new Set([
+  'B', 'b', 'N', 'n', 'E', 'e', 'C', 'c', 'O', 'o',
+  '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+]);
+
 export class SettingsView implements View {
   settings!: HTMLElement;
   seed!: HTMLElement;
@@ -17,6 +23,7 @@ export class SettingsView implements View {
     this.seed.textContent = Game.encodeID(global.SETTINGS, global.SEED);
     this.seed.setAttribute('contenteditable', 'true');
     this.seed.addEventListener('input', () => this.onInput(this.seed.textContent || ''));
+    this.seed.addEventListener('beforeinput', e => this.onBeforeInput(e));
     const back = UI.createBackButton(() => UI.toggleView('Menu'));
     this.settings.appendChild(UI.createTopbar(back, this.seed, null));
 
@@ -98,11 +105,24 @@ export class SettingsView implements View {
 
   onInput(id: string) {
     const [settings, seed] = Game.decodeID(id);
-    if (isNaN(seed) || !(settings.dice && settings.dict && settings.min)) {
+    if (!UI.valid(settings, seed)) {
       this.seed.classList.add('error');
     } else {
       UI.updateSettings(settings, seed, false);
       this.update();
     }
+  }
+
+  onBeforeInput(e: any) {
+    if (e.inputType.startsWith('delete') || (e.data && VALID.has(e.data))) return;
+    e.preventDefault();
+  }
+
+  async onKeyDown(e: KeyboardEvent) {
+    if (!this.seed) return; // not attached
+    // tslint:disable-next-line: deprecation
+    const key = e.keyCode;
+    if ([0, 37, 39, 8, 46].includes(key) || VALID.has(String.fromCharCode(key))) return;
+    e.preventDefault();
   }
 }

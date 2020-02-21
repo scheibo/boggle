@@ -158,7 +158,8 @@ export class Game {
   static decodeID(id: string): [Partial<GameSettings>, number] {
     const d = id.charAt(0);
     const dice = d === 'N' ? 'New' : d === 'O' ? 'Old' : d === 'B' ? 'Big' : undefined;
-    const min = Number(id.charAt(1)) as MinLength;
+    let min: MinLength | undefined = Number(id.charAt(1)) as MinLength;
+    if (isNaN(min) || min < 3 || min > 5) min = undefined;
     const t = id.charAt(2);
     const dict = t === 'N' ? 'NWL' : t === 'E' ? 'ENABLE' : t === 'C' ? 'CSW' : undefined;
 

@@ -2,6 +2,8 @@ import { global } from './global';
 import { UI, View } from './ui';
 import { define } from '../dict';
 
+const VALID = (c: string) => (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+
 export class DefineView implements View {
   private word: string;
 
@@ -30,9 +32,10 @@ export class DefineView implements View {
     this.search.classList.add('word');
     this.search.contentEditable = 'true';
     this.search.textContent = this.word;
+    this.search.addEventListener('beforeinput', e => this.onBeforeInput(e));
+    this.search.addEventListener('input', () => this.query(this.search.textContent || ''));
     this.define.appendChild(this.search);
 
-    this.define.addEventListener('input', () => this.query(this.search.textContent || ''));
     this.update();
 
     return this.define;
@@ -168,6 +171,19 @@ export class DefineView implements View {
     return div;
   }
 
+  async onBeforeInput(e: any) {
+    if (e.inputType.startsWith('delete') || (e.data && VALID(e.data))) return;
+    const enter = ['insertLineBreak', 'insertParagraph'].includes(e.inputType);
+    if (enter || (e.data && e.data === ' ')) {
+      if (this.word) {
+        this.query('');
+      } else {
+        await UI.toggleView('Define');
+      }
+    }
+    e.preventDefault();
+  }
+
   async onKeyDown(e: KeyboardEvent) {
     if (!this.search) return; // not attached
     UI.focusContentEditable(this.search);
@@ -181,7 +197,7 @@ export class DefineView implements View {
       }
     } else if (key === 27) {
       await UI.toggleView('Define');
-    } else if ((key < 65 || key > 90) && key !== 8) {
+    } else if (![0, 37, 39, 8, 46].includes(key) && !VALID(String.fromCharCode(key))) {
       e.preventDefault();
     }
   }
