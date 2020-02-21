@@ -185,6 +185,7 @@ export class Game {
 
     const score = { regular: 0, overtime: 0 };
     for (const w in game.played) {
+      if (game.played[w] < 0) continue;
       const s = Game.score(w);
       if (!game.expired || game.played[w] <= game.expired) {
         score.regular += s;
