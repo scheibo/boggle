@@ -15,9 +15,6 @@
       h1 {
         margin-bottom: 0.5em;
       }
-      h3 {
-        color: #666;
-      }
       .subtitle {
         font-size: 1.2em;
         color: #666;
@@ -27,26 +24,507 @@
         #content {
           font-size: 0.85em;
           max-width: 95%;
-           margin: 2em auto;
+          margin: 2em auto;
         }
       }
     </style>
   </head>
   <body>
     <div id="content">
-      <h1>Boggle</h1>
-   
+      <h1><a href='/'>Boggle</a></h1> 
 
-      <h2 id="motivation">Motivation</h2>
-      <p>
-       
+      <p>Boggle is a word game in which players attempt to find words in
+      sequences of adjacent letters. Unlike the numerous other online
+      implementations of the Boggle game (which are often released under various
+      different names to avoid trademark infringement), this application exists
+      to provide a lightweight, minimalistic user interface and power-user
+      features which aim to help a player improve.</p>
+
+      <p>Boggle can be played in any modern browser or device. The
+      implementation relies on the Service Worker API to ensure it will work
+      completely offline, and can be installed to one's desktop or phone home
+      screen if desired.</p>
+
+      <p>The Boggle application opens to a menu, providing the options to play
+      a game, train your vocabulary, define a word, view stats from past games,
+      or change the settings.</p>
+
+      <h3 id="play">Play</h3>
+
+      <p>While playing, the standard 3 minute timer ticks down (which may be
+      paused or restarted at any point simply by clicking it) and a refresh
+      button can be found in the top left corner which will end the current game
+      and begin a new one with a randomly generated board. In the top right
+      corner the player’s current score is displayed. Words may be entered on a
+      touch device by touching letters on the board and dragging across the
+      tiles to complete words - once the touch ends the word is considered
+      finished. On devices with a keyboard, words may be entered simply by
+      typing, the ‘Enter’ or ‘Space’ key can be used to complete the word.</p>
+
+      <p>By default, after a word has been entered:</p> 
+      <ul>
+        <li>if the word is valid and has not yet been played a definition for
+          the word will be displayed and persist until another word has been
+          entered</li>
+        <li>if the word is valid and has already been played, or the word is
+          shorter than the configured minimum word size the word will disappear
+          immediately after being played</li>
+        <li>if the word is invalid the word will flash red and disappear</li>
+      </ul>
+
+      <p>The application allows words to be entered even after the timer has
+      expired, though it keeps track of which words were entered before the
+      game’s duration elapsed and scores them separately (see example above).
       </p>
 
-      <h2 id="background">Background</h2>
-      <p>
-       
+      <p>The application also provides some ‘power user’ features during
+      gameplay in the form of shortcuts and heatmap hints. To simplify and
+      expedite word entry, given that the minimum length of word supported by
+      the application is 2 letters, anytime a 1 or 2 letter word is played the
+      game will interpret it as if it were intended to be appended as a suffix
+      to the word which had just been entered previously (the ‘ING’ suffix is
+      also handled as a special case for this shortcut). The most common use
+      case for this is quickly entering plurals of words (~50% of all valid
+      words are plurals), though any suffixes can take advantage of the
+      shortcut:</p>
+
+      <p>The heatmap hint feature is more situational - during game play, a
+      player may long press the score displayed in the top right corner to cause
+      the application to colour the tiles based on how frequently they occur
+      (more precisely, the points the tile is involved in) in the remaining
+      possible words that can be played. The tiles opacity is weighted such that
+      those which are present in words forming the most points in aggregate will
+      show up in the most opaque red for the duration of the press. While there
+      are some rare edge cases when words may be found more than one way on a
+      given board, in general the heatmap can be used to help a player determine
+      where to focus their search to maximize their score.</p>
+
+      <h3 id="score">Score</h3>
+
+      <p>Clicking on the score (as opposed to long pressing it) will instead
+      display a full breakdown of which words were played, for the current game
+      and for each game that has ever been played by the user in reverse
+      chronological order.</p>
+
+      <p>Each game’s ID can be seen in the list, though only the current game’s
+      ‘Played’ section will be expanded by default, other games or sections can
+      be expanded or collapsed via clicking on them. A game’s ID contains
+      information about the dice configuration, minimum board size, dictionary
+      and the random seed used to generate the board - this ID can be shared
+      with another player for them to be able to play the same board and compare
+      results. Alongside the ID is the players total score (irrespective of the
+      timer) for the game compared to their configured ‘goal’ score (also
+      rendered as a percentage).</p>
+
+      <p>The ‘Played’ section summary contains several metrics:</p>
+      <ul>
+        <li>the potential score (in parentheses) the player could have had if
+          they had played all of the words described next (note: a word will
+          only be counted in the first group it falls into)</li>
+        <li>the total number (not points) of suffixes that were missed, computed
+          roughly by determining which of the player’s words could also have had
+          ‘S’, ‘ED’, ‘ER’, or ‘ING’ applied to them to form further valid words.
+          This is sometimes misleading as these suffixes may actual form
+          completely new valid words which aren’t actually extensions stemming
+          from the original root (eg. ‘BAS’ -&gt; ‘BASS’ or ‘SAT’ -&gt; ‘SATED’),
+          but in general works as a good enough heuristic</li>
+        <li>the number of subwords of words played which were not played
+          themselves (eg. if ‘SETA’ was played not ‘ETA’)</li>
+        <li>the number of anagrams of words played which were not played
+          themselves though were present in the board</li>
+        <li>the ratio of invalid words played versus the total number of words
+          (invalid and valid) played (also in parentheses)</li>
+      </ul>
+
+      <p>These summary metrics can be completely ignored, but they may also
+      serve as helpful metrics for players looking to improve their play and
+      detect weaknesses. Finally, the ‘Possible’ section summary simply lists
+      the total number of points attainable using only words of a specific grade
+      level or below, ie. ‘D / C / B / A (S)’. Due to the nature of the grading
+      system, the final score in parentheses also indicates the highest possible
+      score for the given board in question.</p>
+
+      <p>Upon expanding the ‘Played’ section, words played by the user are
+      listed in the order that they were entered, along with any definitions.
+      Invalid words show up in red and words which are of a higher grade level
+      than the goal grade configured by the user show up in grey.</p>
+
+      <p>The ‘Possible’ section lists all of the words possible in the board
+      which were not already played by the user, though these are sorted by a
+      more complicated procedure: words which were determined as ‘missed’
+      (suffixes/subwords/anagrams as described above in the section on ‘Played’
+      metrics) are shown at the top (and underlined), then the words are sorted
+      by grade, length, grouped together with their anagrams and then sorted
+      alphabetically. This sort order attempts to make it easy for a player to
+      prioritize learning which words were overlooked.</p>
+
+      <h3 id="stats">Stats</h3>
+
+      <p>To further aid with post game analysis, a ‘stats’ breakdown of
+      commonly missed words, anadromes and anagrams from recent games can be
+      accessed by clicking on the score in the top right of the score breakdown
+      (or via the main application menu).</p>
+
+      <p> he sort order for these tables attempts to surface words worth the
+      most points per game that have been missed most recently. The ‘Words’ tab
+      shows the commonly missed words and how often they have been found
+      relative to how often they were possible, the ‘Anadromes’ tab shows how
+      often one direction of an anadrome pair has been found relative to
+      another, and the ‘Anagrams’ tab shows how often a specific word has been
+      found relative to how often it has been present compared to the stats of
+      its anagrams.</p>
+
+      <h3 id="define">Define</h3>
+
+      <p>By either navigating through the main menu, swiping left or right
+      anywhere in the application outside of the game board, or by using the ‘?’
+      keyboard shortcut the ‘define’ panel can be pulled up: </p>
+
+      <p>Words will be defined immediately as they are typed. Words that are
+      recognized in certain configurations but not the current configuration
+      will be greyed out. In addition to definitions, all valid anagrams of the
+      search term will be displayed (and may be clicked to link to their
+      definition), as will various statistics for the defined word:</p>
+      <ul>
+        <li>Grade: words are assigned an artificial grade (S, A, B, C, D) meant
+          to reflect their difficulty/importance based on the frequency they
+          occur in the English language and how frequently they show up in
+          Boggle games. Each grade corresponds roughly 20 percentile points worth
+          of ‘weight’, eg. a player who knows all B, C and D (and no S or A)  tier
+          words would be expected to roughly recognize 60% of the possible points on
+          any given Boggle board.</li>
+        <li>Frequency: the percentile ranking of the word in the English
+          language, based on n-gram data provided by Peter Norvig, where a lower
+          percentile means the word is more common. While this frequency data
+          needs to be taken with a grain of salt, it does an OK job of separating
+          more regular words from those that are truly esoteric.</li>
+        <li>Score: the percentile ranking of the word based on its expected
+          number of points per game (see below for a further elaboration on this
+          concept).</li>
+        <li>Anagram: the percentile ranking of the word based on the expected
+          number of points per game for it and all of its anagrams.</li>
+      </ul>
+
+      <p>A user can return out of define mode either by swiping left or right
+      or hitting the ‘Escape’ key.</p>
+
+      <h3 id="settings">Settings</h3>
+
+      <p>The settings pane can be accessed via the main menu or through long
+      pressing on the refresh button at any point. Because it is often accessed
+      mid game, the current game’s timer is displayed at the top, and a icon to
+      navigate to training mode exists in the top right (though training mode
+      can also be accessed via the main menu).</p>
+
+      <p>The current game’s ID (which, as described above, contains information
+      about the the dice configuration, minimum board size, dictionary and the
+      random seed used to generate the board) is displayed and can be edited
+      manually, though as the various setting options are toggled the seed
+      updates itself to reflect the changes. Setting changes can be applied by
+      clicking the refresh icon in the top left to return to the new board (or
+      the ‘back’ icon can be clicked to return to an existing one if the
+      settings changes do not mandate a refresh).</p>
+
+      <p>The Boggle board game has been released with various dice
+      configurations over the years. This implementation supports the three most
+      common English dice distributions, including the 5x5 distribution for 'Big
+      Boggle'. The 6x6 'Super Big Boggle' distribution is not supported.</p>
+
+      <p>4x4 configurations of Boggle typically mandate that a legal word must
+      be at least 3 characters long, with the 5x5 Big Boggle further restricting
+      the legal word size to at least 4 characters. This implementation follows
+      these defaults, but also allows the player to change the minimum word
+      length restriction independent of board size, allowing 3, 4, or 5 letter
+      words to be the minimum allowed.</p>
+
+      <p>Boggle has no official dictionary, so instead this implementation
+      relies on the three canonical Scrabble word lists - NWL (formerly known as
+      ‘TWL’, more restrictive, used in American and Canadian Scrabble
+      tournaments), ENABLE (similar to NWL, used by a large number of online
+      games), and CSW (formerly known as ‘SOWPODS’ the most permissive word
+      list, used by Scrabble players outside of North America). By default, the
+      NWL is used (though it is important to note that due to availability all
+      definitions come from CSW which may sometimes be a source of confusion).
       </p>
 
+      <p>The grade toggle simply allows a player to choose which grade (as
+      described in detail above) best reflects the breadth of their vocabulary
+      and is only used for display purposes when determining goal points or
+      visually styling words.</p>
+
+      <p>The display toggle changes how much information the player sees during
+      a game. The ‘Hide’ mode more accurately reflects how games are played in
+      real life - all words entered will disappear immediately instead of
+      lingering with a definition if they were valid or displaying in red if
+      they were invalid, and the current score is not displayed at all times. To
+      find out these details the user must navigate to the scoring breakdown. On
+      the opposite end of the spectrum is the ‘Full’ display mode which pulls
+      out the metrics from the scoring breakdown and places them front and
+      center for easy access while playing. From left to right, the potential
+      score, number of missed suffixes, number of missed subwords, number of
+      missed anagrams, points scored, goal score and percentage of goal score
+      are displayed (a hybrid of what is displayed alongside game ID in the
+      scoring breakdown and the ‘Played’ section summary).</p>
+
+      <p>Finally, light and dark themes are supported for the application,
+      though the application will respect the system’s default preference until
+      it is overwritten in the settings.</p>
+
+      <h3 id="settings">Training</h3>
+
+      <p>The final feature the application provides is a ‘training’ mode,
+      accessible via the main menu or settings. Training mode respects the
+      settings configured in the settings pane (dice configuration, minimum word
+      length, dictionary) and effectively amounts to ‘anagram flashcards’ -
+      users are presented with a jumble of letters to form words out of and by
+      touching anywhere on the screen they can see all of the possible valid
+      words and their definitions. At the bottom of the answer card users are
+      asked to assign a rating to how well they remembered the card - the
+      application will use this rating and the user’s past ratings of this
+      anagram group to determine when it will next be tested. A recommended
+      rubric for assigning the numerical ratings based on the original paper for
+      the algorithm is as follows:</p>
+
+      <table id="rating">
+        <tr><td>5</td><td>perfect response <em>(obvious, knew words and exact number in group immediately)</em></td></tr>
+        <tr><td>4</td><td>correct response after a hesitation <em>(default correct rating, able to name entire group)</em></td></tr>
+        <tr><td>3</td><td>correct response recalled with serious difficulty <em>(took a long time, possibly required size hint or named words not in the group)</em></td></tr>
+        <tr><td>2</td><td>incorrect response; where the correct one seemed easy to recall <em>(~80% or more of the group remembered fairly easily, missing words familiar)</em></td></tr>
+        <tr><td>1</td><td>incorrect response; the correct one remembered <em>(default incorrect rating, no words seem completely foreign)</em></td></tr>
+        <tr><td>0</td><td>complete blackout <em>(less than 20-30% of words remembered and some words totally unrecognized)</em></td></tr>
+      </table>
+
+      <p>New anagram groups are introduced in order of priority based on their
+      expected points per game, and the spaced repetition algorithm used is a
+      modification of those used by existing memorization software applications
+      like Anki, Duolingo, Quizlet or Memrise. Similar standalone game specific
+      word study software exists (eg. ‘NASPA Zyzzyva’ or ‘Scrabble Expert’), but
+      none leverage the expected points per game data available in Boggle to
+      focus on the most important words. A detailed description of how the
+      training algorithm works can be found in the Appendix.</p>
+
+      <p>The count in the top right corner of the training mode displays the
+      number of anagram groups that the player has been exposed to during
+      training, and similar to the ‘heatmap’ hint during game play, the count
+      can be long pressed to reveal a hint indicating the number of valid words
+      that are possible to form by unscrambling the letters being tested. By
+      simply clicking on the count instead of long pressing, a ‘review’ page
+      where anagram groups which are currently troublesome to the user is
+      displayed.</p>
+
+      <h2 id="appendix">Appendix</h2>
+
+      <h3 id="strategy">Strategy</h3>
+
+      <p>The core skill in most word games (eg. Boggle, Scrabble, Bananagrams)
+      is being able to find possible words from a jumble of letters - that is,
+      to determine valid anagrams. Having a substantive vocabulary is important,
+      but the type of vocabulary required is vastly different than the type of
+      vocabulary that may be useful for passing the SAT or GRE - long words
+      occur with significantly less regularity. Shorter words, particularly
+      those involving specific letters, tend to be the most valuable to focus
+      one’s studying on.</p>
+
+      <p>In Bananagrams and Scrabble, knowledge of 2-letter words is incredibly
+      important as it allows much more flexibility in playing longer words
+      alongside those which already exist. Memorizing all valid 2-letter words
+      is actually fairly straightforward, Tom Rees outlines a way of remembering
+      them through use mnemonics, an example of which (updated for NWL 2019) can
+      be found below:</p>
+
+      <table class="mnenomic">
+        <tr><td>dumpy biz thankful</td><td>a</td><td>birthdays mangle wax</td></tr>
+        <tr><td>few behind him party</td><td>e</td><td>homosexual snowdrifts</td></tr>
+        <tr><td>quake halts bag mixup</td><td>i</td><td>infested</td></tr>
+        <tr><td>midnight jeep bylaws</td><td>o</td><td>murky pushdown fix</td></tr>
+        <tr><td>x-men</td><td>u</td><td>phantoms </td></tr>
+        <tr><td>mm hm by my sh</td><td></td><td>aa ae ai oe oi</td></tr>
+      </table>
+
+      <p>As described in the article, a player simply needs to remember the
+      phrases for each of the vowels (and the leftover words at the bottom), and
+      they will be able to determine if a combination of two letters is a valid
+      word or not. Actually knowing the definition of said 2-letter word is
+      irrelevant (case in point, a New Zealander who speaks no French won the
+      French-language Scrabble world championship), though learning the words’
+      definitions can be helpful for further ingraining it in one’s memory or
+      making it easier to recognize as a word.</p>
+
+      <p>2-letter words can also be relatively useful in 4x4 Boggle play, as
+      many of these words can take an ‘-S’ suffix, giving one a jump start on
+      learning the 3-letter words. Playing a letter before or after an existing
+      word is known as “hooking”, and it is already demonstrated in the table
+      above, as the consonants which can be ‘hooked’ onto a vowel are encoded in
+      the phrases. In Scrabble and Bananagrams, hooking is central to the game
+      as it's the only way a player is able to play their word - they must build
+      off an existing word. In Boggle, the concept of hooks is still useful for
+      building up one’s vocabulary in more manageable pieces and also in game -
+      after discovering a pocket of tiles, one can then look around the
+      neighbouring tiles for known hooks to potential form additional words.
+      </p>
+
+      <p>In Scrabble and Bananagrams, learning the 2- and 3-letter words and
+      their hooks (and especially which can be pluralized) is usually the best
+      place to start, as we can assume these words will appear most frequently
+      and be used to join new words to the board. With Boggle, these words are
+      still important (and there’s only ~1000 3-letter words), but Boggle
+      actually has a unique property compared to the other games in that the
+      state of the board is completely determined from the beginning of the
+      game, independent of input from the players. As such, one can actually
+      randomly generate hundreds of millions of boards and track which words
+      occur most often in aggregate, and then use the expected points each word
+      will garner in an average game to prioritize which to study first (thanks
+      to Luke Gustafson and Craig S. Kaplan for this idea).</p>
+
+      <p>The word frequency stats from Boggle games in aggregate shows that
+      most words on a board are going to be 3-7 characters long, with the most
+      between 3-5 (or 4-6 in Big Boggle). As such, Boggle favours the ability to
+      recognize to an even greater extent than Bananagrams or Scrabble where
+      longer words have more advantages. There are several other important
+      tactical considerations when playing or learning Boggle:</p>
+
+      <ul>
+        <li>Anagrams: as mentioned from the beginning, deciphering various
+          anagrams from scrambled letters is the core of word games. In Boggle,
+          if a player encounters a cluster of letters and recognizes one word
+          from an anagram group, the player can then test to see if any of the
+          other words that are known anagrams of the word played can also be
+          played. This narrows the search dramatically from one which is more
+          exploratory to one which is surgical in nature and greatly speeds up
+          identifying words and helps avoid overlooking words.</li>
+        <li>Anadromes: a special case of anagram, anadromes form ‘pairs’ which
+          can simplify learning and playing words to a great extent - unlike
+          anagram groups where some members of the group may not be playable due
+          to the configuration of the board, if a player finds one half of an
+          anadrome pair they immediately know that its partner must exist and
+          can write down the partner word without even looking at the board.
+          Furthermore, anadromes simplify memorizing words considerably, as its
+          only necessary to remember a word has an anadrome, not what the
+          anadrome means or even looks like. eg. A player who remembers that
+          ‘LION’ has an anadrome can immediately write down the reverse of
+          ‘LION’ (‘NOIL’, “short fibers combed from long fibers during textile
+          preparation”), effectively reducing the amount of information they
+          need to memorize from being an entire other word to simply an extra bit
+          of information attached to a word they already know.</li>
+        <li>Subwords: players will more often look to build longer words through
+          hooking and sometimes miss looking inside the words they’ve already
+          found: eg. missing ‘LOO’ after jumping immediately to ‘LOOT’. This
+          often occurs when the subword is more esoteric than the longer word
+          (‘OPE’ vs. ‘OPEN’).</li>
+        <li>Search Optimization: players should aim to spend most of their time
+          looking in the areas of the board most likely to contain the most
+          scoring words, which often means not spending too much time trying to
+          make words out ‘Qu’, ‘K’, ‘Z’, etc and instead looking to build around
+          vowels and other promising groups of characters.</li>
+        <li>Suffixes/Prefixes: one of the most basic strategies players learn
+          for Boggle is to always been on the lookout to see if a common suffix
+          such as  ‘-S’, ‘-ER’, ‘-ED’,  or ‘-ING’ exists on the board and then
+          trying to look for words around those suffixes. This is effectively a
+          combination of hooking and looking in areas likely to have higher
+          clusters of points. This practice can also be applied to common
+          prefixes such as ‘RE-’ or ‘DE-’, though these occur with less
+          regularity than the suffixes mentioned above (it’s also worth noting
+          that ‘-ING’ isn’t actually that common a suffix when you take into
+        account dice distributions and expected points per game).</li>
+      </ul>
+
+      <p>Playing games like Bananagrams and Scrabble involve slightly different
+      strategies, including:</p>
+
+      <ul>
+        <li>Dumping: stronger players tend to be more willing to take the tradeoff of missing their turn/gaining more letters to get rid of a bad slate of tiles. In Scrabble, longer words (and especially bingos) that you can more easily play to stretch to word bonuses are going to earn disproportionately more points in the long run. In both games, trading off undesirable letters in the hopes of achieving a better composition of characters to work with is an important skill to master.</li>
+        <li>Difficult Letters: while knowing when to dump difficult letters is important, players should also take care to study the easiest ways to utilize these letters in their play. While in Boggle difficult letters can (and for the most part, should) be avoided, in Scrabble and Bananagrams you are often placed in a position where you are to come up with a use for a ‘Q’ or ‘Z’ or need a word that uses up an excess of consonants or vowels. In Bananagrams it is worth considering leaving open an ‘A’, ‘I’, or ‘O’ available be able to use in case a ‘Z’, ‘K’, ‘X’, ‘Q’ or ‘J’ arises. In Scrabble, more difficult letters are assigned higher points, so it is often worth saving them to play on bonus squares and learning how to use them in longer words such that they can actually serve as a benefit rather than a roadblock.</li>
+        <li>Open Board Position: high level Scrabble and Bananagram players will look to build a board that is as ‘open’ as possible, favoring longer words sprawled out as opposed to a board which is compact and hard to play off of. An open board position provides more opportunities to play high scoring words in Scrabble (and in particular, to reach bonus squares on the board) and provides more space to play words in Bananagrams.</li>
+        <li>Restructuring: in Bananagrams a player should constantly be willing to restructure their board as needed. The board state in Bananagrams is not set in stone, once played a word may later be removed and rearranged to form other words. Because of this, players should always be on the lookout for opportunities to remove words in order to build long words from the tiles (to achieve a more open board position, as discussed above) and, in particular, to use difficult letters. A very powerful tactic in Bananagrams for dealing with a difficult letter is to find a place for it in your existing board by swapping out a more common and easy to use letter, with the expectation that it will be much easier to then find a new home for the letter it replaced.</li>
+        <li>Bonuses/Bingos: word/letter bonuses (eg. triple letter score) and bingos (when a player uses all 7 of their tiles in one turn and earns a 50 point bonus) are incredibly important to consider at higher level play - among experts the winner, on average, out-bingos the loser 2:1. Maintaining an open board position as mentioned above is important for facilitating this, but for Scrabble it’s also important to study the most common 6-7 letter stems that can be turned into bingos. Old Town Scrabble explains bingo stems in more detail,  but for example, 70 other words can be made by the addition of one letter to the 6 tiles in ‘SATIRE’.</li>
+      </ul>
+
+
+      <h3 id="training-algorithm">Training Algorithm</h3>
+
+      <p>Words are learned alongside their anagrams, with new groups being
+      introduced in order of the groups’ average total expected points per game.
+      The trainee’s ratings are then plugged into the standard SM2 algorithm,
+      with a small number of enhancements and the now standard 3 day review
+      period. Like with Anki, failures during the initial ‘learning’ phase of a
+      group (the first 5 times the group has been seen) are treated less
+      harshly, with the modifier applied to the difficulty rating only
+      progressively approaching its full value. Furthermore, if a group is
+      corrected remembered after its due date, a bonus is applied to reduce its
+      difficulty.</p>
+
+      <p> Because the training mode is built into the same application as the
+      game, it seems like it would be possible to use in-game experience to
+      objectively adjust training weights of anagram groups identified in game.
+      Unfortunately, there are a number of reasons why this is difficult: </p>
+
+      <ul>
+        <li>training mode deals in anagram groups, not the individual words, and
+          on a real board entire anagram groups are not always present</li>
+        <li>missing a word on the board does not necessary imply it was not
+          remember - real games have time pressure and the player may have
+          simply prioritized other areas of the board to focus on</li>
+        <li>games are not all played to exhaustion or even until the timer has
+          expired and it is difficult to eliminate false negatives</li>
+        <li>words may be easy to overlook on a board but also easy to solve in
+          training (different modalities)</li>
+      </ul>
+
+      <p>Instead the stats section was designed with the hopes of surfacing the
+      same sorts of actionable information based on trying to use feedback from
+      the game history.</p>
+
+      <h3 id="implementation">Implementation</h3>
+
+      <p>The main challenge with implementing Boggle is the size of the
+      dictionary - ranging from ~180,000 - 280,000 words depending on which
+      dictionary is used, even just the words themselves stored in a
+      deterministic acyclic finite state automaton or an efficiently compressed
+      trie still take up around 2MB. Furthermore, since the application shows
+      definitions by default on successful entry of word it end up requiring the
+      full dictionary anyway which balloons the size up 10-15x. Unfortunately,
+      this has a large impact on initial startup as downloading a 30MB
+      dictionary anywhere is going to be slow.</p>
+
+      <p>If supporting offline was not a requirement the application could
+      compute board solutions server side and send down only the required
+      definitions and words for the game (or do point lookups on demand for
+      something like define mode). Even with the need to support offline mode
+      the initial download could be slightly optimized by shipping down just the
+      encoded word data structure without definitions (and only for the specific
+      dictionary configuration, given CSW is ~50% larger than the other two) so
+      that the initial board could be solved and then shipping down definitions
+      in a secondary download so that the user could begin playing immediately
+      (racing the definitions download), however this approach was not chosen as
+      either not showing the definitions before the second download has
+      completed or blocking input on the board until the downloads are
+      undesirable.</p>
+
+      <p>As such, the best that can be done is attempting to hiding the latency
+      (and the dreaded loading spinner UI) of the dictionary download by
+      inserting the menu splash instead of dropping the user directly into a
+      game and using the Service Worker API to cache the dictionary to make
+      future loads as fast as possible. Given the number of features and modes
+      supported by the application the menu as the loading screen isn’t actually
+      a terrible UX decision, and if the user hesitates long enough on choosing
+      where they wish to navigate to the entirety of the dictionary download may
+      have time to finish in the background.</p>
+
+      <p>Computing the training set or processing game history can also cause
+      problems as they grow linearly. The training set thankfully grows fairly
+      slowly because it is bound by human memory, though it is still relatively
+      expensive to initially compute as it involves iterating through the
+      entirety of the dictionary. Saving the history of each game played also is
+      problematic as the longer a user uses the application the slower their
+      experience will get, however, its possible to minimize this impact by
+      bounding the amount of recent history we look at (eg. only looking at the
+      last 500 games for stats) or by lazy loading (as is done in the past
+      scoring breakdown).</p>
+
+      <p>The application is currently fairly poorly implemented and a future
+      rewrite in Typescript and Preact is planned - features and quick iteration
+      have been prioritized above all else and the code quality reflects this.
+      </p>
     </div>
   </body>
 </html>
