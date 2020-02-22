@@ -16,6 +16,7 @@ export class SettingsView implements View {
   seed!: HTMLElement;
 
   toJSON() {}
+
   attach() {
     this.settings = UI.createElementWithId('div', 'settings');
 
@@ -110,6 +111,7 @@ export class SettingsView implements View {
     } else {
       UI.updateSettings(settings, seed, false);
       this.update();
+      UI.focusContentEditable(this.seed);
     }
   }
 

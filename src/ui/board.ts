@@ -166,16 +166,16 @@ export class BoardView implements View {
       for (let col = 0; col < game.size; col++) {
         const td = document.createElement('td');
 
-        let div = document.createElement('div');
-        div.textContent = game.board[row * game.size + col];
-        if (div.textContent === 'Qu') div.classList.add('qu');
-        if (['M', 'W', 'Z'].includes(div.textContent)) div.classList.add('underline');
-        div.classList.add(`rotate${90 * random.next(0, 4)}`);
-        div.setAttribute('data-x', String(row));
-        div.setAttribute('data-y', String(col));
-        td.appendChild(div);
+        const text = document.createElement('div');
+        text.textContent = game.board[row * game.size + col];
+        if (text.textContent === 'Qu') text.classList.add('qu');
+        if (['M', 'W', 'Z'].includes(text.textContent)) text.classList.add('underline');
+        text.classList.add(`rotate${90 * random.next(0, 4)}`);
+        td.setAttribute('data-x', String(row));
+        td.setAttribute('data-y', String(col));
+        td.appendChild(text);
 
-        div = document.createElement('div');
+        const div = document.createElement('div');
         div.classList.add('target');
         div.setAttribute('data-x', String(row));
         div.setAttribute('data-y', String(col));
@@ -272,6 +272,7 @@ export class BoardView implements View {
     const game = this.game as Game;
     if (global.SETTINGS.display === 'Hide') {
       this.score.textContent = '?';
+      this.full.classList.add('hidden');
       return;
     }
 
