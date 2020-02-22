@@ -243,6 +243,7 @@ export class BoardView implements View {
   play() {
     const game = this.game as Game;
     let w = (this.word.textContent || '').toUpperCase();
+    if (!w.length) return;
     if (w.length < 3 || SUFFIXES.includes(w)) {
       w = `${this.last}${w}`;
       this.word.textContent = w;
