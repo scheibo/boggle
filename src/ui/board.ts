@@ -41,6 +41,13 @@ export class BoardView implements View {
     const { display, timer } = this.createTimer(json && json.timer);
     this.timer = timer;
     this.timerDisplay = display;
+    document.addEventListener('visibilitychange', e => {
+      if (document.hidden) {
+        this.timer.stop();
+      } else if (!this.paused) {
+        this.timer.start();
+      }
+    });
   }
 
   toJSON(): BoardJSON {
