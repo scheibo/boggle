@@ -82,6 +82,16 @@
         font-style: italic;
         text-align: left;
       }
+      img {
+        border: 1px solid black;
+        margin: 30px 5px;
+      }
+      .nooutline {
+        border: none;
+      }
+      .i {
+        text-align: center;
+      }
     </style>
     <!-- Global site tag (gtag.js) - Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-15415096-6"></script>
@@ -105,10 +115,10 @@
       features which aim to help a player improve.</p>
 
       <p>Boggle can be played on <a
-        href="https://en.wikipedia.org/wiki/No_true_Scotsman">"any modern
-        browser or device"</a>. The implementation relies on the <a
-        href="https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API">
-        Service Worker API</a> to ensure it will work completely offline, and
+      href="https://en.wikipedia.org/wiki/No_true_Scotsman">"any modern
+      browser or device"</a>. The implementation relies on the <a
+      href="https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API">
+      Service Worker API</a> to ensure it will work completely offline, and
       can be installed to one's desktop or phone home screen if desired.</p>
 
       <p>The Boggle application opens to a menu, providing the options to
@@ -116,6 +126,8 @@
       your vocabulary, <a href="#define"><b>define</b></a> a word, view 
       <a href="#stats"><b>stats</b></a> from past games, or change the 
       <a href="#settings"><b>settings</b></a>.</p>
+
+      <div class="i"><img src="img/menu.png" height=320 /></div>
 
       <h3 id="play">Play</h3>
 
@@ -130,6 +142,11 @@
       typing, the '<tt>Enter</tt>' or '<tt>Space</tt>' key can be used to
       complete the word.</p>
 
+      <div class="i">
+        <img src="img/touch.gif" height=320 />
+        <img src="img/refresh.gif" height=320 />
+      </div>
+
       <p>By default, after a word has been entered:</p> 
       <ul>
         <li>if the word is valid and has not yet been played a definition for
@@ -140,6 +157,11 @@
           immediately after being played</li>
         <li>if the word is invalid the word will flash red and disappear</li>
       </ul>
+
+      <div class="i">
+        <img src="img/5x5-overtime.gif" height=320 />
+        <img src="img/failure-and-reentry.gif" height=320 />
+      </div>
 
       <p>The application allows words to be entered even after the timer has
       expired, though it keeps track of which words were entered before the
@@ -156,9 +178,12 @@
       previously (the 'ING' suffix is also handled as a special case for this
       shortcut).  The most common use case for this is quickly entering plurals
       of words (~50% of all valid words are plurals), though any suffixes can
-      take
-      advantage of the
-      shortcut:</p>
+      take advantage of the shortcut:</p>
+      
+      <div class="i">
+        <img src="img/shortcut.gif" height=320 />
+        <img src="img/heatmap.gif" height=320 />
+      </div>
 
       <p>The <b>heatmap</b> hint feature is more situational - during game
       play, a player may long press the score displayed in the top right corner
@@ -178,6 +203,8 @@
       display a full breakdown of which words were played, for the current game
       and for each game that has ever been played by the user in reverse
       chronological order.</p>
+      
+      <div class="i"><img class="nooutline" src="img/score-breakdown.png" height=250 /></div>
 
       <p>Each game's ID can be seen in the list, though only the current game's
       'Played' section will be expanded by default, other games or sections can
@@ -224,6 +251,8 @@
       Invalid words show up in red and words which are of a higher grade level
       than the goal grade configured by the user show up in grey.</p>
 
+      <div class="i"><img src="img/score.gif" height=320 /></div>
+
       <p>The 'Possible' section lists all of the words possible in the board
       which were not already played by the user, though these are sorted by a
       more complicated procedure: words which were determined as 'missed'
@@ -236,10 +265,12 @@
       <h3 id="stats">Stats</h3>
 
       <p>To further aid with post game analysis, a '<b>stats</b>' breakdown of
-      commonly missed words, <a
-      href="https://en.wiktionary.org/wiki/anadrome">anadromes</a> and anagrams
-      from recent games can be accessed by clicking on the score in the top right
-      of the score breakdown (or via the main application menu).</p>
+      commonly missed words, <a href="https://en.wiktionary.org/wiki/anadrome">
+      anadromes</a> and anagrams from recent games can be accessed by clicking
+      on the score in the top right of the score breakdown (or via the main
+      application menu).</p>
+
+      <div class="i"><img src="img/stats.gif" height=320 /></div>
 
       <p>The sort order for these tables attempts to surface words worth the
       most points per game that have been missed most recently. The 'Words' tab
@@ -256,6 +287,8 @@
       anywhere in the application outside of the game board, or by using the
       '<tt>?</tt>' keyboard shortcut the '<b>define</b>' panel can be pulled
       up:</p>
+
+      <div class="i"><img src="img/define.gif" height=320 /></div>
 
       <p>Words will be defined immediately as they are typed. Words that are
       recognized in certain configurations but not the current configuration
@@ -296,6 +329,8 @@
       accessed mid game, the current game's timer is displayed at the top, and
       a icon to navigate to training mode exists in the top right (though
       training mode can also be accessed via the main menu).</p>
+
+      <div class="i"><img src="img/settings.gif" height=320 /></div>
 
       <p>The current game's <b>ID</b> (which, as described <a
       href="#score">above</a>, contains information about the the dice
@@ -338,6 +373,11 @@
       breadth of their vocabulary and is only used for display purposes when
       determining goal points or visually styling words.</p>
 
+      <div class="i">
+        <img src="img/hide.gif" height=320 />
+        <img src="img/full.gif" height=320 />
+      </div>
+
       <p>The <b>display</b> toggle changes how much information the player sees
       during a game. The 'Hide' mode more accurately reflects how games are
       played in real life - all words entered will disappear immediately
@@ -358,6 +398,8 @@
       preference until it is overwritten in the settings.</p>
 
       <h3 id="settings">Training</h3>
+
+      <div class="i"><img src="img/training.gif" height=320 /></div>
 
       <p>The final feature the application provides is a '<b>training</b>'
       mode, accessible via the main menu or <a href="#setting">settings</a>.
@@ -396,6 +438,8 @@
       in Boggle to focus on the most important words. A detailed description of
       how the training algorithm works can be found in the <a
       href="#appendix">Appendix</a>.</p>
+
+      <div class="i"><img src="img/sizeHint-review.gif" height=320 /></div>
 
       <p>The count in the top right corner of the training mode displays the
       number of anagram groups that the player has been exposed to during
