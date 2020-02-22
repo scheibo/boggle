@@ -1,10 +1,16 @@
 #rating .toggle {
   border: solid var(--fg-color);
   border-width: 3px 0 3px 3px;
-  padding: 7px 4px;
   margin: auto;
   display: inline-block;
-  width: 56px;
+  padding: 4px 2px;
+  width: 50px;
+}
+@media (min-height: 550px) {
+  #rating .toggle {
+    padding: 7px 4px;
+    width: 56px;
+  }
 }
 #rating .toggle:active {
   font-weight: bold;
@@ -37,20 +43,28 @@
   justify-content: center;
   align-items: center;
   overflow: hidden;
-  height: calc(100vh - 264px);
+  height: calc(100vh - 80px);
+}
+@media (min-height: 550px) {
+  #train .wrapper {
+    height: calc(100vh - 125px);
+  }
 }
 #rating {
-  width: 336px;
-  height: 68px;
-  margin: 61px auto 0 auto;
+  margin: 0 auto 0 auto;
 }
 #sizeHint {
-  font-size: 20px;
   font-weight: bold;
   color: red;
   text-align: center;
-  line-height: 68px;
-  height: 68px;
+  font-size: 16px;
+  height: 40px;
+}
+@media (min-height: 550px) {
+  #sizeHint {
+    font-size: 20px;
+    height: 68px;
+  }
 }
 #rating .toggle:last-of-type {
   border-right: 3px solid var(--fg-color);
