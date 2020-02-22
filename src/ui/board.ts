@@ -388,7 +388,7 @@ export class BoardView implements View {
       e.preventDefault();
       this.play();
       UI.focusContentEditable(this.word);
-    } else if (![0, 37, 39, 8, 46].includes(key) || !VALID(String.fromCharCode(key))) {
+    } else if (![0, 37, 39, 8, 46].includes(key) && !VALID(String.fromCharCode(key))) {
       e.preventDefault();
     }
   }
