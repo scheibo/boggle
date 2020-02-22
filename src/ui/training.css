@@ -43,15 +43,25 @@
   justify-content: center;
   align-items: center;
   overflow: hidden;
-  height: calc(100vh - 80px);
+  height: calc(100vh - 90px);
 }
 @media (min-height: 550px) {
   #train .wrapper {
-    height: calc(100vh - 125px);
+    height: calc(100vh - 135px);
+  }
+}
+@media all and (display-mode: standalone) {
+  #train .wrapper {
+    height: calc(100vh - 110px);
+  }
+}
+@media (min-height: 550px) and (display-mode: standalone) {
+  #train .wrapper {
+    height: calc(100vh - 155px);
   }
 }
 #rating {
-  margin: 0 auto 0 auto;
+  margin: 10px auto 0 auto;
 }
 #sizeHint {
   font-weight: bold;
@@ -59,6 +69,7 @@
   text-align: center;
   font-size: 16px;
   height: 40px;
+  margin-top: 10px;
 }
 @media (min-height: 550px) {
   #sizeHint {
