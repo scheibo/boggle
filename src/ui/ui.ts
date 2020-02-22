@@ -248,9 +248,14 @@ export const UI = new (class {
 
   focusContentEditable(element: HTMLElement) {
     element.focus();
-    document.execCommand('selectAll', false);
-    const sel = document.getSelection();
-    if (sel && sel.rangeCount) sel.collapseToEnd();
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    range.collapse(false);
+    const selection = window.getSelection();
+    if (selection) {
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
   }
 
   permaFocus(element: HTMLElement) {

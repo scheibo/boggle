@@ -47,6 +47,7 @@ export class DefineView implements View {
 
   query(w: string) {
     this.search.textContent = w;
+    UI.focusContentEditable(this.search);
     this.word = w.toUpperCase();
     this.update();
     UI.persist();
