@@ -165,14 +165,17 @@ export class BoardView implements View {
       const tr = document.createElement('tr');
       for (let col = 0; col < game.size; col++) {
         const td = document.createElement('td');
-        td.textContent = game.board[row * game.size + col];
-        if (td.textContent === 'Qu') td.classList.add('qu');
-        if (['M', 'W', 'Z'].includes(td.textContent)) td.classList.add('underline');
-        td.classList.add(`rotate${90 * random.next(0, 4)}`);
-        td.setAttribute('data-x', String(row));
-        td.setAttribute('data-y', String(col));
 
-        const div = document.createElement('div');
+        let div = document.createElement('div');
+        div.textContent = game.board[row * game.size + col];
+        if (div.textContent === 'Qu') div.classList.add('qu');
+        if (['M', 'W', 'Z'].includes(div.textContent)) div.classList.add('underline');
+        div.classList.add(`rotate${90 * random.next(0, 4)}`);
+        div.setAttribute('data-x', String(row));
+        div.setAttribute('data-y', String(col));
+        td.appendChild(div);
+
+        div = document.createElement('div');
         div.classList.add('target');
         div.setAttribute('data-x', String(row));
         div.setAttribute('data-y', String(col));
