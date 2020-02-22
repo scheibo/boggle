@@ -26,9 +26,6 @@
   }
 }
 @media(min-height: 680px) {
-  #men h1 {
-    font-size: 64px;
-  }
   #men button {
     font-size: 32px;
   }
