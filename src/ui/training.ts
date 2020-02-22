@@ -88,7 +88,9 @@ export class TrainingView implements View {
 
     content.appendChild(wrapper);
     content.appendChild(sizeHint);
-    content.appendChild(rating);
+    const rwrapper = UI.createElementWithId('div', 'rating-wrapper');
+    rwrapper.appendChild(rating);
+    content.appendChild(rwrapper);
 
     const listener = (e: MouseEvent) => {
       if (![back, progress, this.progress].includes(e.target as HTMLElement)) {
