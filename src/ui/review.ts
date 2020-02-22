@@ -28,7 +28,7 @@ export class ReviewView implements View {
     const score = (k: string) => global.STATS.anagrams(k, global.SETTINGS.dict)[d] || 0;
 
     const store = new Store('training', global.SETTINGS.dict);
-    const data = (await store.get('data') || []) as TrainingStats[];
+    const data = ((await store.get('data')) || []) as TrainingStats[];
     const keys = data
       .filter(w => w.e < 2.0) // TODO: !v.c, figure out 2.0 based on average?
       .sort((a, b) => score(b.k) / b.e - score(a.k) / a.e)
