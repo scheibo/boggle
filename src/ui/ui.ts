@@ -247,6 +247,7 @@ export const UI = new (class {
   }
 
   focusContentEditable(element: HTMLElement) {
+    if (!document.body.contains(element)) return;
     element.focus();
     const range = document.createRange();
     range.selectNodeContents(element);
