@@ -7,8 +7,8 @@ const fs = require('fs');
 const path = require('path');
 const Terser = require('terser');
 
-const canonical = process.argv[2]; // https://scheibo.github.io/boggle/
-const root = process.argv[3] || '/'; // /boggle/
+const canonical = process.argv[2]; // e.g. 'https://scheibo.github.io/boggle/'
+const root = process.argv[3] || '/'; // e.g. '/boggle/'
 
 const shell = cmd => child_process.execSync(cmd, {stdio: 'inherit', cwd: __dirname});
 const hash = files => {
@@ -48,8 +48,8 @@ if (canonical) contents = contents.replace(META, `${META}<link rel="canonical" h
 contents = contents.replace(SCRIPT, `<script>"serviceWorker"in navigator&&window.addEventListener("load",function(){return navigator.serviceWorker.register("${root}sw.js",{scope: "${root}"})});</script> ${SCRIPT}`)
 fs.writeFileSync(index, contents);
 
-// All the files parcel created
-const FILES = fs.readdirSync(dist).filter(f => f !== 'data');
+// All the files parcel created, excluding images
+const FILES = fs.readdirSync(dist).filter(f => f !== 'data' && !f.endsWith('.png'));
 
 // Mirror the data directory to dist
 if (!fs.existsSync(distdata)) fs.mkdirSync(distdata);
