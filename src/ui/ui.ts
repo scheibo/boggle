@@ -46,6 +46,18 @@ export const UI = new (class {
 
   async create() {
     setTimeout(() => window.scrollTo(0, 1), 0);
+    // tslint:disable-next-line: deprecation
+    const mobile =
+      typeof window.orientation !== 'undefined' || navigator.userAgent.indexOf('IEMobile') !== -1;
+    if (mobile) {
+      const meta = document.querySelector('meta[name=viewport]')!;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      meta.setAttribute(
+        'content',
+        `width=${w}, height=${h}, initial-scale=1, user-scalable=no, minimal-ui`
+      );
+    }
 
     // If theme has been explicitly set by the user then that trumps the system value
     if (global.SETTINGS.theme !== undefined) {
