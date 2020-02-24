@@ -6,7 +6,7 @@ node build https://scheibo.github.io/boggle/ /boggle/
 git checkout gh-pages
 find . -maxdepth 1 -type f -not -path './.gitignore' -delete
 cp -a dist/* .
-git add -u .
+git add -A .
 git commit -m "Publish: '${rev}'"
 git push origin gh-pages
 git checkout -
