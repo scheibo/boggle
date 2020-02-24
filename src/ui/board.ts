@@ -6,7 +6,8 @@ import { Random } from '../random';
 import { define } from '../dict';
 
 const DURATION = 180 * 1000;
-const VALID = (c: string) => (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+const VALID = (s: string) =>
+  s.split('').every(c => (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'));
 
 interface BoardJSON {
   last: string;
@@ -372,14 +373,12 @@ export class BoardView implements View {
 
   async onBeforeInput(e: any) {
     if (e.inputType.startsWith('delete') || (e.data && VALID(e.data))) return;
+    e.preventDefault();
     const enter = ['insertLineBreak', 'insertParagraph'].includes(e.inputType);
-    if (enter || (e.data && e.data === ' ')) {
-      e.preventDefault();
+    if (enter || (e.data && e.data.includes(' '))) {
       this.play();
       UI.focusContentEditable(this.word);
-      return;
     }
-    e.preventDefault();
   }
 
   async onKeyDown(e: KeyboardEvent) {

@@ -6,10 +6,11 @@ import { Grade } from '../stats';
 import { Settings, Dice, MinLength, ScoreDisplay, Theme } from '../settings';
 
 // prettier-ignore
-const VALID = new Set([
+const CHARS = new Set([
   'B', 'b', 'N', 'n', 'E', 'e', 'C', 'c', 'O', 'o',
   '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 ]);
+const VALID = (s: string) => s.split('').every(c => CHARS.has(c));
 
 export class SettingsView implements View {
   settings!: HTMLElement;
@@ -105,6 +106,7 @@ export class SettingsView implements View {
   }
 
   onInput(id: string) {
+    if (!VALID(id)) return;
     const [settings, seed] = Game.decodeID(id);
     if (!UI.valid(settings, seed)) {
       this.seed.classList.add('error');
@@ -116,7 +118,7 @@ export class SettingsView implements View {
   }
 
   onBeforeInput(e: any) {
-    if (e.inputType.startsWith('delete') || (e.data && VALID.has(e.data))) return;
+    if (e.inputType.startsWith('delete') || (e.data && VALID(e.data))) return;
     e.preventDefault();
   }
 
@@ -124,7 +126,7 @@ export class SettingsView implements View {
     if (!this.seed) return; // not attached
     // tslint:disable-next-line: deprecation
     const key = e.keyCode;
-    if ([0, 37, 39, 8, 46].includes(key) || VALID.has(String.fromCharCode(key))) return;
+    if ([0, 37, 39, 8, 46].includes(key) || VALID(String.fromCharCode(key))) return;
     e.preventDefault();
   }
 }
