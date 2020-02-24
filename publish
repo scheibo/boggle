@@ -1,6 +1,7 @@
 #!/bin/bash
 
 rev=$(git rev-parse --short HEAD | tr -d "\n")
+rm -rf dist
 node build https://scheibo.github.io/boggle/ /boggle/
 rm -r /tmp/dist
 cp -a dist /tmp
