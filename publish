@@ -3,11 +3,9 @@
 rev=$(git rev-parse --short HEAD | tr -d "\n")
 rm -rf dist
 node build https://scheibo.github.io/boggle/ /boggle/
-rm -r /tmp/dist
-cp -a dist /tmp
 git checkout gh-pages
 find . -maxdepth 1 -type f -not -path './.gitignore' -delete
-cp -a /tmp/dist/* .
+cp -a dist/* .
 git add -u .
 git commit -m "Publish: '${rev}'"
 git push origin gh-pages
