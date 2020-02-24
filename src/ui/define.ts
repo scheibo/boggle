@@ -2,7 +2,8 @@ import { global } from './global';
 import { UI, View } from './ui';
 import { define } from '../dict';
 
-const VALID = (c: string) => (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+const VALID = (s: string) =>
+  s.split('').every(c => (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'));
 
 export class DefineView implements View {
   private word: string;
@@ -33,7 +34,10 @@ export class DefineView implements View {
     this.search.contentEditable = 'true';
     this.search.textContent = this.word;
     this.search.addEventListener('beforeinput', e => this.onBeforeInput(e));
-    this.search.addEventListener('input', () => this.query(this.search.textContent || ''));
+    this.search.addEventListener('input', () => {
+      const w = this.search.textContent;
+      this.query(w && VALID(w) ? w : '');
+    });
     this.define.appendChild(this.search);
 
     this.update();
@@ -174,15 +178,15 @@ export class DefineView implements View {
 
   async onBeforeInput(e: any) {
     if (e.inputType.startsWith('delete') || (e.data && VALID(e.data))) return;
+    e.preventDefault();
     const enter = ['insertLineBreak', 'insertParagraph'].includes(e.inputType);
-    if (enter || (e.data && e.data === ' ')) {
+    if (enter || (e.data && e.data.includes(' '))) {
       if (this.word) {
         this.query('');
       } else {
         await UI.toggleView('Define');
       }
     }
-    e.preventDefault();
   }
 
   async onKeyDown(e: KeyboardEvent) {
