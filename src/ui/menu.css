@@ -24,7 +24,7 @@
     margin: 5px 0;
   }
 }
-@media(min-height: 680px) {
+@media(min-height: 650px) {
   #men h1 {
     margin: 0.67em;
   }
