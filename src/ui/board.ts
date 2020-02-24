@@ -265,11 +265,7 @@ export class BoardView implements View {
       const original = this.word.textContent || undefined;
       if (!hide && game.played[w] < 0) this.word.classList.add('error');
       this.word.classList.add('fade');
-      const listener = () => {
-        this.clear(original);
-        this.word.removeEventListener('animationend', listener);
-      };
-      this.word.addEventListener('animationend', listener);
+      this.word.addEventListener('animationend', () => this.clear(original), {once: true});
     }
   }
 

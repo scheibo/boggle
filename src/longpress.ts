@@ -47,9 +47,7 @@
     );
 
     if (longPress) {
-      const longPressUp = (e: Event) => {
-        document.removeEventListener(mouseUp, longPressUp, true);
-
+      document.addEventListener(mouseUp, e => {
         e.stopImmediatePropagation();
         e.preventDefault();
         e.stopPropagation();
@@ -61,9 +59,7 @@
             detail: { clientX, clientY },
           })
         );
-      };
-
-      document.addEventListener(mouseUp, longPressUp, true);
+      }, {once: true, capture: true});
     }
   }
 
