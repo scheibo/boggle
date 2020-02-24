@@ -194,12 +194,9 @@ export class BoardView implements View {
       table.appendChild(tr);
     }
 
-    let touched: Set<HTMLTableCellElement>;
+    let touched = new Set<HTMLTableCellElement>();
     const deselect = () => {
-      if (!touched) return;
-      for (const td of touched) {
-        td.classList.remove('selected');
-      }
+      for (const td of touched) td.classList.remove('selected');
     };
 
     const registerTouch = (e: TouchEvent) => {
