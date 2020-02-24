@@ -191,6 +191,7 @@ export class DefineView implements View {
     // tslint:disable-next-line: deprecation
     const key = e.keyCode;
     if (key === 13 || key === 32) {
+      e.preventDefault();
       if (this.word) {
         this.query('');
       } else {
