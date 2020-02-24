@@ -298,7 +298,7 @@ export class BoardView implements View {
     }
 
     const s = game.score;
-    this.score.textContent = s.overtime ? `${s.regular} / ${s.overtime}` : `${s.regular}`;
+    this.score.textContent = s.overtime ? `${s.regular}\xA0/\xA0${s.overtime}` : `${s.regular}`;
   }
 
   clear(w?: string) {

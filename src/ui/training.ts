@@ -137,6 +137,6 @@ export class TrainingView implements View {
   }
 
   updateProgress() {
-    this.progress.textContent = `${this.pool.overdue()} / ${this.pool.size()}`;
+    this.progress.textContent = `${this.pool.overdue()}\xA0/\xA0${this.pool.size}`;
   }
 }

@@ -166,10 +166,11 @@ body {
   }
 }
 #topbar div:nth-child(1), #topbar div:nth-child(3)  {
-  width: 20%;
+  min-width: 20%;
 }
 #topbar div:nth-child(2) {
-  width: 60%;
+  min-width: 52%;
+  max-width: 60%;
 }
 
 /** LOADING VIEW **/

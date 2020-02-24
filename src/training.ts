@@ -108,6 +108,8 @@ export class TrainingPool {
   private readonly store: Store;
   private readonly stats: Stats;
 
+  size: number;
+
   static async create(stats: Stats, dice: Dice, type: Type, store: Store, min: number) {
     const d = dice.toLowerCase()[0] as 'n' | 'o' | 'b';
     // NOTE: learned is shared across dice...
@@ -145,20 +147,17 @@ export class TrainingPool {
   ) {
     this.unlearned = unlearned;
     this.learned = learned;
+    this.size = learned.length;
     this.d = d;
     this.type = type;
     this.store = store;
     this.stats = stats;
   }
 
-  size() {
-    return this.learned.length;
-  }
-
   overdue() {
     const now = +new Date();
     const popped = [];
-    let overdue = 0;
+    let overdue = this.size === this.learned.length ? 0 : 1;
     for (let next = this.learned.pop(); next; next = this.learned.pop()) {
       popped.push(next);
       if (next.d > now) break;
@@ -200,7 +199,10 @@ export class TrainingPool {
     const anagrams = this.stats.anagrams(key, this.type);
     const group = anagrams.words;
 
-    const restore = () => this.learned.push(next!);
+    const restore = () => {
+      this.learned.push(next!);
+      this.size = this.learned.length;
+    };
     const update = (q: number) => {
       next = adjust(next!, q, now);
       restore();
