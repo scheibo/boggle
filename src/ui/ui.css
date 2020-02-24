@@ -166,11 +166,11 @@ body {
   }
 }
 #topbar div:nth-child(1), #topbar div:nth-child(3)  {
+  flex-grow: 1;
   min-width: 20%;
 }
 #topbar div:nth-child(2) {
-  min-width: 52%;
-  max-width: 60%;
+  flex-grow: 3;
 }
 
 /** LOADING VIEW **/
