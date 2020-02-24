@@ -47,19 +47,23 @@
     );
 
     if (longPress) {
-      document.addEventListener(mouseUp, e => {
-        e.stopImmediatePropagation();
-        e.preventDefault();
-        e.stopPropagation();
+      document.addEventListener(
+        mouseUp,
+        e => {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          e.stopPropagation();
 
-        element.dispatchEvent(
-          new CustomEvent('long-press-up', {
-            bubbles: true,
-            cancelable: true,
-            detail: { clientX, clientY },
-          })
-        );
-      }, {once: true, capture: true});
+          element.dispatchEvent(
+            new CustomEvent('long-press-up', {
+              bubbles: true,
+              cancelable: true,
+              detail: { clientX, clientY },
+            })
+          );
+        },
+        { once: true, capture: true }
+      );
     }
   }
 

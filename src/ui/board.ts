@@ -132,7 +132,10 @@ export class BoardView implements View {
     this.container = UI.createElementWithId('div', 'game');
 
     const back = UI.createBackButton(() => UI.toggleView('Menu'));
-    back.addEventListener('long-press', () => this.refresh({ new: true }));
+    back.addEventListener('long-press', e => {
+      e.preventDefault();
+      return this.refresh({ new: true });
+    });
 
     const score = UI.createElementWithId('div', 'score-wrapper');
     score.appendChild(this.score);
@@ -265,7 +268,7 @@ export class BoardView implements View {
       const original = this.word.textContent || undefined;
       if (!hide && game.played[w] < 0) this.word.classList.add('error');
       this.word.classList.add('fade');
-      this.word.addEventListener('animationend', () => this.clear(original), {once: true});
+      this.word.addEventListener('animationend', () => this.clear(original), { once: true });
     }
   }
 
