@@ -8,5 +8,5 @@ find . -maxdepth 1 -type f -not -path './.gitignore' -delete
 cp -a dist/* .
 git add -A .
 git commit -m "Publish: '${rev}'"
-git push origin gh-pages
+git push origin --force gh-pages
 git checkout -
