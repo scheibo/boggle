@@ -211,6 +211,6 @@ body {
   position: relative;
   overflow: hidden;
 }
-@media all and (display-mode: standalone), (min-height: 800px) {
+@media all and (display-mode: standalone), (min-height: 750px) {
   body { margin-top: 20px; }
 }

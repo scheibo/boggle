@@ -61,6 +61,11 @@
   bottom: 20px;
   pointer-events: all;
 }
+@media all and (display-mode: standalone), (min-height: 750px) {
+  #rating {
+    bottom: 40px;
+  }
+}
 #sizeHint {
   font-weight: bold;
   color: red;
