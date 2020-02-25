@@ -260,6 +260,12 @@ export const UI = new (class {
     return back;
   }
 
+  createPlaceholder() {
+    const empty = this.createElementWithId('div', 'empty');
+    empty.textContent = '...';
+    return empty;
+  }
+
   focusContentEditable(element: HTMLElement) {
     if (!document.body.contains(element)) return;
     element.focus();

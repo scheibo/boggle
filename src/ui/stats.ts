@@ -75,82 +75,94 @@ export class StatsView implements View {
       return b;
     };
 
-    const table = document.createElement('table');
+    let table = document.createElement('table');
     table.classList.add('roundedTable');
     if (section === 'PAIR') {
-      for (const { n, fn, d, fd, e } of anadromes) {
-        const tr = document.createElement('tr');
+      if (!anadromes.length) {
+        table = UI.createPlaceholder();
+      } else {
+        for (const { n, fn, d, fd, e } of anadromes) {
+          const tr = document.createElement('tr');
 
-        let td = document.createElement('td');
-        td.appendChild(link(n));
-        tr.appendChild(td);
+          let td = document.createElement('td');
+          td.appendChild(link(n));
+          tr.appendChild(td);
 
-        td = document.createElement('td');
-        td.textContent = `${fn}/${fd} (${e})`;
-        tr.appendChild(td);
+          td = document.createElement('td');
+          td.textContent = `${fn}/${fd} (${e})`;
+          tr.appendChild(td);
 
-        td = document.createElement('td');
-        td.appendChild(link(d));
-        tr.appendChild(td);
+          td = document.createElement('td');
+          td.appendChild(link(d));
+          tr.appendChild(td);
 
-        table.appendChild(tr);
+          table.appendChild(tr);
+        }
       }
     } else if (section === 'WORD') {
-      for (const { w, found, all } of words) {
-        const tr = document.createElement('tr');
+      if (!words.length) {
+        table = UI.createPlaceholder();
+      } else {
+        for (const { w, found, all } of words) {
+          const tr = document.createElement('tr');
 
-        let td = document.createElement('td');
-        td.appendChild(link(w));
-        tr.appendChild(td);
+          let td = document.createElement('td');
+          td.appendChild(link(w));
+          tr.appendChild(td);
 
-        td = document.createElement('td');
-        td.textContent = `${found}/${all}`;
-        tr.appendChild(td);
+          td = document.createElement('td');
+          td.textContent = `${found}/${all}`;
+          tr.appendChild(td);
 
-        table.appendChild(tr);
+          table.appendChild(tr);
+        }
       }
     } else {
-      for (const group of anagrams) {
-        const tr = document.createElement('tr');
-        const td = document.createElement('td');
+      if (!anagrams.length) {
+        table = UI.createPlaceholder();
+      } else {
+        for (const group of anagrams) {
+          const tr = document.createElement('tr');
+          const td = document.createElement('td');
 
-        let together = [];
-        let wait = false;
-        for (const { raw, found, all } of group) {
-          const w = raw.replace(/[^A-Z]/, '');
+          let together = [];
+          let wait = false;
+          for (const { raw, found, all } of group) {
+            const w = raw.replace(/[^A-Z]/, '');
 
-          if (raw.startsWith('(')) {
-            const b = document.createElement('b');
-            b.textContent = '(';
-            together.push(b);
-            wait = true;
+            if (raw.startsWith('(')) {
+              const b = document.createElement('b');
+              b.textContent = '(';
+              together.push(b);
+              wait = true;
+            }
+
+            together.push(link(w));
+
+            const span = document.createElement('span');
+            span.textContent = ` ${found}/${all}`;
+
+            if (raw.endsWith(')')) {
+              together.push(span);
+              const b = document.createElement('b');
+              b.textContent = ')';
+              together.push(b);
+              wait = false;
+            } else {
+              if (wait) span.textContent += ' ';
+              together.push(span);
+            }
+
+            if (!wait) {
+              for (const e of together) td.appendChild(e);
+              td.appendChild(document.createElement('br'));
+              together = [];
+            }
           }
 
-          together.push(link(w));
-
-          const span = document.createElement('span');
-          span.textContent = ` ${found}/${all}`;
-
-          if (raw.endsWith(')')) {
-            together.push(span);
-            const b = document.createElement('b');
-            b.textContent = ')';
-            together.push(b);
-            wait = false;
-          } else {
-            if (wait) span.textContent += ' ';
-            together.push(span);
-          }
-
-          if (!wait) {
-            for (const e of together) td.appendChild(e);
-            td.appendChild(document.createElement('br'));
-            together = [];
-          }
+          tr.appendChild(td);
+          table.appendChild(tr);
         }
-
-        tr.appendChild(td);
-        table.appendChild(tr);
       }
     }
     if (this.table) this.stats.removeChild(this.table);
