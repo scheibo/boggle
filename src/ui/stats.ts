@@ -21,23 +21,7 @@ export class StatsView implements View {
 
   // TODO: why is there no spinner?
   async attach() {
-    await Promise.all([
-      global.LOADED.HISTORY,
-      global.LOADED.TRIE(),
-      global.LOADED.DICT,
-      global.LOADED.STATS(),
-    ]);
-    if (!global.GAMES) {
-      global.GAMES = [];
-      for (let i = global.HISTORY.length - 1; i >= 0 && global.GAMES.length < global.LIMIT; i--) {
-        const game = Game.fromJSON(global.HISTORY[i], global.TRIE, global.DICT, global.STATS);
-        const played = new Set<string>();
-        for (const w in game.played) {
-          if (game.played[w] > 0) played.add(w);
-        }
-        global.GAMES.push([game.possible, played]);
-      }
-    }
+    await global.LOADED.GAMES();
     // TODO: cache this, invalidate if GAMES/dice/dict/min changes?
     const data = global.STATS.history(global.GAMES, global.SETTINGS.dice, global.SETTINGS.dict);
 
@@ -75,7 +59,7 @@ export class StatsView implements View {
       return b;
     };
 
-    let table = document.createElement('table');
+    let table = document.createElement('table') as HTMLElement;
     table.classList.add('roundedTable');
     if (section === 'PAIR') {
       if (!anadromes.length) {

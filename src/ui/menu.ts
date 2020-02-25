@@ -12,7 +12,6 @@ export class MenuView implements View {
     this.menu = UI.createElementWithId('div', 'men');
     const title = UI.createElementWithId('h1', 'title');
     title.textContent = 'BOGGLE';
-    // TODO: needs testing!
     title.addEventListener('long-press', async () => {
       const key = (await caches.keys()).find(n => n.includes(':cache:'));
       if (key) await caches.delete(key);
