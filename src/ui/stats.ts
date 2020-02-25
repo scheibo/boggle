@@ -23,7 +23,7 @@ export class StatsView implements View {
   async attach() {
     await global.LOADED.GAMES();
     // TODO: cache this, invalidate if GAMES/dice/dict/min changes?
-    const data = global.STATS.history(global.GAMES, global.SETTINGS.dice, global.SETTINGS.dict);
+    const data = global.STATS.history(global.GAMES!, global.SETTINGS.dice, global.SETTINGS.dict);
 
     this.stats = UI.createElementWithId('div', 'stats');
     const back = UI.createBackButton(() => UI.toggleView('Menu'));

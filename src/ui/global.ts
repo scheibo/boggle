@@ -3,7 +3,7 @@ import { Store } from '../store';
 import { Settings } from '../settings';
 import { Trie } from '../trie';
 import { Dictionary } from '../dict';
-import { GameJSON } from '../game';
+import { Game, GameJSON } from '../game';
 import { Stats, Data } from '../stats';
 
 const STORE = new Store('db', 'store');
@@ -28,6 +28,7 @@ export const global: {
     STATS: () => Promise<void>;
     HISTORY: Promise<void>;
     TRAINING: Promise<void>;
+    GAMES: () => Promise<void>;
   };
 } = {
   SETTINGS: (JSON.parse(localStorage.getItem('settings')!) as Settings) || DEFAULTS,
@@ -64,5 +65,23 @@ export const global: {
       global.HISTORY = (h as GameJSON[]) || [];
     }),
     TRAINING: Store.setup('training', ['NWL', 'ENABLE', 'CSW']) as Promise<void>,
+    GAMES: async () => {
+      if (global.GAMES) return;
+      await Promise.all([
+        global.LOADED.HISTORY,
+        global.LOADED.TRIE(),
+        global.LOADED.DICT,
+        global.LOADED.STATS(),
+      ]);
+      global.GAMES = [];
+      for (let i = global.HISTORY.length - 1; i >= 0 && global.GAMES.length < global.LIMIT; i--) {
+        const game = Game.fromJSON(global.HISTORY[i], global.TRIE, global.DICT, global.STATS);
+        const played = new Set<string>();
+        for (const w in game.played) {
+          if (game.played[w] > 0) played.add(w);
+        }
+        global.GAMES.push([game.possible, played]);
+      }
+    },
   },
 };

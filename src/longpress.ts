@@ -75,7 +75,7 @@
       const current = new Date().getTime();
       const delta = current - start;
 
-      const timeout = e.target?.id === 'title' ? TIMEOUT * 10 : TIMEOUT;
+      const timeout = (e.target as HTMLElement)?.id === 'title' ? TIMEOUT * 10 : TIMEOUT;
       if (delta >= timeout) {
         fireLongPressEvent(e.target!, e);
       } else {
