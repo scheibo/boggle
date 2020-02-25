@@ -30,7 +30,7 @@ export class ReviewView implements View {
     const store = new Store('training', global.SETTINGS.dict);
     const data = ((await store.get('data')) || []) as TrainingStats[];
     const keys = data
-      .filter(w => w.e < 2.0) // TODO: !v.c, figure out 2.0 based on average?
+      .filter(w => !w.c || w.e < 2.0)
       .sort((a, b) => score(b.k) / b.e - score(a.k) / a.e)
       .map(w => w.k);
 
