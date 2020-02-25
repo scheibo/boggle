@@ -21,6 +21,7 @@ export const global: {
   HISTORY: GameJSON[];
   TRIE: Trie;
   GAMES: Array<[{ [word: string]: any }, Set<string>]> | undefined;
+  PLAYED: Set<string> | undefined;
   SEED: number;
   LOADED: {
     DICT: Promise<void>;
@@ -29,6 +30,7 @@ export const global: {
     HISTORY: Promise<void>;
     TRAINING: Promise<void>;
     GAMES: () => Promise<void>;
+    PLAYED: () => Promise<void>;
   };
 } = {
   SETTINGS: (JSON.parse(localStorage.getItem('settings')!) as Settings) || DEFAULTS,
@@ -40,6 +42,7 @@ export const global: {
   HISTORY: (undefined as unknown) as GameJSON[],
   TRIE: (undefined as unknown) as Trie,
   GAMES: undefined as Array<[{ [word: string]: any }, Set<string>]> | undefined,
+  PLAYED: undefined as Set<string> | undefined,
   SEED: 0,
   LOADED: {
     DICT: fetchJSON('data/dict.json').then(d => {
@@ -82,6 +85,12 @@ export const global: {
         }
         global.GAMES.push([game.possible, played]);
       }
+    },
+    PLAYED: async () => {
+      if (global.PLAYED) return;
+      await global.LOADED.HISTORY;
+      global.PLAYED = new Set();
+      for (const h of global.HISTORY) global.PLAYED.add(h.seed);
     },
   },
 };

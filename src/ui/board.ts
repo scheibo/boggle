@@ -67,12 +67,8 @@ export class BoardView implements View {
       global.LOADED.TRIE(),
       global.LOADED.STATS(),
       global.LOADED.HISTORY,
+      global.LOADED.PLAYED(),
     ]);
-
-    if (!this.played) {
-      this.played = new Set();
-      for (const h of global.HISTORY) this.played.add(h.seed);
-    }
 
     if (!this.game || data.new) {
       let seed = global.SEED;
@@ -82,7 +78,7 @@ export class BoardView implements View {
           this.game = Game.fromJSON(this.game, global.TRIE, global.DICT, global.STATS);
         }
         if (this.game.seed === seed) seed = this.game.random.seed % global.MAX_SEED;
-        this.played.add(this.game.id);
+        global.PLAYED!.add(this.game.id);
         if (Object.values(this.game.played).filter(t => t > 0).length) {
           this.updateGames();
           global.HISTORY.push(this.game.toJSON());
@@ -95,7 +91,7 @@ export class BoardView implements View {
       while (!game || !Object.keys(game.possible).length) {
         random.seed = seed;
         const id = Game.encodeID(global.SETTINGS, random.seed);
-        if (this.played.has(id) && !data.allowDupes) {
+        if (global.PLAYED!.has(id) && !data.allowDupes) {
           seed = (seed + 1) % global.MAX_SEED;
           continue;
         }
