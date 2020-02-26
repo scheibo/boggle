@@ -128,9 +128,12 @@ export class BoardView implements View {
 
     this.container = UI.createElementWithId('div', 'game');
 
+    const touch =
+      'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
+
     const back = UI.createBackButton(() => UI.toggleView('Menu'));
     back.addEventListener('long-press', e => {
-      e.preventDefault();
+      if (touch) e.preventDefault();
       return this.refresh({ new: true });
     });
 
@@ -148,8 +151,7 @@ export class BoardView implements View {
     this.word = UI.createElementWithId('div', 'word');
     this.word.classList.add('word');
     this.word.addEventListener('beforeinput', e => this.onBeforeInput(e));
-    const touch =
-      'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
+
     if (!touch) this.word.contentEditable = 'true';
     this.container.appendChild(this.word);
     this.defn = UI.createElementWithId('div', 'defn');
