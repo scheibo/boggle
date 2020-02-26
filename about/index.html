@@ -87,6 +87,8 @@
       }
       .nooutline {
         border: none;
+        height: auto;
+        max-width: 80%;
       }
       .i {
         text-align: center;
@@ -103,7 +105,7 @@
   </head>
   <body>
     <div id="content">
-      <h1><a href='/'>Boggle</a></h1> 
+      <h1><a href='/'>Boggle</a></h1>
 
       <p><a href="https://en.wikipedia.org/wiki/Boggle">Boggle</a> is a word
       game in which players attempt to find words in sequences of adjacent
@@ -122,8 +124,8 @@
 
       <p>The Boggle application opens to a menu, providing the options to
       <a href="#play"><b>play</b></a> a game, <a href="#train"><b>train</b></a>
-      your vocabulary, <a href="#define"><b>define</b></a> a word, view 
-      <a href="#stats"><b>stats</b></a> from past games, or change the 
+      your vocabulary, <a href="#define"><b>define</b></a> a word, view
+      <a href="#stats"><b>stats</b></a> from past games, or change the
       <a href="#settings"><b>settings</b></a>.</p>
 
       <div class="i"><img src="img/menu.png" height=320 /></div>
@@ -151,7 +153,7 @@
         <img src="img/refresh.gif" height=320 />
       </div>
 
-      <p>By default, after a word has been entered:</p> 
+      <p>By default, after a word has been entered:</p>
       <ul>
         <li>if the word is valid and has not yet been played a definition for
           the word will be displayed and persist until another word has been
@@ -183,7 +185,7 @@
       shortcut). The most common use case for this is quickly entering plurals
       of words (~50% of all valid words are plurals), though any suffixes can
       take advantage of the shortcut:</p>
-      
+
       <div class="i">
         <img src="img/shortcut.gif" height=320 />
         <img src="img/heatmap.gif" height=320 />
@@ -207,7 +209,7 @@
       display a full breakdown of which words were played, for the current game
       and for each game that has ever been played by the user in reverse
       chronological order.</p>
-      
+
       <div class="i"><img class="nooutline" src="img/score-breakdown.png" height=250 /></div>
 
       <p>Each game's ID can be seen in the list, though only the current game's
@@ -646,7 +648,7 @@
       times the group has been seen) are treated less harshly, with the
       modifier applied to the difficulty rating only progressively approaching
       its full value. Furthermore, if a group is
-      corrected remembered after its due date, a 
+      corrected remembered after its due date, a
       <a href="http://www.blueraja.com/blog/477/a-better-spaced-repetition-learning-algorithm-sm2">bonus</a>
       is applied to reduce its difficulty.</p>
 
