@@ -3,7 +3,7 @@
 #score-history {
   height: 100%;
   overflow: scroll;
-  width: 95vw;
+  width: 95%;
   margin: 0 auto;
 }
 @media(max-width: 549px) {
