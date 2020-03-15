@@ -3,7 +3,7 @@ import { UI, View } from './ui';
 import { Game } from '../game';
 import { Type } from '../dict';
 import { Grade } from '../stats';
-import { Settings, Dice, MinLength, ScoreDisplay, Theme } from '../settings';
+import { Settings, Dice, MinLength, ScoreDisplay, Shortcuts, Theme } from '../settings';
 
 // prettier-ignore
 const CHARS = new Set([
@@ -79,7 +79,12 @@ export class SettingsView implements View {
       )
     );
     this.settings.appendChild(
-      checkedRadioRow('theme', ['Light', 'Dark'], function(this: HTMLInputElement) {
+      checkedRadioRow('shortcuts', ['Shortcuts', 'None'], function(this: HTMLInputElement) {
+        UI.updateSettings({ shortcuts: this.value as Shortcuts });
+      })
+    );
+    this.settings.appendChild(
+      checkedRadioRow('theme', ['Light', 'Default', 'Dark'], function(this: HTMLInputElement) {
         const theme = this.value as Theme;
         UI.updateSettings({ theme });
         UI.setTheme(theme);
@@ -102,7 +107,8 @@ export class SettingsView implements View {
     set(`dict${global.SETTINGS.dict}`);
     set(`grade${global.SETTINGS.grade}`);
     set(`scoreDisplay${global.SETTINGS.display}`);
-    set(`theme${global.SETTINGS.theme || 'Light'}`);
+    set(`shortcuts${global.SETTINGS.shortcuts}`);
+    set(`theme${global.SETTINGS.theme}`);
   }
 
   onInput(id: string) {

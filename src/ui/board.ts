@@ -250,7 +250,7 @@ export class BoardView implements View {
     const game = this.game as Game;
     let w = (this.word.textContent || '').toUpperCase();
     if (!w.length) return;
-    if (w.length < 3 || SUFFIXES.includes(w)) {
+    if (global.SETTINGS.shortcuts === 'Shortcuts' && (w.length < 3 || SUFFIXES.includes(w))) {
       w = `${this.last}${w}`;
       this.word.textContent = w;
     }
@@ -369,6 +369,7 @@ export class BoardView implements View {
     }
   }
 
+  // TODO: up and down arrow to go through history
   async onBeforeInput(e: any) {
     if (e.inputType.startsWith('delete') || (e.data && VALID(e.data))) return;
     e.preventDefault();
@@ -379,6 +380,7 @@ export class BoardView implements View {
     }
   }
 
+  // TODO: up and down arrow to go through history
   async onKeyDown(e: KeyboardEvent) {
     if (!this.word) return; // not attached
     if (this.kept) this.clear();

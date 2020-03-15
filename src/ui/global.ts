@@ -7,7 +7,15 @@ import { Game, GameJSON } from '../game';
 import { Stats, Data } from '../stats';
 
 const STORE = new Store('db', 'store');
-const DEFAULTS: Settings = { dice: 'New', min: 3, dict: 'NWL', grade: 'C', display: 'Show' };
+const DEFAULTS: Settings = {
+  dice: 'New',
+  min: 3,
+  dict: 'NWL',
+  grade: 'D',
+  shortcuts: 'None',
+  display: 'Show',
+  theme: 'Default',
+};
 const fetchJSON = (url: string) => fetch(url, { mode: 'no-cors' }).then(j => j.json());
 // TODO: TRIE, STATS, GAMES, and the TrainingPool creation
 // need to be moved to a background worker and transferred in.

@@ -60,13 +60,7 @@ export const UI = new (class {
         );
       }, 200);
     }
-
-    // If theme has been explicitly set by the user then that trumps the system value
-    if (global.SETTINGS.theme !== undefined) {
-      this.setTheme(global.SETTINGS.theme);
-    } else {
-      this.setTheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'Dark' : 'Light');
-    }
+    this.setTheme(global.SETTINGS.theme);
 
     this.root = document.getElementById('display')!;
 
@@ -287,6 +281,9 @@ export const UI = new (class {
   }
 
   setTheme(theme: Theme) {
+    if (theme === 'Default') {
+      theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'Dark' : 'Light';
+    }
     document.documentElement.setAttribute('data-theme', theme.toLowerCase());
   }
 

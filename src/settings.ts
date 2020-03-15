@@ -4,7 +4,8 @@ import { Grade } from './stats';
 export type Dice = 'New' | 'Old' | 'Big';
 export type MinLength = 3 | 4 | 5;
 export type ScoreDisplay = 'Hide' | 'Show' | 'Full';
-export type Theme = 'Dark' | 'Light';
+export type Shortcuts = 'Shortcuts' | 'None';
+export type Theme = 'Dark' | 'Default' | 'Light';
 
 export interface Settings {
   dice: Dice;
@@ -12,5 +13,6 @@ export interface Settings {
   min: MinLength;
   grade: Exclude<Grade, ' '>;
   display: ScoreDisplay;
-  theme?: Theme;
+  shortcuts: Shortcuts;
+  theme: Theme;
 }
