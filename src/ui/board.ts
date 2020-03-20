@@ -369,7 +369,6 @@ export class BoardView implements View {
     }
   }
 
-  // TODO: up and down arrow to go through history
   async onBeforeInput(e: any) {
     if (e.inputType.startsWith('delete') || (e.data && VALID(e.data))) return;
     e.preventDefault();
@@ -391,6 +390,8 @@ export class BoardView implements View {
       e.preventDefault();
       this.play();
       UI.focusContentEditable(this.word);
+    } else if (!this.word.textContent && (key === 37 || key === 39)) {
+      e.preventDefault();
     } else if (![0, 37, 39, 8, 46].includes(key) && !VALID(String.fromCharCode(key))) {
       e.preventDefault();
     }

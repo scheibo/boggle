@@ -6,14 +6,22 @@
   overflow: hidden;
 }
 #settings .toggle {
-  padding: 12px 6px;
+  padding: 10px 6px;
 }
 #seed:focus {
   outline: none;
 }
 #settings .row {
   text-align: center;
-  padding: 7px 0;
+  padding: 8px 0;
+}
+
+#shortcuts > label:nth-child(2) {
+  width: 7em;
+}
+
+#theme > label:nth-child(4) {
+  width: 5em;
 }
 
 @media(min-height: 550px) and (min-width: 375px) {
@@ -21,12 +29,12 @@
     font-size: 25px;
   }
   #settings .toggle {
-    padding: 14px 8px;
+    padding: 12px 8px;
   }
 }
 @media(min-height: 550px) {
   #settings .row {
-    padding: 12px 0;
+    padding: 11px 0;
   }
 }
 @media(min-height: 650px) {

@@ -60,7 +60,24 @@ export const UI = new (class {
         );
       }, 200);
     }
-    this.setTheme(global.SETTINGS.theme);
+    const pref = window.matchMedia('(prefers-color-scheme: dark)');
+    const listener = (e: MediaQueryListEvent) => {
+      if (global.SETTINGS.theme === 'Default') {
+        this.setTheme(e.matches ? 'Dark' : 'Light');
+      }
+    };
+    try {
+      pref.addEventListener('change', listener);
+    } catch (err) {
+      pref.addListener(listener);
+    }
+    this.setTheme(
+      global.SETTINGS.theme === 'Default'
+        ? pref.matches
+          ? 'Dark'
+          : 'Light'
+        : global.SETTINGS.theme
+    );
 
     this.root = document.getElementById('display')!;
 
@@ -281,9 +298,6 @@ export const UI = new (class {
   }
 
   setTheme(theme: Theme) {
-    if (theme === 'Default') {
-      theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'Dark' : 'Light';
-    }
     document.documentElement.setAttribute('data-theme', theme.toLowerCase());
   }
 
