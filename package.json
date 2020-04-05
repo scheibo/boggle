@@ -1,17 +1,13 @@
 {
   "name": "boggle",
-  "version": "0.0.1",
+  "private": true,
   "description": "Boggle",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/scheibo/boggle.git"
-  },
+  "repository": "github:scheibo/boggle",
   "author": "Kirk Scheibelhut",
   "license": "MIT",
   "devDependencies": {
     "gts": "^1.1.2",
     "parcel-bundler": "^1.12.4",
-    "terser": "^4.6.7",
     "typescript": "^3.8.3"
   },
   "scripts": {
