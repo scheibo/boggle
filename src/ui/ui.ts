@@ -58,6 +58,13 @@ export const UI = new (class {
           `width=${w}, height=${h}, initial-scale=1, user-scalable=no, minimal-ui`
         );
       }, 200);
+      // https://stackoverflow.com/questions/7919172
+      window.addEventListener('orientationchange', () => {
+        document.body.style.display = 'none';
+        // eslint-disable-next-line no-unused-expressions
+        document.body.offsetHeight; // cause a reflow
+        document.body.style.display = 'block'; // cause a repaint
+      });
     }
     const pref = window.matchMedia('(prefers-color-scheme: dark)');
     const listener = (e: MediaQueryListEvent) => {
