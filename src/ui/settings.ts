@@ -83,7 +83,7 @@ export class SettingsView implements View {
       })
     );
     this.settings.appendChild(
-      checkedRadioRow('theme', ['Light', 'Default', 'Dark'], function (this: HTMLInputElement) {
+      checkedRadioRow('theme', ['System', 'Light', 'Dark'], function (this: HTMLInputElement) {
         const theme = this.value as Theme;
         UI.updateSettings({theme});
         UI.setTheme(theme);

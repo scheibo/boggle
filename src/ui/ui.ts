@@ -61,7 +61,7 @@ export const UI = new (class {
     }
     const pref = window.matchMedia('(prefers-color-scheme: dark)');
     const listener = (e: MediaQueryListEvent) => {
-      if (global.SETTINGS.theme === 'Default') {
+      if (global.SETTINGS.theme === 'System') {
         this.setTheme(e.matches ? 'Dark' : 'Light');
       }
     };
@@ -71,7 +71,7 @@ export const UI = new (class {
       pref.addListener(listener);
     }
     this.setTheme(
-      global.SETTINGS.theme === 'Default'
+      global.SETTINGS.theme === 'System'
         ? pref.matches
           ? 'Dark'
           : 'Light'

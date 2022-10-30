@@ -13,7 +13,7 @@ const DEFAULTS: Settings = {
   grade: 'D',
   shortcuts: 'None',
   display: 'Show',
-  theme: 'Default',
+  theme: 'System',
 };
 const fetchJSON = (url: string) => fetch(url, {mode: 'no-cors'}).then(j => j.json());
 // TODO: TRIE, STATS, GAMES, and the TrainingPool creation
