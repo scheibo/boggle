@@ -1,7 +1,7 @@
-import { global } from './global';
-import { UI } from './ui';
-import { BoardView } from './board';
-import { Game } from '../game';
+import {global} from './global';
+import {UI} from './ui';
+import {BoardView} from './board';
+import {Game} from '../game';
 
 export class ScoreView {
   private readonly board: BoardView;
@@ -90,7 +90,7 @@ export class ScoreView {
     table.classList.add('results');
     table.classList.add('played');
 
-    for (const { word, grade, overtime, defn, invalid } of state.played) {
+    for (const {word, grade, overtime, defn, invalid} of state.played) {
       const tr = document.createElement('tr');
       if (grade < global.SETTINGS.grade) tr.classList.add('hard');
       if (invalid) tr.classList.add('error');
@@ -128,7 +128,7 @@ export class ScoreView {
     table.classList.add('results');
     table.classList.add('possible');
 
-    for (const { word, grade, root, missing, defn } of state.remaining) {
+    for (const {word, grade, root, missing, defn} of state.remaining) {
       const tr = document.createElement('tr');
       if (grade < global.SETTINGS.grade) tr.classList.add('hard');
 

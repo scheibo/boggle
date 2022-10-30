@@ -1,4 +1,6 @@
 export class Store {
+  dbName: string;
+  readonly storeName: string;
   private readonly db: Promise<IDBDatabase>;
 
   static async setup(dbName = 'keyval', storeNames = ['keyval']) {
@@ -14,7 +16,9 @@ export class Store {
     });
   }
 
-  constructor(dbName = 'keyval', readonly storeName = 'keyval') {
+  constructor(dbName = 'keyval', storeName = 'keyval') {
+    this.dbName = dbName;
+    this.storeName = storeName;
     this.db = new Promise((resolve, reject) => {
       const openreq = indexedDB.open(dbName, 1);
       openreq.onerror = () => reject(openreq.error);

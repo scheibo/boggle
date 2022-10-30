@@ -1,7 +1,7 @@
-import { global } from './global';
-import { UI, View } from './ui';
-import { TrainingPool } from '../training';
-import { Store } from '../store';
+import {global} from './global';
+import {UI, View} from './ui';
+import {TrainingPool} from '../training';
+import {Store} from '../store';
 
 const INTERVAL = 1000;
 
@@ -43,7 +43,7 @@ export class TrainingView implements View {
   }
 
   async detach() {
-    if (this.restore) await this.restore();
+    if (this.restore) this.restore();
     if (this.interval) clearInterval(this.interval);
     this.content = null;
     return this.train;
@@ -52,7 +52,7 @@ export class TrainingView implements View {
   next() {
     const content = UI.createElementWithId('div', 'content');
 
-    const { label, group, update, restore } = this.pool.next();
+    const {label, group, update, restore} = this.pool.next();
     this.restore = restore;
     const trainWord = document.createElement('div');
     trainWord.classList.add('word');

@@ -1,4 +1,4 @@
-import { Dictionary } from './dict';
+import {Dictionary} from './dict';
 
 export class Trie {
   parent: Trie | null;
@@ -16,8 +16,7 @@ export class Trie {
     const root = new Trie(null, '');
     for (const word in dict) {
       let current = root;
-      for (let i = 0; i < word.length; i++) {
-        const letter = word[i];
+      for (const letter of word) {
         const ord = letter.charCodeAt(0);
         let next = current.children[ord - 65];
         if (next === undefined) next = new Trie(current, letter);

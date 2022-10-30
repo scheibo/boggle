@@ -1,5 +1,5 @@
-import { Dice } from './settings';
-import { Dictionary, Type, isValid, order } from './dict';
+import {Dice} from './settings';
+import {Dictionary, Type, isValid, order} from './dict';
 
 export interface Data {
   New: DiceEntry;
@@ -45,7 +45,7 @@ export class Stats {
     const a = Stats.toAnagram(word);
     const group = this.mixed[a];
 
-    const result: { words: string[]; n?: number; o?: number; b?: number } = { words: [] };
+    const result: { words: string[]; n?: number; o?: number; b?: number } = {words: []};
     if (!group) return result;
 
     for (const w of group) {
@@ -66,13 +66,13 @@ export class Stats {
     const val = this.dict[word];
     const a = this.anagrams(word, type);
     if (!isValid(word, this.dict, type) || !a.words.length) {
-      return { grade: ' ' as Grade };
+      return {grade: ' ' as Grade};
     }
 
     const pf = val.freq === undefined ? -1 : this.percentiles.freqs.findIndex(v => v <= val.freq!);
     const f = pf === -1 ? ' ' : gradeFreq(pf);
 
-    const s = (this.percentiles[dice] as DiceEntry)[type];
+    const s = (this.percentiles[dice])[type];
     const d = dice.charAt(0).toLowerCase() as 'n' | 'o' | 'b';
 
     const vw = val[d] || 0;
@@ -91,16 +91,15 @@ export class Stats {
       freq?: number;
       word?: { p: number; v: number };
       anagram?: { p: number; v: number };
-    } = { grade: g < f ? f : g };
+    } = {grade: g < f ? f : g};
     if (pf > -1) result.freq = pf;
-    if (pw > -1) result.word = { p: pw, v: pct(val.freq!) };
-    if (pa > -1) result.anagram = { p: pa, v: pct(va) };
+    if (pw > -1) result.word = {p: pw, v: pct(val.freq!)};
+    if (pa > -1) result.anagram = {p: pa, v: pct(va)};
     return result;
   }
 
   history(games: Array<[{ [w: string]: any }, Set<string>]>, dice: Dice, type: Type) {
     const d = dice.charAt(0).toLowerCase() as 'n' | 'o' | 'b';
-    // prettier-ignore
     const reverse = (w: string) => w.split('').reverse().join('');
 
     const ratio: { [k: string]: number } = {};
@@ -179,14 +178,14 @@ export class Stats {
         const k = e[0];
         const r = reverse(k);
         const [n, d] = (found[r] || 0) > (found[k] || 0) ? [k, r] : [r, k];
-        return { n, fn: found[n] || 0, d, fd: found[d] || 0, e: either[k] || 0 };
+        return {n, fn: found[n] || 0, d, fd: found[d] || 0, e: either[k] || 0};
       }),
       anagrams: sorted(anagrams, 50).map(e => {
         const group = [];
         // FIXME: should pass in min length and 3 letter words should have B scores
         for (const r of order(this.anagrams(e[0], type).words)) {
           const w = r.replace(/[^A-Z]/, '');
-          group.push({ raw: r, found: found[w] || 0, all: all[w] || 0 });
+          group.push({raw: r, found: found[w] || 0, all: all[w] || 0});
         }
         return group;
       }),
@@ -194,7 +193,6 @@ export class Stats {
   }
 
   static toAnagram(word: string) {
-    // prettier-ignore
     return word.split('').sort().join('');
   }
 }

@@ -1,7 +1,6 @@
-import { global } from './global';
-import { UI, View } from './ui';
-import { Game } from '../game';
-import { Stats } from '../stats';
+import {global} from './global';
+import {UI, View} from './ui';
+import {Stats} from '../stats';
 
 type Section = 'WORD' | 'ANAGRAM' | 'PAIR';
 
@@ -16,7 +15,7 @@ export class StatsView implements View {
   }
 
   toJSON(): { section: Section } {
-    return { section: this.section };
+    return {section: this.section};
   }
 
   // TODO: why is there no spinner?
@@ -31,7 +30,7 @@ export class StatsView implements View {
     const radios = UI.createRadios(
       'statsSelect',
       ['WORD', 'ANAGRAM', 'PAIR'].map(s => (s === this.section ? [s] : s)),
-      function(this: HTMLInputElement) {
+      function (this: HTMLInputElement) {
         display(this.value as Section);
         UI.persist();
       }
@@ -50,7 +49,7 @@ export class StatsView implements View {
 
   display(section: Section, data: ReturnType<Stats['history']>) {
     this.section = section;
-    const { words, anadromes, anagrams } = data;
+    const {words, anadromes, anagrams} = data;
 
     const link = (w: string) => {
       const b = document.createElement('b');
@@ -65,7 +64,7 @@ export class StatsView implements View {
       if (!anadromes.length) {
         table = UI.createPlaceholder();
       } else {
-        for (const { n, fn, d, fd, e } of anadromes) {
+        for (const {n, fn, d, fd, e} of anadromes) {
           const tr = document.createElement('tr');
 
           let td = document.createElement('td');
@@ -87,7 +86,7 @@ export class StatsView implements View {
       if (!words.length) {
         table = UI.createPlaceholder();
       } else {
-        for (const { w, found, all } of words) {
+        for (const {w, found, all} of words) {
           const tr = document.createElement('tr');
 
           let td = document.createElement('td');
@@ -111,7 +110,7 @@ export class StatsView implements View {
 
           let together = [];
           let wait = false;
-          for (const { raw, found, all } of group) {
+          for (const {raw, found, all} of group) {
             const w = raw.replace(/[^A-Z]/, '');
 
             if (raw.startsWith('(')) {

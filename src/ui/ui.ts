@@ -1,17 +1,17 @@
-import { global } from './global';
-import { Game, GameSettings, GameJSON } from '../game';
-import { Random } from '../random';
-import { Settings, Theme } from '../settings';
-import { define } from '../dict';
+import {global} from './global';
+import {Game, GameSettings, GameJSON} from '../game';
+import {Random} from '../random';
+import {Settings, Theme} from '../settings';
+import {define} from '../dict';
 
-import { BoardView } from './board';
-import { ScoreView } from './score';
-import { DefineView } from './define';
-import { MenuView } from './menu';
-import { ReviewView } from './review';
-import { SettingsView } from './settings';
-import { StatsView } from './stats';
-import { TrainingView } from './training';
+import {BoardView} from './board';
+import {ScoreView} from './score';
+import {DefineView} from './define';
+import {MenuView} from './menu';
+import {ReviewView} from './review';
+import {SettingsView} from './settings';
+import {StatsView} from './stats';
+import {TrainingView} from './training';
 
 class Loader {
   private loader!: HTMLElement;
@@ -46,9 +46,8 @@ export const UI = new (class {
 
   async create() {
     setTimeout(() => window.scrollTo(0, 1), 0);
-    // tslint:disable: deprecation
     const mobile =
-      typeof window.orientation !== 'undefined' || navigator.userAgent.indexOf('IEMobile') !== -1;
+      typeof window.orientation !== 'undefined' || navigator.userAgent.includes('IEMobile');
     if (mobile) {
       setTimeout(() => {
         const meta = document.querySelector('meta[name=viewport]')!;
@@ -95,9 +94,9 @@ export const UI = new (class {
     };
     const views = state ? state.views : {};
     this.Views = {};
-    for (const [type, view] of Object.entries(VIEWS)) {
+    for (const [type, V] of Object.entries(VIEWS)) {
       // @ts-ignore
-      this.Views[type] = new view(views[type]);
+      this.Views[type] = new V(views[type]);
     }
     this.Views.Review = new ReviewView(this.Views.Training as TrainingView);
     this.Views.Score = new ScoreView(this.Views.Board as BoardView);
@@ -175,7 +174,7 @@ export const UI = new (class {
       }
     };
 
-    const hash = document.location.hash && document.location.hash.slice(1);
+    const hash = document.location.hash?.slice(1);
     if (!hash) {
       const existing = (this.Views.Board as BoardView).game;
       if (existing) {
@@ -194,7 +193,6 @@ export const UI = new (class {
   }
 
   async onKeyDown(e: KeyboardEvent) {
-    // tslint:disable-next-line: deprecation
     const key = e.keyCode;
     const currentView = this.Views[this.current];
     if (key === 191 && e.shiftKey) {
@@ -212,7 +210,7 @@ export const UI = new (class {
 
     let refresh = seed !== global.SEED;
     if (!refresh) {
-      const s = Object.assign({}, global.SETTINGS);
+      const s = {...global.SETTINGS};
       refresh = s.dice !== settings.dice || s.min !== settings.min || s.dict !== settings.dict;
     }
     this.updateSettings(settings, seed, false);
@@ -220,7 +218,7 @@ export const UI = new (class {
     if (this.current === 'Settings') {
       (this.Views[this.current] as SettingsView).update();
     } else if (refresh && ['Board', 'Score'].includes(this.current)) {
-      return (this.Views.Board as BoardView).refresh({ new: true, allowDupes: true });
+      return (this.Views.Board as BoardView).refresh({new: true, allowDupes: true});
     }
   }
 
@@ -292,8 +290,7 @@ export const UI = new (class {
 
   permaFocus(element: HTMLElement) {
     element.addEventListener('blur', () =>
-      setTimeout(() => this.focusContentEditable(element), 20)
-    );
+      setTimeout(() => this.focusContentEditable(element), 20));
     this.focusContentEditable(element);
   }
 

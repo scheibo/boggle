@@ -1,5 +1,5 @@
-import { UI, View } from './ui';
-import { BoardView } from './board';
+import {UI, View} from './ui';
+import {BoardView} from './board';
 
 export class MenuView implements View {
   menu!: HTMLElement;
@@ -7,7 +7,7 @@ export class MenuView implements View {
   toJSON() {}
 
   attach() {
-    // NOTE: The id here would make more sense as '#menu', but uBlock's "Web Annoyances Ultralist" has:
+    // NOTE: The '#menu' here would make more sense, but uBlock's "Web Annoyances Ultralist" has:
     // 'github.io###menu, .fixedHeaderContainer, .menu-btn:style(position: absolute !important;)'
     this.menu = UI.createElementWithId('div', 'men');
     const title = UI.createElementWithId('h1', 'title');
@@ -15,8 +15,7 @@ export class MenuView implements View {
     title.addEventListener('long-press', async () => {
       const key = (await caches.keys()).find(n => n.includes(':cache:'));
       if (key) await caches.delete(key);
-      // tslint:disable-next-line: deprecation
-      document.location.reload(true);
+      (document.location as any).reload(true);
     });
     this.menu.appendChild(title);
     const nav = document.createElement('nav');
@@ -31,7 +30,7 @@ export class MenuView implements View {
 
     if ((UI.Views.Board as BoardView).game) {
       nav.appendChild(createButton('RESUME', () => UI.toggleView('Board')));
-      nav.appendChild(createButton('NEW GAME', () => UI.toggleView('Board', { new: true })));
+      nav.appendChild(createButton('NEW GAME', () => UI.toggleView('Board', {new: true})));
     } else {
       nav.appendChild(createButton('PLAY', () => UI.toggleView('Board')));
     }

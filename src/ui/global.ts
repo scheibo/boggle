@@ -1,10 +1,9 @@
-// tslint:disable:no-var-keyword prefer-const
-import { Store } from '../store';
-import { Settings } from '../settings';
-import { Trie } from '../trie';
-import { Dictionary } from '../dict';
-import { Game, GameJSON } from '../game';
-import { Stats, Data } from '../stats';
+import {Store} from '../store';
+import {Settings} from '../settings';
+import {Trie} from '../trie';
+import {Dictionary} from '../dict';
+import {Game, GameJSON} from '../game';
+import {Stats, Data} from '../stats';
 
 const STORE = new Store('db', 'store');
 const DEFAULTS: Settings = {
@@ -16,7 +15,7 @@ const DEFAULTS: Settings = {
   display: 'Show',
   theme: 'Default',
 };
-const fetchJSON = (url: string) => fetch(url, { mode: 'no-cors' }).then(j => j.json());
+const fetchJSON = (url: string) => fetch(url, {mode: 'no-cors'}).then(j => j.json());
 // TODO: TRIE, STATS, GAMES, and the TrainingPool creation
 // need to be moved to a background worker and transferred in.
 export const global: {

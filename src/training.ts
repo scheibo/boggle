@@ -1,8 +1,8 @@
-import { Type, order } from './dict';
-import { Stats } from './stats';
-import { Store } from './store';
-import { Dice } from './settings';
-import { Random } from './random';
+import {Type, order} from './dict';
+import {Stats} from './stats';
+import {Store} from './store';
+import {Dice} from './settings';
+import {Random} from './random';
 
 const PERIOD = 3;
 const DAY = 24 * 60 * 60 * 1000;
@@ -128,7 +128,7 @@ export class TrainingPool {
     for (const k in stats.mixed) {
       if (!queued.has(k)) {
         const w = stats.anagrams(k, type, min)[d] || 0;
-        if (w) raw.push({ k, w });
+        if (w) raw.push({k, w});
       }
     }
     raw.sort((a, b) => a.w - b.w);
@@ -216,7 +216,7 @@ export class TrainingPool {
       if (!group.includes(key)) break;
     }
 
-    return { label: key, group: order(group), update, restore };
+    return {label: key, group: order(group), update, restore};
   }
 }
 

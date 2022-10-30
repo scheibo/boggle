@@ -1,11 +1,10 @@
-import { global } from './global';
-import { UI, View } from './ui';
-import { Game } from '../game';
-import { Type } from '../dict';
-import { Grade } from '../stats';
-import { Settings, Dice, MinLength, ScoreDisplay, Shortcuts, Theme } from '../settings';
+import {global} from './global';
+import {UI, View} from './ui';
+import {Game} from '../game';
+import {Type} from '../dict';
+import {Grade} from '../stats';
+import {Settings, Dice, MinLength, ScoreDisplay, Shortcuts, Theme} from '../settings';
 
-// prettier-ignore
 const CHARS = new Set([
   'B', 'b', 'N', 'n', 'E', 'e', 'C', 'c', 'O', 'o',
   '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
@@ -47,46 +46,46 @@ export class SettingsView implements View {
     };
 
     this.settings.appendChild(
-      checkedRadioRow('dice', ['New', 'Old', 'Big'], function(this: HTMLInputElement) {
+      checkedRadioRow('dice', ['New', 'Old', 'Big'], function (this: HTMLInputElement) {
         const min = this.value === 'Big' ? 4 : 3;
         (document.getElementById(`min${min}`) as HTMLInputElement).checked = true;
-        UI.updateSettings({ dice: this.value as Dice, min });
+        UI.updateSettings({dice: this.value as Dice, min});
       })
     );
     this.settings.appendChild(
-      checkedRadioRow('min', ['3', '4', '5'], function(this: HTMLInputElement) {
-        UI.updateSettings({ min: Number(this.value) as MinLength });
+      checkedRadioRow('min', ['3', '4', '5'], function (this: HTMLInputElement) {
+        UI.updateSettings({min: Number(this.value) as MinLength});
       })
     );
     this.settings.appendChild(
-      checkedRadioRow('dict', ['NWL', 'ENABLE', 'CSW'], function(this: HTMLInputElement) {
-        UI.updateSettings({ dict: this.value as Type });
+      checkedRadioRow('dict', ['NWL', 'ENABLE', 'CSW'], function (this: HTMLInputElement) {
+        UI.updateSettings({dict: this.value as Type});
       })
     );
     this.settings.appendChild(
-      checkedRadioRow('grade', ['A', 'B', 'C', 'D'], function(this: HTMLInputElement) {
-        UI.updateSettings({ grade: this.value as Exclude<Grade, ' '> });
+      checkedRadioRow('grade', ['A', 'B', 'C', 'D'], function (this: HTMLInputElement) {
+        UI.updateSettings({grade: this.value as Exclude<Grade, ' '>});
       })
     );
     this.settings.appendChild(
       checkedRadioRow(
         'display',
         ['Hide', 'Show', 'Full'],
-        function(this: HTMLInputElement) {
-          UI.updateSettings({ display: this.value as ScoreDisplay });
+        function (this: HTMLInputElement) {
+          UI.updateSettings({display: this.value as ScoreDisplay});
         },
         'scoreDisplay'
       )
     );
     this.settings.appendChild(
-      checkedRadioRow('shortcuts', ['Shortcuts', 'None'], function(this: HTMLInputElement) {
-        UI.updateSettings({ shortcuts: this.value as Shortcuts });
+      checkedRadioRow('shortcuts', ['Shortcuts', 'None'], function (this: HTMLInputElement) {
+        UI.updateSettings({shortcuts: this.value as Shortcuts});
       })
     );
     this.settings.appendChild(
-      checkedRadioRow('theme', ['Light', 'Default', 'Dark'], function(this: HTMLInputElement) {
+      checkedRadioRow('theme', ['Light', 'Default', 'Dark'], function (this: HTMLInputElement) {
         const theme = this.value as Theme;
-        UI.updateSettings({ theme });
+        UI.updateSettings({theme});
         UI.setTheme(theme);
       })
     );
@@ -130,7 +129,6 @@ export class SettingsView implements View {
 
   async onKeyDown(e: KeyboardEvent) {
     if (!this.seed) return; // not attached
-    // tslint:disable-next-line: deprecation
     const key = e.keyCode;
     if ([0, 37, 39, 8, 46].includes(key) || VALID(String.fromCharCode(key))) return;
     e.preventDefault();

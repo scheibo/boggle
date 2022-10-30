@@ -87,7 +87,7 @@ async function addWordList(dict, list, id) {
   }
 }
 
-async function buildDictionary() { 
+async function buildDictionary() {
   let lines = readline.createInterface({
     input: fs.createReadStream(path.join(DATA, 'freqs.txt')),
     crlfDelay: Infinity
@@ -103,7 +103,7 @@ async function buildDictionary() {
   }
 
   const dict = {};
-  await addWordList(dict, 'nwl.2018.txt', 'N');
+  await addWordList(dict, 'nwl.2020.txt', 'N');
   await addWordList(dict, 'enable.txt', 'E');
 
   lines = readline.createInterface({

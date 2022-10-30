@@ -1,6 +1,6 @@
-import { global } from './global';
-import { UI, View } from './ui';
-import { define } from '../dict';
+import {global} from './global';
+import {UI, View} from './ui';
+import {define} from '../dict';
 
 const VALID = (s: string) =>
   s.split('').every(c => (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'));
@@ -20,7 +20,7 @@ export class DefineView implements View {
   }
 
   toJSON(): { word: string } {
-    return { word: this.word };
+    return {word: this.word};
   }
 
   async attach(word?: string) {
@@ -143,7 +143,6 @@ export class DefineView implements View {
     const anadromes = new Set<string>();
 
     for (const w of words) {
-      // prettier-ignore
       const r = w.split('').reverse().join('');
       if (r !== w && words.includes(r)) {
         anadromes.add(`${[w, r].sort().join(' ')}`);
@@ -180,7 +179,7 @@ export class DefineView implements View {
     if (e.inputType.startsWith('delete') || (e.data && VALID(e.data))) return;
     e.preventDefault();
     const enter = ['insertLineBreak', 'insertParagraph'].includes(e.inputType);
-    if (enter || (e.data && e.data.includes(' '))) {
+    if (enter || (e.data?.includes(' '))) {
       if (this.word) {
         this.query('');
       } else {
@@ -192,7 +191,6 @@ export class DefineView implements View {
   async onKeyDown(e: KeyboardEvent) {
     if (!this.search) return; // not attached
     UI.focusContentEditable(this.search);
-    // tslint:disable-next-line: deprecation
     const key = e.keyCode;
     if (key === 13 || key === 32) {
       e.preventDefault();

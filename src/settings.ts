@@ -1,5 +1,5 @@
-import { Type } from './dict';
-import { Grade } from './stats';
+import {Type} from './dict';
+import {Grade} from './stats';
 
 export type Dice = 'New' | 'Old' | 'Big';
 export type MinLength = 3 | 4 | 5;

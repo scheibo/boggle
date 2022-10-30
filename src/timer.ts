@@ -33,7 +33,7 @@ export class Timer {
   }
 
   toJSON(): TimerJSON {
-    return { duration: this.duration, elapsed: this.elapsed };
+    return {duration: this.duration, elapsed: this.elapsed};
   }
 
   start() {

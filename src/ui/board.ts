@@ -1,9 +1,9 @@
-import { global } from './global';
-import { UI, View } from './ui';
-import { Game, GameJSON, SUFFIXES } from '../game';
-import { Timer, TimerJSON } from '../timer';
-import { Random } from '../random';
-import { define } from '../dict';
+import {global} from './global';
+import {UI, View} from './ui';
+import {Game, GameJSON, SUFFIXES} from '../game';
+import {Timer, TimerJSON} from '../timer';
+import {Random} from '../random';
+import {define} from '../dict';
 
 const DURATION = 180 * 1000;
 const VALID = (s: string) =>
@@ -39,10 +39,10 @@ export class BoardView implements View {
     this.kept = json ? json.kept : false;
     this.game = json ? json.game : undefined;
     this.paused = json ? json.paused : false;
-    const { display, timer } = this.createTimer(json && json.timer);
+    const {display, timer} = this.createTimer(json?.timer);
     this.timer = timer;
     this.timerDisplay = display;
-    document.addEventListener('visibilitychange', e => {
+    document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         this.timer.stop();
       } else if (!this.paused) {
@@ -100,7 +100,7 @@ export class BoardView implements View {
       this.game = game;
       global.SEED = seed;
 
-      const { display, timer } = this.createTimer();
+      const {display, timer} = this.createTimer();
       this.timer = timer;
       this.timerDisplay = display;
 
@@ -111,7 +111,7 @@ export class BoardView implements View {
       this.game = Game.fromJSON(this.game, global.TRIE, global.DICT, global.STATS);
     }
 
-    const hash = `#${(this.game as Game).id}`;
+    const hash = `#${(this.game).id}`;
     if (document.location.hash !== hash) {
       window.history.replaceState(null, '', hash);
     }
@@ -128,13 +128,12 @@ export class BoardView implements View {
 
     this.container = UI.createElementWithId('div', 'game');
 
-    const touch =
-      'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
+    const touch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
     const back = UI.createBackButton(() => UI.toggleView('Menu'));
     back.addEventListener('long-press', e => {
       if (touch) e.preventDefault();
-      return this.refresh({ new: true });
+      return this.refresh({new: true});
     });
 
     const score = UI.createElementWithId('div', 'score-wrapper');
@@ -204,7 +203,7 @@ export class BoardView implements View {
     const registerTouch = (e: TouchEvent) => {
       const touch = e.touches[0];
       const cell = document.elementFromPoint(touch.clientX, touch.clientY);
-      if (cell && cell.matches('.target')) {
+      if (cell?.matches('.target')) {
         const td = cell.parentNode as HTMLTableCellElement;
         td.classList.add('selected');
         if (!touched.has(td)) {
@@ -267,7 +266,7 @@ export class BoardView implements View {
       const original = this.word.textContent || undefined;
       if (!hide && game.played[w] < 0) this.word.classList.add('error');
       this.word.classList.add('fade');
-      this.word.addEventListener('animationend', () => this.clear(original), { once: true });
+      this.word.addEventListener('animationend', () => this.clear(original), {once: true});
     }
   }
 
@@ -319,7 +318,7 @@ export class BoardView implements View {
       }
     };
     const timer = new Timer(display, duration, elapsed, expire, () => UI.persist());
-    return { display, timer };
+    return {display, timer};
   }
 
   updateGames() {
@@ -369,11 +368,11 @@ export class BoardView implements View {
     }
   }
 
-  async onBeforeInput(e: any) {
+  onBeforeInput(e: any) {
     if (e.inputType.startsWith('delete') || (e.data && VALID(e.data))) return;
     e.preventDefault();
     const enter = ['insertLineBreak', 'insertParagraph'].includes(e.inputType);
-    if (enter || (e.data && e.data.includes(' '))) {
+    if (enter || (e.data?.includes(' '))) {
       this.play();
       UI.focusContentEditable(this.word);
     }
@@ -384,7 +383,6 @@ export class BoardView implements View {
     if (!this.word) return; // not attached
     if (this.kept) this.clear();
     UI.focusContentEditable(this.word);
-    // tslint:disable-next-line: deprecation
     const key = e.keyCode;
     if (key === 13 || key === 32) {
       e.preventDefault();

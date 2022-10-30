@@ -1,12 +1,12 @@
-import { global } from './global';
-import { UI } from './ui';
-import { Store } from '../store';
-import { TrainingPool, TrainingStats } from '../training';
-import { Stats } from '../stats';
+import {global} from './global';
+import {UI} from './ui';
+import {Store} from '../store';
+import {TrainingPool, TrainingStats} from '../training';
+import {Stats} from '../stats';
 
 export const Debug = new (class {
   async backup() {
-    const data: any = { history: await global.STORE.get('history') };
+    const data: any = {history: await global.STORE.get('history')};
     for (const type of ['NWL', 'ENABLE', 'CSW']) {
       const store = new Store('training', type);
       data[type] = await store.get('data');

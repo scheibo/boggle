@@ -45,7 +45,7 @@ const SCRIPT = '<script type="application/javascript"';
 const index = path.join(dist, 'index.html');
 let contents = fs.readFileSync(index, 'utf8');
 if (canonical) contents = contents.replace(META, `${META}<link rel="canonical" href="${canonical}" />`);
-contents = contents.replace(SCRIPT, `<script>"serviceWorker"in navigator&&window.addEventListener("load",function(){return navigator.serviceWorker.register("${root}sw.js",{scope: "${root}"})});</script> ${SCRIPT}`)
+contents = contents.replace(SCRIPT, `<script>"serviceWorker"in navigator&&window.addEventListener("load",function(){return navigator.serviceWorker.register("${root}sw.js",{scope: "${root}"})});</script> ${SCRIPT}`);
 fs.writeFileSync(index, contents);
 
 // All the files parcel created, excluding images
@@ -57,8 +57,9 @@ for (const file of DATA) {
   fs.copyFileSync(path.join(__dirname, file), path.join(dist, file));
 }
 
+(async () => {
 const NAMESPACE = 'boggle';
-const {error, code, map} = Terser.minify(`'use strict';
+const {error, code, map} = await Terser.minify(`'use strict';
   const version = '${hash(FILES.map(f => path.join('/dist', f)))}';
   const CACHE = '${NAMESPACE}:cache:' + version;
   const DATA = '${NAMESPACE}:data:${hash(DATA)}';
@@ -121,3 +122,4 @@ if (error) {
 }
 fs.writeFileSync(path.join(dist, 'sw.js'), code);
 fs.writeFileSync(path.join(dist, 'sw.js.map'), map);
+})();

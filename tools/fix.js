@@ -36,7 +36,7 @@ async function addWordList(dict, f, fn) {
 
 (async () => {
   const dict = new Set();
-  await addWordList(dict, 'nwl.2018.txt', line => line.toUpperCase());
+  await addWordList(dict, 'nwl.2020.txt', line => line.toUpperCase());
   await addWordList(dict, 'enable.txt', line => line.toUpperCase());
   await addWordList(dict, 'csw.2019.txt', line => splitFirst(line, '\t')[0]);
 

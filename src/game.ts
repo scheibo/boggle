@@ -1,10 +1,9 @@
-import { Dictionary, Type, define } from './dict';
-import { Random } from './random';
-import { Settings, Dice, MinLength } from './settings';
-import { Trie } from './trie';
-import { Stats, Grade } from './stats';
+import {Dictionary, Type, define} from './dict';
+import {Random} from './random';
+import {Settings, Dice, MinLength} from './settings';
+import {Trie} from './trie';
+import {Stats, Grade} from './stats';
 
-// prettier-ignore
 const NEW_DICE = [
   'AAEEGN', 'ELRTTY', 'AOOTTW', 'ABBJOO',
   'EHRTVW', 'CIMOTU', 'DISTTY', 'EIOSST',
@@ -12,7 +11,6 @@ const NEW_DICE = [
   'EEGHNW', 'AFFKPS', 'HLNNRZ', 'DEILRX',
 ];
 
-// prettier-ignore
 const OLD_DICE = [
   'AACIOT', 'AHMORS', 'EGKLUY', 'ABILTY',
   'ACDEMP', 'EGINTV', 'GILRUW', 'ELPSTU',
@@ -20,7 +18,6 @@ const OLD_DICE = [
   'EHINPS', 'DKNOTU', 'ADENVZ', 'BIFORX',
 ];
 
-// prettier-ignore
 const BIG_DICE = [
   'AAAFRS', 'AAEEEE', 'AAFIRS', 'ADENNN', 'AEEEEM',
   'AEEGMU', 'AEGMNN', 'AFIRSY', 'BJKQXZ', 'CCNSTW',
@@ -72,22 +69,22 @@ export class Game {
 
   expired: number | null;
   private totals_:
-    | {
-        s: number;
-        a: number;
-        b: number;
-        c: number;
-        d: number;
-        anagrams: { [anagram: string]: string[] };
-      }
-    | undefined;
+  | {
+    s: number;
+    a: number;
+    b: number;
+    c: number;
+    d: number;
+    anagrams: { [anagram: string]: string[] };
+  }
+  | undefined;
 
   constructor(
     trie: Trie,
     dict: Dictionary,
     stats: Stats,
     random: Random,
-    settings: GameSettings = { dice: 'New', dict: 'NWL' }
+    settings: GameSettings = {dice: 'New', dict: 'NWL'}
   ) {
     this.trie = trie;
     this.dict = dict;
@@ -111,7 +108,7 @@ export class Game {
     this.id = Game.encodeID(this.settings, this.seed);
     this.played = {};
     this.overtime = new Set();
-    this.score = { regular: 0, overtime: 0 };
+    this.score = {regular: 0, overtime: 0};
 
     this.start = +new Date();
     this.expired = null; // set to timestamp!
@@ -167,7 +164,7 @@ export class Game {
     let seed = num.length ? Number(num) : NaN;
     if (String(seed) !== num) seed = NaN;
 
-    return [{ dice, min, dict }, seed];
+    return [{dice, min, dict}, seed];
   }
 
   static fromJSON(json: GameJSON, trie: Trie, dict: Dictionary, stats: Stats) {
@@ -183,7 +180,7 @@ export class Game {
     // @ts-ignore readonly
     game.played = json.words;
 
-    const score = { regular: 0, overtime: 0 };
+    const score = {regular: 0, overtime: 0};
     for (const w in game.played) {
       if (game.played[w] < 0) continue;
       const s = Game.score(w);
@@ -220,7 +217,7 @@ export class Game {
     const a = b + (grades.A || 0);
     const s = a + (grades[' '] || 0);
 
-    return (this.totals_ = { s, a, b, c, d, anagrams });
+    return (this.totals_ = {s, a, b, c, d, anagrams});
   }
 
   progress() {
@@ -367,11 +364,11 @@ export class Game {
     }
     while (queue.length !== 0) {
       const [x, y, s, node, h] = queue.pop()!;
-      // prettier-ignore
+      // eslint-disable-next-line max-len
       for (const [dx, dy] of [[1, 0], [1, -1], [0, -1], [-1, -1], [-1, 0], [-1, 1], [0, 1], [1, 1]]) {
         const [x2, y2] = [x + dx, y + dy];
         if (h.find(e => e[0] === x2 && e[1] === y2) !== undefined) continue;
-        if (0 <= x2 && x2 < this.size && 0 <= y2 && y2 < this.size) {
+        if (x2 >= 0 && x2 < this.size && y2 >= 0 && y2 < this.size) {
           const hist = h.slice();
           hist.push([x2, y2]);
 
@@ -383,8 +380,8 @@ export class Game {
           }
           if (node2 !== undefined) {
             const s2 = s + c;
-            const isWord = typeof node2.isWord === 'boolean' ?
-              node2.isWord : node2.isWord.includes(this.settings.dict.charAt(0));
+            const isWord = typeof node2.isWord === 'boolean'
+              ? node2.isWord : node2.isWord.includes(this.settings.dict.charAt(0));
             if (isWord && s2.length >= this.settings.min) words[s2] = hist;
             queue.push([x2, y2, s2, node2, hist]);
           }

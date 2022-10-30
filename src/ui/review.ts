@@ -1,9 +1,9 @@
-import { global } from './global';
-import { UI, View } from './ui';
-import { order } from '../dict';
-import { Store } from '../store';
-import { TrainingStats } from '../training';
-import { TrainingView } from './training';
+import {global} from './global';
+import {UI, View} from './ui';
+import {order} from '../dict';
+import {Store} from '../store';
+import {TrainingStats} from '../training';
+import {TrainingView} from './training';
 
 export class ReviewView implements View {
   private readonly training: TrainingView;
@@ -28,7 +28,7 @@ export class ReviewView implements View {
     const score = (k: string) => global.STATS.anagrams(k, global.SETTINGS.dict)[d] || 0;
 
     const store = new Store('training', global.SETTINGS.dict);
-    const data = ((await store.get('data')) || []) as TrainingStats[];
+    const data = ((await store.get<TrainingStats[]>('data')) || []);
     const keys = data
       .filter(w => !w.c || w.e < 2.0)
       .sort((a, b) => score(b.k) / b.e - score(a.k) / a.e)
