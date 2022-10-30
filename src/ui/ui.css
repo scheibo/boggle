@@ -209,7 +209,7 @@ body {
   max-width: 393px;
   height: 100%;
   min-height: 454px;
-  max-height: 714px;
+  max-height: max(714px, 99%);
   margin: 0px auto;
   display: flex;
   flex-direction: column;
