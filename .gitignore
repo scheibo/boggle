@@ -6,7 +6,7 @@ data/dict.json
 data/stats.json
 data/freqs.txt
 # fuckers want your money
-data/nwl.2018.txt
+data/nwl.*.txt
 
 sw.js
 dist
