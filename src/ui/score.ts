@@ -92,7 +92,7 @@ export class ScoreView {
 
     for (const {word, grade, overtime, defn, invalid} of state.played) {
       const tr = document.createElement('tr');
-      if (grade < global.SETTINGS.grade) tr.classList.add('hard');
+      if (!invalid && grade < global.SETTINGS.grade) tr.classList.add('hard');
       if (invalid) tr.classList.add('error');
       if (overtime) tr.classList.add('overtime');
 
