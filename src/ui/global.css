@@ -31,18 +31,6 @@ button {
 body, html {
   height: 100%; /* https://bugs.chromium.org/p/chromium/issues/detail?id=844848#c4 */
 }
-[contenteditable] {
-  -moz-user-select: text;
-  -ms-user-select: text;
-  -khtml-user-select: text;
-  -webkit-user-select: text;
-  user-select: text;
-}
-@-moz-document url-prefix() {
-  [contenteditable]:empty {
-    margin-left: 50% !important;
-  }
-}
 ::-webkit-scrollbar {
   width: 0px;
   background: transparent;

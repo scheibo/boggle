@@ -9,7 +9,7 @@ export class DefineView implements View {
   private word: string;
 
   private define!: HTMLElement;
-  private search!: HTMLElement;
+  private search!: HTMLInputElement;
 
   private defn: HTMLElement | null = null;
   private stats: HTMLElement | null = null;
@@ -29,13 +29,13 @@ export class DefineView implements View {
     if (word) this.word = word;
 
     this.define = UI.createElementWithId('div', 'define');
-    this.search = UI.createElementWithId('div', 'search');
+    this.search = UI.createElementWithId('input', 'search') as HTMLInputElement;
+    this.search.setAttribute('type', 'text');
     this.search.classList.add('word');
-    this.search.contentEditable = 'true';
-    this.search.textContent = this.word;
+    this.search.value = this.word;
     this.search.addEventListener('beforeinput', e => this.onBeforeInput(e));
     this.search.addEventListener('input', () => {
-      const w = this.search.textContent;
+      const w = this.search.value;
       this.query(w && VALID(w) ? w : '');
     });
     this.define.appendChild(this.search);
@@ -50,8 +50,7 @@ export class DefineView implements View {
   }
 
   query(w: string) {
-    this.search.textContent = w;
-    UI.focusContentEditable(this.search);
+    this.search.value = w;
     this.word = w.toUpperCase();
     this.update();
     UI.persist();
@@ -190,7 +189,6 @@ export class DefineView implements View {
 
   async onKeyDown(e: KeyboardEvent) {
     if (!this.search) return; // not attached
-    UI.focusContentEditable(this.search);
     const key = e.keyCode;
     if (key === 13 || key === 32) {
       e.preventDefault();

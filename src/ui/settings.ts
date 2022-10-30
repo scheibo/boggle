@@ -13,17 +13,17 @@ const VALID = (s: string) => s.split('').every(c => CHARS.has(c));
 
 export class SettingsView implements View {
   settings!: HTMLElement;
-  seed!: HTMLElement;
+  seed!: HTMLInputElement;
 
   toJSON() {}
 
   attach() {
     this.settings = UI.createElementWithId('div', 'settings');
 
-    this.seed = UI.createElementWithId('div', 'seed');
-    this.seed.textContent = Game.encodeID(global.SETTINGS, global.SEED);
-    this.seed.setAttribute('contenteditable', 'true');
-    this.seed.addEventListener('input', () => this.onInput(this.seed.textContent || ''));
+    this.seed = UI.createElementWithId('input', 'seed') as HTMLInputElement;
+    this.seed.setAttribute('type', 'text');
+    this.seed.value = Game.encodeID(global.SETTINGS, global.SEED);
+    this.seed.addEventListener('input', () => this.onInput(this.seed.value || ''));
     this.seed.addEventListener('beforeinput', e => this.onBeforeInput(e));
     const back = UI.createBackButton(() => UI.toggleView('Menu'));
     this.settings.appendChild(UI.createTopbar(back, this.seed, null));
@@ -118,7 +118,6 @@ export class SettingsView implements View {
     } else {
       UI.updateSettings(settings, seed, false);
       this.update();
-      UI.focusContentEditable(this.seed);
     }
   }
 

@@ -282,23 +282,9 @@ export const UI = new (class {
     return empty;
   }
 
-  focusContentEditable(element: HTMLElement) {
-    if (!document.body.contains(element)) return;
+  permaFocus(element: HTMLInputElement) {
+    element.addEventListener('blur', () => setTimeout(() => element.focus(), 20));
     element.focus();
-    const range = document.createRange();
-    range.selectNodeContents(element);
-    range.collapse(false);
-    const selection = window.getSelection();
-    if (selection) {
-      selection.removeAllRanges();
-      selection.addRange(range);
-    }
-  }
-
-  permaFocus(element: HTMLElement) {
-    element.addEventListener('blur', () =>
-      setTimeout(() => this.focusContentEditable(element), 20));
-    this.focusContentEditable(element);
   }
 
   setTheme(theme: Theme) {

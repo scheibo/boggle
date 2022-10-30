@@ -30,7 +30,7 @@ export class BoardView implements View {
   container!: HTMLElement;
   score!: HTMLElement;
   full!: HTMLElement;
-  word!: HTMLElement;
+  word!: HTMLInputElement;
   defn!: HTMLElement;
   tds!: Set<HTMLTableCellElement>;
 
@@ -147,11 +147,12 @@ export class BoardView implements View {
     this.container.appendChild(this.renderBoard());
     this.displayScore();
 
-    this.word = UI.createElementWithId('div', 'word');
+    this.word = UI.createElementWithId('input', 'word') as HTMLInputElement;
+    this.word.setAttribute('type', 'text');
     this.word.classList.add('word');
     this.word.addEventListener('beforeinput', e => this.onBeforeInput(e));
 
-    if (!touch) this.word.contentEditable = 'true';
+    if (touch) this.word.setAttribute('disabled', 'disabled');
     this.container.appendChild(this.word);
     this.defn = UI.createElementWithId('div', 'defn');
     this.defn.classList.add('definition');
@@ -208,7 +209,7 @@ export class BoardView implements View {
         td.classList.add('selected');
         if (!touched.has(td)) {
           touched.add(td);
-          this.word.textContent += td.textContent!;
+          this.word.value += td.textContent!;
         }
       }
     };
@@ -247,11 +248,11 @@ export class BoardView implements View {
 
   play() {
     const game = this.game as Game;
-    let w = (this.word.textContent || '').toUpperCase();
+    let w = (this.word.value || '').toUpperCase();
     if (!w.length) return;
     if (global.SETTINGS.shortcuts === 'Shortcuts' && (w.length < 3 || SUFFIXES.includes(w))) {
       w = `${this.last}${w}`;
-      this.word.textContent = w;
+      this.word.value = w;
     }
     const score = game.play(w);
     this.last = w;
@@ -263,7 +264,7 @@ export class BoardView implements View {
       this.displayScore();
       this.defn.textContent = define(w, global.DICT);
     } else {
-      const original = this.word.textContent || undefined;
+      const original = this.word.value || undefined;
       if (!hide && game.played[w] < 0) this.word.classList.add('error');
       this.word.classList.add('fade');
       this.word.addEventListener('animationend', () => this.clear(original), {once: true});
@@ -296,8 +297,8 @@ export class BoardView implements View {
   }
 
   clear(w?: string) {
-    if (w && w !== this.word.textContent) return;
-    this.word.textContent = '';
+    if (w && w !== this.word.value) return;
+    this.word.value = '';
     this.word.classList.remove('error');
     this.word.classList.remove('fade');
     this.defn.textContent = '';
@@ -372,23 +373,18 @@ export class BoardView implements View {
     if (e.inputType.startsWith('delete') || (e.data && VALID(e.data))) return;
     e.preventDefault();
     const enter = ['insertLineBreak', 'insertParagraph'].includes(e.inputType);
-    if (enter || (e.data?.includes(' '))) {
-      this.play();
-      UI.focusContentEditable(this.word);
-    }
+    if (enter || (e.data?.includes(' '))) this.play();
   }
 
   // TODO: up and down arrow to go through history
   async onKeyDown(e: KeyboardEvent) {
     if (!this.word) return; // not attached
     if (this.kept) this.clear();
-    UI.focusContentEditable(this.word);
     const key = e.keyCode;
     if (key === 13 || key === 32) {
       e.preventDefault();
       this.play();
-      UI.focusContentEditable(this.word);
-    } else if (!this.word.textContent && (key === 37 || key === 39)) {
+    } else if (!this.word.value && (key === 37 || key === 39)) {
       e.preventDefault();
     } else if (![0, 37, 39, 8, 46].includes(key) && !VALID(String.fromCharCode(key))) {
       e.preventDefault();
