@@ -19,7 +19,7 @@
     "typescript": "^4.8.4"
   },
   "scripts": {
-    "check": "eslint --cache src --ext ts,js",
+    "lint": "eslint --cache src --ext ts,js",
     "fix": "eslint --fix src --ext ts,js",
     "compile": "tsc -p .",
     "test": "true",
