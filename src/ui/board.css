@@ -6,9 +6,13 @@
 #score-wrapper #score {
   width: 100%;
 }
+#score {
+  cursor: pointer;
+}
 #timer {
   width: 60%;
   font-size: 32px;
+  cursor: pointer;
 }
 @media(min-height: 550px) {
   #timer {

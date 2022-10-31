@@ -18,7 +18,10 @@
 #progress-wrapper #progress {
   width: 100%;
 }
-#progress { font-weight: bold; }
+#progress {
+  font-weight: bold;
+  cursor: pointer;
+}
 #rating0 { background-color: rgba(255,0,0,0.6); }
 #rating0:focus, #rating0:hover { background-color: rgba(255,0,0,0.65); }
 #rating0:active { background-color: rgba(255,0,0,0.7); }

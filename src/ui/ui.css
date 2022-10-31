@@ -53,6 +53,7 @@ input {
   width: 90%;
 }
 #back {
+  cursor: pointer;
   filter: var(--filter);
 }
 #back img {
