@@ -13,3 +13,4 @@ dist
 .*cache
 
 tools/results
+js/

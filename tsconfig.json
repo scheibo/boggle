@@ -9,7 +9,7 @@
     "incremental": true,
     "lib": ["es6", "es2018", "dom"],
     "module": "commonjs",
-    "noEmit": true,
+    "outDir": "js",
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
     "resolveJsonModule": true,
