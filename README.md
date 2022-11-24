@@ -1,8 +1,8 @@
 # Boggle
 
-Offline PWA implementation of Boggle for power users. Can be played at
-https://scheibo.github.com/boggle/, please see
-https://scheibo.github.com/boggle/about/ for a full user guide.
+Offline PWA implementation of [Boggle](https://en.wikipedia.org/wiki/Boggle) for power users,
+playable at [boggle.scheibo.com](https://boggle.scheibo.com/) - full details on the [about
+page](https://boggle.scheibo.com/about/).
 
 ## Development
 
@@ -14,5 +14,5 @@ npm run build # production, serve dist/ somewhere. See the 'publish' script as a
 
 ## License
 
-'Boggle' is trademarked by Parker Brothers/Hasbro, but the code in this
-repository is distributed under the terms of the MIT License.
+"Boggle" is trademarked by Parker Brothers / Hasbro, but the code in this repository is distributed
+under the terms of the MIT License.
