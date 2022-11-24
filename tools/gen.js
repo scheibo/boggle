@@ -7,7 +7,7 @@ const Random = require('../js/random').Random;
 const dict = require('../data/dict.json');
 const trie = Trie.create(dict);
 
-const NUM = 2e9; // 1e7 for testing
+const NUM = 1e9; // 1e7 for testing
 const EPOCH = Number(process.argv[3]);
 const OFFSET = (EPOCH * NUM) + Number(process.argv[4]) / 5 * NUM;
 
