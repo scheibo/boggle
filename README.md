@@ -2,7 +2,7 @@
 
 Offline PWA implementation of [Boggle](https://en.wikipedia.org/wiki/Boggle) for power users,
 playable at [scheibo.github.io/boggle](https://scheibo.github.io/boggle/) - full details on the [about
-page](https://boggle.scheibo.com/about/).
+page](https://scheibo.github.io/boggle/about/).
 
 ## Development
 
