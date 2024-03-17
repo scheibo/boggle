@@ -1,9 +1,10 @@
-import {global} from './global';
-import {UI, View} from './ui';
 import {order} from '../dict';
 import {Store} from '../store';
 import {TrainingStats} from '../training';
+
+import {global} from './global';
 import {TrainingView} from './training';
+import {UI, View} from './ui';
 
 export class ReviewView implements View {
   private readonly training: TrainingView;

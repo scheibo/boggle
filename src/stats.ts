@@ -1,5 +1,5 @@
-import {Dice} from './settings';
 import {Dictionary, Type, isValid, order} from './dict';
+import {Dice} from './settings';
 
 export interface Data {
   New: DiceEntry;
@@ -27,7 +27,7 @@ export class Stats {
   private readonly dict: Dictionary;
   private readonly percentiles: Data;
   // NOTE: contains ALL words!
-  readonly mixed: { [anagram: string]: string[] };
+  readonly mixed: {[anagram: string]: string[]};
 
   constructor(percentiles: Data, dict: Dictionary) {
     this.dict = dict;
@@ -45,7 +45,7 @@ export class Stats {
     const a = Stats.toAnagram(word);
     const group = this.mixed[a];
 
-    const result: { words: string[]; n?: number; o?: number; b?: number } = {words: []};
+    const result: {words: string[]; n?: number; o?: number; b?: number} = {words: []};
     if (!group) return result;
 
     for (const w of group) {
@@ -89,8 +89,8 @@ export class Stats {
     const result: {
       grade: Grade;
       freq?: number;
-      word?: { p: number; v: number };
-      anagram?: { p: number; v: number };
+      word?: {p: number; v: number};
+      anagram?: {p: number; v: number};
     } = {grade: g < f ? f : g};
     if (pf > -1) result.freq = pf;
     if (pw > -1) result.word = {p: pw, v: pct(val.freq!)};
@@ -98,20 +98,20 @@ export class Stats {
     return result;
   }
 
-  history(games: Array<[{ [w: string]: any }, Set<string>]>, dice: Dice, type: Type) {
+  history(games: Array<[{[w: string]: any}, Set<string>]>, dice: Dice, type: Type) {
     const d = dice.charAt(0).toLowerCase() as 'n' | 'o' | 'b';
     const reverse = (w: string) => w.split('').reverse().join('');
 
-    const ratio: { [k: string]: number } = {};
-    const anadromes: { [k: string]: number } = {};
-    const anagrams: { [k: string]: number } = {};
+    const ratio: {[k: string]: number} = {};
+    const anadromes: {[k: string]: number} = {};
+    const anagrams: {[k: string]: number} = {};
 
-    const all: { [k: string]: number } = {};
-    const either: { [k: string]: number } = {};
-    const found: { [k: string]: number } = {};
+    const all: {[k: string]: number} = {};
+    const either: {[k: string]: number} = {};
+    const found: {[k: string]: number} = {};
     let n = games.length;
     for (const [possible, played] of games) {
-      const as: { [k: string]: string[] } = {};
+      const as: {[k: string]: string[]} = {};
       for (const w in possible) {
         all[w] = (all[w] || 0) + 1;
         const a = Stats.toAnagram(w);
@@ -163,7 +163,7 @@ export class Stats {
       }
     }
 
-    const sorted = (obj: { [k: string]: number }, limit: number) =>
+    const sorted = (obj: {[k: string]: number}, limit: number) =>
       Object.entries(obj)
         .sort((a, b) => b[1] - a[1])
         .slice(0, limit);

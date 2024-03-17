@@ -1,9 +1,10 @@
+import {define} from '../dict';
+import {Game, GameJSON, SUFFIXES} from '../game';
+import {Random} from '../random';
+import {Timer, TimerJSON} from '../timer';
+
 import {global} from './global';
 import {UI, View} from './ui';
-import {Game, GameJSON, SUFFIXES} from '../game';
-import {Timer, TimerJSON} from '../timer';
-import {Random} from '../random';
-import {define} from '../dict';
 
 const DURATION = 180 * 1000;
 const VALID = (s: string) =>
@@ -61,7 +62,7 @@ export class BoardView implements View {
     };
   }
 
-  async init(data: { new?: boolean; allowDupes?: boolean } = {}) {
+  async init(data: {new?: boolean; allowDupes?: boolean} = {}) {
     await Promise.all([
       global.LOADED.DICT,
       global.LOADED.TRIE(),
@@ -123,7 +124,7 @@ export class BoardView implements View {
     }
   }
 
-  async attach(data: { new?: boolean; allowDupes?: boolean } = {}) {
+  async attach(data: {new?: boolean; allowDupes?: boolean} = {}) {
     await this.init(data);
 
     this.container = UI.createElementWithId('div', 'game');
@@ -240,7 +241,7 @@ export class BoardView implements View {
     return this.container;
   }
 
-  async refresh(data: { new?: boolean; allowDupes?: boolean } = {}) {
+  async refresh(data: {new?: boolean; allowDupes?: boolean} = {}) {
     UI.persist();
     await UI.detachView('Board', 'Board');
     await UI.attachView('Board', data);

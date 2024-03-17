@@ -1,8 +1,8 @@
 import {Type, order} from './dict';
+import {Random} from './random';
+import {Dice} from './settings';
 import {Stats} from './stats';
 import {Store} from './store';
-import {Dice} from './settings';
-import {Random} from './random';
 
 const PERIOD = 3;
 const DAY = 24 * 60 * 60 * 1000;
@@ -37,7 +37,7 @@ class Queue<T> {
   pop(): T | undefined {
     if (this.length === 0) return undefined;
 
-    const top = this.data[0]!;
+    const top = this.data[0];
     const bottom = this.data.pop()!;
     this.length--;
 

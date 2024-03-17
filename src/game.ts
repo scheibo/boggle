@@ -1,8 +1,8 @@
 import {Dictionary, Type, define} from './dict';
 import {Random} from './random';
-import {Settings, Dice, MinLength} from './settings';
+import {Dice, MinLength, Settings} from './settings';
+import {Grade, Stats} from './stats';
 import {Trie} from './trie';
-import {Stats, Grade} from './stats';
 
 const NEW_DICE = [
   'AAEEGN', 'ELRTTY', 'AOOTTW', 'ABBJOO',
@@ -38,7 +38,7 @@ export interface GameJSON {
   seed: string;
   start: number;
   expired: number | null;
-  words: { [word: string]: number };
+  words: {[word: string]: number};
   goal: {
     S: number;
     A: number;
@@ -60,11 +60,11 @@ export class Game {
   readonly random: Random;
   readonly settings: Omit<Settings, 'grade'>;
   readonly size: number;
-  readonly possible: { [word: string]: Array<[number, number]> };
+  readonly possible: {[word: string]: Array<[number, number]>};
   readonly id: string;
-  readonly played: { [word: string]: number };
+  readonly played: {[word: string]: number};
   readonly overtime: Set<string>;
-  readonly score: { regular: number; overtime: number };
+  readonly score: {regular: number; overtime: number};
   readonly start: number;
 
   expired: number | null;
@@ -75,7 +75,7 @@ export class Game {
     b: number;
     c: number;
     d: number;
-    anagrams: { [anagram: string]: string[] };
+    anagrams: {[anagram: string]: string[]};
   }
   | undefined;
 
@@ -200,8 +200,8 @@ export class Game {
   get totals() {
     if (this.totals_) return this.totals_;
 
-    const anagrams: { [anagram: string]: string[] } = {};
-    const grades: { [grade: string]: number } = {};
+    const anagrams: {[anagram: string]: string[]} = {};
+    const grades: {[grade: string]: number} = {};
     for (const word in this.possible) {
       const anagram = Stats.toAnagram(word);
       anagrams[anagram] = anagrams[anagram] || [];
@@ -224,10 +224,10 @@ export class Game {
     let total = 0;
     let invalid = 0;
     let valid = 0;
-    const suffixes: { [suffixed: string]: string } = {};
+    const suffixes: {[suffixed: string]: string} = {};
     const subwords = new Set<string>();
 
-    const anagrams: { [anagram: string]: string[] } = {};
+    const anagrams: {[anagram: string]: string[]} = {};
     for (const word in this.played) {
       total++;
       if (this.played[word] < 0) {
@@ -346,7 +346,7 @@ export class Game {
   }
 
   solve() {
-    const words: { [word: string]: Array<[number, number]> } = {};
+    const words: {[word: string]: Array<[number, number]>} = {};
     const queue: Array<[number, number, string, Trie, Array<[number, number]>]> = [];
     for (let y = 0; y < this.size; y++) {
       for (let x = 0; x < this.size; x++) {

@@ -1,8 +1,9 @@
-import {global} from './global';
-import {UI} from './ui';
+import {Stats} from '../stats';
 import {Store} from '../store';
 import {TrainingPool, TrainingStats} from '../training';
-import {Stats} from '../stats';
+
+import {global} from './global';
+import {UI} from './ui';
 
 export const Debug = new (class {
   async backup() {

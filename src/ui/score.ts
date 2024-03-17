@@ -1,7 +1,8 @@
+import {Game} from '../game';
+
+import {BoardView} from './board';
 import {global} from './global';
 import {UI} from './ui';
-import {BoardView} from './board';
-import {Game} from '../game';
 
 export class ScoreView {
   private readonly board: BoardView;

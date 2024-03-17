@@ -1,9 +1,9 @@
-import {Store} from '../store';
-import {Settings} from '../settings';
-import {Trie} from '../trie';
 import {Dictionary} from '../dict';
 import {Game, GameJSON} from '../game';
-import {Stats, Data} from '../stats';
+import {Settings} from '../settings';
+import {Data, Stats} from '../stats';
+import {Store} from '../store';
+import {Trie} from '../trie';
 
 const STORE = new Store('db', 'store');
 const DEFAULTS: Settings = {
@@ -27,7 +27,7 @@ export const global: {
   STATS: Stats;
   HISTORY: GameJSON[];
   TRIE: Trie;
-  GAMES: Array<[{ [word: string]: any }, Set<string>]> | undefined;
+  GAMES: Array<[{[word: string]: any}, Set<string>]> | undefined;
   PLAYED: Set<string> | undefined;
   SEED: number;
   LOADED: {
@@ -48,7 +48,7 @@ export const global: {
   STATS: (undefined as unknown) as Stats,
   HISTORY: (undefined as unknown) as GameJSON[],
   TRIE: (undefined as unknown) as Trie,
-  GAMES: undefined as Array<[{ [word: string]: any }, Set<string>]> | undefined,
+  GAMES: undefined as Array<[{[word: string]: any}, Set<string>]> | undefined,
   PLAYED: undefined as Set<string> | undefined,
   SEED: 0,
   LOADED: {

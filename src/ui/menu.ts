@@ -1,5 +1,5 @@
-import {UI, View} from './ui';
 import {BoardView} from './board';
+import {UI, View} from './ui';
 
 export class MenuView implements View {
   menu!: HTMLElement;

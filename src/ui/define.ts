@@ -1,6 +1,7 @@
+import {define} from '../dict';
+
 import {global} from './global';
 import {UI, View} from './ui';
-import {define} from '../dict';
 
 const VALID = (s: string) =>
   s.split('').every(c => (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'));
@@ -15,11 +16,11 @@ export class DefineView implements View {
   private stats: HTMLElement | null = null;
   private anagrams: HTMLElement | null = null;
 
-  constructor(json?: { word: string }) {
+  constructor(json?: {word: string}) {
     this.word = json ? json.word : '';
   }
 
-  toJSON(): { word: string } {
+  toJSON(): {word: string} {
     return {word: this.word};
   }
 

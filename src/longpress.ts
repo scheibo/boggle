@@ -10,7 +10,7 @@
   const MAX_DIFF = 10;
   const TIMEOUT = 500;
 
-  let timer: { value: number } | null = null;
+  let timer: {value: number} | null = null;
   let startX = 0;
   let startY = 0;
 

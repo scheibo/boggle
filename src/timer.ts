@@ -95,6 +95,6 @@ export class Timer {
     const seconds = `${Math.floor((distance % (1000 * 60)) / 1000)}`.padStart(2, '0');
     const time = `${minutes}:${seconds}`;
     // Safari doesn't fire click events on the display while we're updating ¯\_(ツ)_/¯
-    if (time != this.display.textContent) this.display.textContent = time;
+    if (time !== this.display.textContent) this.display.textContent = time;
   }
 }

@@ -1,6 +1,7 @@
+import {Stats} from '../stats';
+
 import {global} from './global';
 import {UI, View} from './ui';
-import {Stats} from '../stats';
 
 type Section = 'WORD' | 'ANAGRAM' | 'PAIR';
 
@@ -10,11 +11,11 @@ export class StatsView implements View {
   stats!: HTMLElement;
   table: HTMLElement | null = null;
 
-  constructor(json?: { section: Section }) {
+  constructor(json?: {section: Section}) {
     this.section = json ? json.section : 'WORD';
   }
 
-  toJSON(): { section: Section } {
+  toJSON(): {section: Section} {
     return {section: this.section};
   }
 

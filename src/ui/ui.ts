@@ -1,14 +1,14 @@
-import {global} from './global';
-import {Game, GameSettings, GameJSON} from '../game';
+import {define} from '../dict';
+import {Game, GameJSON, GameSettings} from '../game';
 import {Random} from '../random';
 import {Settings, Theme} from '../settings';
-import {define} from '../dict';
 
 import {BoardView} from './board';
-import {ScoreView} from './score';
 import {DefineView} from './define';
+import {global} from './global';
 import {MenuView} from './menu';
 import {ReviewView} from './review';
+import {ScoreView} from './score';
 import {SettingsView} from './settings';
 import {StatsView} from './stats';
 import {TrainingView} from './training';
@@ -41,7 +41,7 @@ export const UI = new (class {
   BACK!: HTMLImageElement;
   current!: string;
   previous!: string;
-  Views!: { [view: string]: View };
+  Views!: {[view: string]: View};
   loader!: Loader;
 
   async create() {

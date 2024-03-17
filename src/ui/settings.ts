@@ -1,9 +1,10 @@
+import {Type} from '../dict';
+import {Game} from '../game';
+import {Dice, MinLength, ScoreDisplay, Settings, Shortcuts, Theme} from '../settings';
+import {Grade} from '../stats';
+
 import {global} from './global';
 import {UI, View} from './ui';
-import {Game} from '../game';
-import {Type} from '../dict';
-import {Grade} from '../stats';
-import {Settings, Dice, MinLength, ScoreDisplay, Shortcuts, Theme} from '../settings';
 
 const CHARS = new Set([
   'B', 'b', 'N', 'n', 'E', 'e', 'C', 'c', 'O', 'o',

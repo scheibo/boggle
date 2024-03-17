@@ -1,7 +1,8 @@
+import {Store} from '../store';
+import {TrainingPool} from '../training';
+
 import {global} from './global';
 import {UI, View} from './ui';
-import {TrainingPool} from '../training';
-import {Store} from '../store';
 
 const INTERVAL = 1000;
 

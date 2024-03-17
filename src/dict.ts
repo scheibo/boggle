@@ -25,7 +25,7 @@ export function define(word: string, dict: Dictionary) {
   const match = re.exec(def);
   if (match) {
     const m = dict[match[1].toUpperCase()];
-    if (!m || !m.defn) {
+    if (!m?.defn) {
       def = match[1];
     } else {
       def = `${match[1]} (${m.defn})`;
