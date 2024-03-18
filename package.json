@@ -23,9 +23,8 @@
     "fix": "eslint --fix src --ext ts,js",
     "compile": "tsc -p .",
     "test": "true",
-    "prepare": "npm run compile",
     "pretest": "npm run compile",
-    "posttest": "npm run check",
+    "posttest": "npm run lint",
     "start": "parcel index.html",
     "build": "node build"
   },
